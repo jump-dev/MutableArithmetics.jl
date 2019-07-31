@@ -8,10 +8,8 @@ module MutableArithmetics
 
 using LinearAlgebra, Base.GMP.MPZ
 
-import Base.+, Base.*, Base.==
-import LinearAlgebra.mul!
-
 export DummyBigInt
+export set_zero!, add_prod!
 
 
 """
@@ -38,9 +36,9 @@ Base.zero(::Type{DummyBigInt}) = DummyBigInt(0)
 Base.convert(::Type{DummyBigInt}, x::Int64) = DummyBigInt(x)
 
 # Arithmetics
-*(a::DummyBigInt, b::DummyBigInt) = DummyBigInt(a.data * b.data)
-+(a::DummyBigInt, b::DummyBigInt) = DummyBigInt(a.data + b.data)
-==(a::DummyBigInt, b::DummyBigInt) = a.data == b.data
+Base.:*(a::DummyBigInt, b::DummyBigInt) = DummyBigInt(a.data * b.data)
+Base.:+(a::DummyBigInt, b::DummyBigInt) = DummyBigInt(a.data + b.data)
+Base.:(==)(a::DummyBigInt, b::DummyBigInt) = a.data == b.data
 
 """
     add_prod!(x, args...)
@@ -80,9 +78,20 @@ Set the value of `x` to zero.
 """
 function set_zero! end
 
-set_zero!(x) = zero(x)
-set_zero!(x::BigInt) = MPZ.set_si!(x, 0)
-set_zero!(x::DummyBigInt) = set_zero!(x.data)
+function set_zero!(x)
+    x = zero(x)
+    x
+end
+
+function set_zero!(x::BigInt)
+    MPZ.set_si!(x, 0)
+    x
+end
+
+function set_zero!(x::DummyBigInt)
+    set_zero!(x.data)
+    x
+end
 
 """
     LinearAlgebra.mul!(C::AbstractVector, A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T <: AbstractMutable}
@@ -128,6 +137,6 @@ function mul(A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T<:AbstractMut
     mul!(C, A, B)
 end
 
-*(A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T<:AbstractMutable} = mul(A, B)
+Base.:*(A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T<:AbstractMutable} = mul(A, B)
 
 end # module
