@@ -8,7 +8,7 @@ module MutableArithmetics
 
 using LinearAlgebra, Base.GMP.MPZ
 
-import Base.*, Base.promote_op, Base.==
+import Base.+, Base.*, Base.==
 import LinearAlgebra.mul!
 
 export DummyBigInt
@@ -26,6 +26,8 @@ abstract type AbstractMutable end
     DummyBigInt
 
 Mutable wrapper type around `BigInt`.
+The goal of this type is to allow the package to test itself;
+hence its name.
 """
 struct DummyBigInt <: AbstractMutable
     data::BigInt
@@ -33,8 +35,11 @@ end
 
 # For convenience.
 Base.zero(::Type{DummyBigInt}) = DummyBigInt(0)
-Base.promote_op(matprod, ::Type{DummyBigInt}, ::Type{DummyBigInt}) = DummyBigInt
 Base.convert(::Type{DummyBigInt}, x::Int64) = DummyBigInt(x)
+
+# Arithmetics
+*(a::DummyBigInt, b::DummyBigInt) = DummyBigInt(a.data * b.data)
++(a::DummyBigInt, b::DummyBigInt) = DummyBigInt(a.data + b.data)
 ==(a::DummyBigInt, b::DummyBigInt) = a.data == b.data
 
 """
