@@ -6,100 +6,91 @@
 
 module MutableArithmetics
 
-using LinearAlgebra, Base.GMP.MPZ
+import LinearAlgebra
 
-export DummyBigInt
-export set_zero!, add_prod!
+# Define Tratis
+abstract type MutableTrait end
+struct IsMutable <: MutableTrait end
+struct NotMutable <: MutableTrait end
 
-
-"""
-    AbstractMutable
-
-Generic supertype for types
-implementing the MutableArithmetics interface.
-"""
-abstract type AbstractMutable end
 
 """
-    DummyBigInt
+    mutability(::Type)::MutableTrait
 
-Mutable wrapper type around `BigInt`.
-The goal of this type is to allow the package to test itself;
-hence its name.
+Return `IsMutable` to indicate that the type supports the MutableArithmetic API.
 """
-struct DummyBigInt <: AbstractMutable
-    data::BigInt
+mutability(::Type) = NotMutable()
+mutability(x) = mutability(typeof(x))
+
+"""
+    add!([a::T], b::T, c::T) where T
+
+Inplace addition of `b` and `c`, overwriting `a`. If `a` is not provided `c` is overwritten.
+"""
+function add! end
+function add_impl! end
+add!(b::T, c::T) where T = add!(c, b, c)
+add!(a::T, b::T, c::T) where T = add!(a, b, c, mutability(T))
+# generic fallbacks
+add!(a, b, c, ::NotMutable) = b + c
+add!(a, b, c, ::IsMutable) = add_impl!(a, b, c)
+
+"""
+    mul!([a::T], b::T, c::T) where T
+
+Inplace multiplication of `b` and `c`, overwriting `a`. If `a` is not provided `c` is overwritten.
+"""
+function mul! end
+function mul_impl! end
+
+mul!(b::T, c::T) where T = mul!(c, b, c)
+mul!(a::T, b::T, c::T) where T = mul!(a, b, c, mutability(T))
+
+# generic fallbacks
+mul!(a, b, c, ::NotMutable) = b * c
+mul!(a, b, c, ::IsMutable) = mul_impl!(a, b, c)
+
+"""
+    mul!([u::T], x::T, y::T, z::T, b::T) where T
+
+Inplace version of `muladd(x,y,z)` overwriting `u`. If `a` is not provided `z` is overwritten.
+An intermediate value needs to be written therefore it is necesarsy to provide a buffer `b`.
+"""
+muladd!(x::T, y::T, z::T, b::T) where T = muladd!(z, x, y, z, b)
+muladd!(u::T, x::T, y::T, z::T, b::T) where T = muladd!(u, x, y, z, b, mutability(T))
+# fallback
+muladd!(u, x, y, z, buffer, ::NotMutable) = muladd(x, y, z)
+function muladd!(u, x, y, z, b, ::IsMutable)
+    mul_impl!(b, x, y)
+    add_impl!(u, z, b)
+    u
 end
 
-# For convenience.
-Base.zero(::Type{DummyBigInt}) = DummyBigInt(0)
-Base.convert(::Type{DummyBigInt}, x::Int64) = DummyBigInt(x)
+function zero_impl! end
+zero!(x) = zero!(x, mutability(x))
+# fallback
+zero!(x, ::NotMutable) = zero(x)
+zero!(x, ::IsMutable) = zero_impl!(x)
 
-# Arithmetics
-Base.:*(a::DummyBigInt, b::DummyBigInt) = DummyBigInt(a.data * b.data)
-Base.:+(a::DummyBigInt, b::DummyBigInt) = DummyBigInt(a.data + b.data)
-Base.:(==)(a::DummyBigInt, b::DummyBigInt) = a.data == b.data
+function one_impl! end
+one!(x) = one(x, mutability(x))
+# fallback
+one!(x, ::NotMutable) = one(x)
+one!(x, ::IsMutable) = one_impl!(x)
 
-"""
-    add_prod!(x, args...)
-
-Returns the result of `x + (*)(args...)` and possibly destroys
-`x` (i.e., reusing its storage for the result, if possible).
-"""
-function add_prod! end
-
-add_prod!(x, args...) = x + (*)(args...)
-
-function add_prod!(x::BigInt, a::BigInt, b::BigInt)
-    MPZ.add!(x, a*b)
-    x
-end
-
-function add_prod!(x::BigInt, a::BigInt, b::BigInt, buf::BigInt)
-    MPZ.mul!(buf, a, b)
-    MPZ.add!(x, buf)
-    x
-end
-
-function add_prod!(x::DummyBigInt, a::DummyBigInt, b::DummyBigInt)
-    add_prod!(x.data, a.data, b.data)
-    x
-end
-
-function add_prod!(x::DummyBigInt, a::DummyBigInt, b::DummyBigInt, buf::DummyBigInt)
-    add_prod!(x.data, a.data, b.data, buf.data)
-    x
-end
 
 """
-    set_zero!(x)
-
-Set the value of `x` to zero.
-"""
-function set_zero! end
-
-function set_zero!(x)
-    x = zero(x)
-    x
-end
-
-function set_zero!(x::BigInt)
-    MPZ.set_si!(x, 0)
-    x
-end
-
-function set_zero!(x::DummyBigInt)
-    set_zero!(x.data)
-    x
-end
-
-"""
-    LinearAlgebra.mul!(C::AbstractVector, A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T <: AbstractMutable}
+    mul!(C::AbstractVector{T}, A::AbstractVecOrMat{T}, B::AbstractVector{T})
 
 Computes the product between a matrix of `AbstractMutable`s and a vector of `AbstractMutable`s.
 """
-function LinearAlgebra.mul!(C::AbstractVector, A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T<:AbstractMutable}
-    # require_one_based_indexing is not exposed.
+function mul!(C::AbstractVector{T}, A::AbstractVecOrMat{T}, B::AbstractVector{T}) where T
+    mul!(C, A, B, mutability(T))
+end
+function mul!(C::AbstractVector, A::AbstractVecOrMat, B::AbstractVector, ::NotMutable)
+    LinearAlgebra.mul!(C, A, B)
+end
+function mul!(C::AbstractVector{T}, A::AbstractVecOrMat{T}, B::AbstractVector{T}, ::IsMutable) where T
     mB = length(B)
     mA, nA = (size(A, 1), size(A, 2)) # lapack_size is not exposed.
     if mB != nA
@@ -112,7 +103,7 @@ function LinearAlgebra.mul!(C::AbstractVector, A::AbstractVecOrMat{T}, B::Abstra
     Astride = size(A, 1)
     @inbounds begin
     for i = 1:mA
-        set_zero!(C[i])
+        C[i] = zero!(C[i])
     end
 
     # We need a buffer to hold the intermediate multiplication.
@@ -121,14 +112,14 @@ function LinearAlgebra.mul!(C::AbstractVector, A::AbstractVecOrMat{T}, B::Abstra
         aoffs = (k-1)*Astride
         b = B[k]
         for i = 1:mA
-            add_prod!(C[i], A[aoffs + i], b, mul_buffer)
+            muladd!(A[aoffs + i], b, C[i], mul_buffer)
         end
     end
     end # @inbounds
     C
 end
 
-function mul(A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T<:AbstractMutable}
+function mul(A::AbstractVecOrMat{T}, B::AbstractVector{T}) where T
     C = similar(B, eltype(A), axes(A,1))
     # C now contains only undefined values, we need to fill this with actual zeros
     for i in eachindex(C)
@@ -136,7 +127,5 @@ function mul(A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T<:AbstractMut
     end
     mul!(C, A, B)
 end
-
-Base.:*(A::AbstractVecOrMat{T}, B::AbstractVector{T}) where {T<:AbstractMutable} = mul(A, B)
 
 end # module
