@@ -15,25 +15,54 @@ struct NotMutable <: MutableTrait end
 
 
 """
-    mutability(::Type)::MutableTrait
+    mutability(T::Type, ::typeof(op), args::Type...)::MutableTrait
 
-Return `IsMutable` to indicate that the type supports the MutableArithmetic API.
+Return `IsMutable` to indicate that `op(a::T, ::args[1], ...)` returns `a`.
+That is, the result of the operation is stored in `a` and then `a` is returned.
+Equivalently, returns whether `op_impl` is supported.
 """
-mutability(::Type) = NotMutable()
-mutability(x) = mutability(typeof(x))
+mutability(::Type, op, args::Type...) = NotMutable()
+mutability(x, op, args...) = mutability(typeof(x), op, typeof.(args)...)
 
 """
-    add!([a::T], b::T, c::T) where T
+    add_to!(a, b, c)
 
-Inplace addition of `b` and `c`, overwriting `a`. If `a` is not provided `c` is overwritten.
+Return the sum of `b` and `c`, possibly modifying `a`.
+"""
+function add_to! end
+
+"""
+    add!(a, b)
+
+Return the sum of `a` and `b`, possibly modifying `a`.
 """
 function add! end
+
+"""
+    add_to_impl!(a, b, c)
+
+Write the result of the sum of `b` and `c` to `a`.
+"""
+function add_to_impl! end
+
+"""
+    add_impl!(a, b)
+
+Write the result of the sum of `a` and `b` to `a`.
+"""
 function add_impl! end
-add!(b::T, c::T) where T = add!(c, b, c)
-add!(a::T, b::T, c::T) where T = add!(a, b, c, mutability(T))
+
+add!(a, b) = add!(a, b, mutability(a, typeof(add!), b, c))
+function add_to!(a, b, c)
+    add_to!(a, b, c, mutability(a, typeof(add!), b, c))
+end
 # generic fallbacks
-add!(a, b, c, ::NotMutable) = b + c
-add!(a, b, c, ::IsMutable) = add_impl!(a, b, c)
+add!(a, b, ::NotMutable) = a + b
+add_to!(a, b, c, ::NotMutable) = b + c
+add!(a, b, ::IsMutable) = add_impl!(a, b)
+add_to!(a, b, c, ::IsMutable) = add_to_impl!(a, b, c)
+
+add_impl!(a, b) = add_to_impl!(a, a, b)
 
 """
     mul!([a::T], b::T, c::T) where T
