@@ -242,8 +242,8 @@ function mul_to_impl!(C::Vector, A::AbstractVecOrMat, B::AbstractVector)
         return LinearAlgebra.mul!(C, A, B)
     end
     # If `mutability(S, muladd!, T, U)` is `NotMutable`, we might as well redirect to `LinearAlgebra.mul!(C, A, B)`
-    # in which case we can do `muladd_buf!(mul_buffer, A[aoffs + i], b, C[i])` here instead of
-    # `A[aoffs + i] = muladd_buf!(mul_buffer, A[aoffs + i], b, C[i])` which should be faster
+    # in which case we can do `muladd_buf_impl!(mul_buffer, A[aoffs + i], b, C[i])` here instead of
+    # `A[aoffs + i] = muladd_buf!(mul_buffer, A[aoffs + i], b, C[i])`
     mB = length(B)
     mA, nA = (size(A, 1), size(A, 2)) # lapack_size is not exposed.
     if mB != nA
