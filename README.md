@@ -39,6 +39,7 @@ MA.mutability(::Type{BigInt}, ::typeof(MA.mul_to!), ::Type{BigInt}, ::Type{BigIn
 MA.mul_to_impl!(x::BigInt, a::BigInt, b::BigInt) = Base.GMP.MPZ.mul!(x, a, b)
 MA.mutability(::Type{BigInt}, ::typeof(MA.add_to!), ::Type{BigInt}, ::Type{BigInt}) = MA.IsMutable()
 MA.add_to_impl!(x::BigInt, a::BigInt, b::BigInt) = Base.GMP.MPZ.add!(x, a, b)
+MA.muladd_buf_impl!(buf::BigInt, a::BigInt, b::BigInt, c::BigInt) = Base.GMP.MPZ.add!(a, Base.GMP.MPZ.mul!(buf, b, c))
 
 println("MA performance after defininig interface")
 trial2 = @benchmark MA.mul_to!($c2, $A2, $b2)
