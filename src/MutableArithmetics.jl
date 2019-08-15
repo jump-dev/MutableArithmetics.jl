@@ -81,7 +81,7 @@ Write the result of `muladd(b, c, a)` to `a`, possibly modifying `buf`.
 """
 function muladd_buf_impl! end
 # No fallback as it depends on the type of arguments whether we should
-# redirec to `muladd_buf_to_impl!` or `muladd_impl!`
+# redirect to `muladd_buf_to_impl!` or `muladd_impl!`
 
 
 """
@@ -210,6 +210,9 @@ end
 # generic fallbacks
 muladd_buf!(buf, a, b, c, ::NotMutable) = muladd(b, c, a)
 muladd_buf!(buf, a, b, c, ::IsMutable) = muladd_buf_impl!(buf, a, b, c)
+function mutability(S::Type, ::typeof(muladd_buf!), T::Type, U::Type, V::Type)
+    return mutability(S, add_to!, T, typeof(zero(U) * zero(V)))
+end
 
 """
     zero!(a)
@@ -228,7 +231,7 @@ zero!(x, ::IsMutable) = zero_impl!(x)
 Return `one(a)`, possibly modifying `a`.
 """
 function one! end
-one!(x) = one(x, mutability(x, one!))
+one!(x) = one!(x, mutability(x, one!))
 # fallback
 one!(x, ::NotMutable) = one(x)
 one!(x, ::IsMutable) = one_impl!(x)
