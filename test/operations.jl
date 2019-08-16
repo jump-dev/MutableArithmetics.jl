@@ -60,7 +60,7 @@
         @test MA.mul!(a, b) == BigInt(420) && a == BigInt(420)
     end
 
-    @testset "muladd_to! / muladd! / muladd_buf!" begin
+    @testset "muladd_to! / muladd! / muladd_buf_to! /muladd_buf!" begin
         a = BigInt(5)
         b = BigInt(9)
         c = BigInt(3)
@@ -71,9 +71,11 @@
 
         @test MA.muladd_to!(a, b, c, d) == BigInt(69) && a == BigInt(5)
         @test MA.muladd!(b, c, d) == BigInt(69) && b == BigInt(9)
-        @test MA.muladd_buf!(buf, b, c, d) == BigInt(69) && b == 9 && buf == BigInt(24)
+        @test MA.muladd_buf_to!(buf, a, b, c, d) == BigInt(69) && buf == BigInt(24) && a == BigInt(5)
+        @test MA.muladd_buf!(buf, b, c, d) == BigInt(69) && b == BigInt(9) && buf == BigInt(24)
         @test MA.mutability(BigInt, MA.muladd_to!, BigInt, BigInt, BigInt) isa MA.NotMutable
         @test MA.mutability(BigInt, MA.muladd!, BigInt, BigInt) isa MA.NotMutable
+        @test MA.mutability(BigInt, MA.muladd_buf_to!, BigInt, BigInt, BigInt, BigInt) isa MA.NotMutable
         @test MA.mutability(BigInt, MA.muladd_buf!, BigInt, BigInt, BigInt) isa MA.NotMutable
 
         MA.mutability(::Type{BigInt}, ::typeof(MA.add_to!), ::Type{BigInt}, ::Type{BigInt}) = MA.IsMutable()
@@ -110,6 +112,17 @@
         MA.muladd_buf_impl!(buf::BigInt, x::BigInt, y::BigInt, z::BigInt) = Base.GMP.MPZ.add!(x, Base.GMP.MPZ.mul!(buf, y, z))
 
         @test MA.muladd_buf!(buf, a, b, c) == BigInt(420) && buf == BigInt(272) && a == BigInt(420)
+
+        a = BigInt(148)
+        b = BigInt(16)
+        c = BigInt(17)
+        d = BigInt(42)
+        buf = BigInt(56)
+
+        MA.mul_to_impl!(x::BigInt, y::BigInt, z::BigInt) = Base.GMP.MPZ.mul!(x, y, z)
+        MA.add_to_impl!(x::BigInt, y::BigInt, z::BigInt) = Base.GMP.MPZ.add!(x, y, z)
+
+        @test MA.muladd_buf_to!(buf, d, a, b, c) == BigInt(420) && buf == BigInt(272) && d == BigInt(420)
     end
 
     @testset "zero! / one!" begin

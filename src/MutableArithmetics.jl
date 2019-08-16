@@ -199,6 +199,25 @@ end
 
 
 """
+    muladd_buf_to!(buf, a, b, c, d)
+
+Return `muladd(c, d, b)`, possibly modifying `a` and `buf`.
+"""
+function muladd_buf_to! end
+function muladd_buf_to!(buf, a, b, c, d)
+    muladd_buf_to!(buf, a, b, c, d, mutability(a, muladd_to!, b, c, d))
+end
+# generic fallbacks
+muladd_buf_to!(buf, a, b, c, d, ::NotMutable) = muladd(c, d, b)
+muladd_buf_to!(buf, a, b, c, d, ::IsMutable) = muladd_buf_to_impl!(buf, a, b, c, d)
+function mutability(S::Type, ::typeof(muladd_buf_to!), T::Type, U::Type, V::Type, W::Type)
+    if mutability(S, add_to!, U, typeof(zero(V) * zero(W))) isa IsMutable && mutability(T, add_to!, U, typeof(zero(V) * zero(W))) isa IsMutable
+        return IsMutable()
+    end
+    return NotMutable()
+end
+
+"""
     muladd_buf!(buf, a, b, c)
 
 Return `muladd(b, c, a)`, possibly modifying `a` and `buf`.
