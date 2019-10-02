@@ -1,6 +1,8 @@
 using Test
-using MutableArithmetics
+import MutableArithmetics
 const MA = MutableArithmetics
 
-include("operations.jl")
+@testset "BigInt" begin
+    include("bigint.jl")
+end
 include("matmul.jl")
