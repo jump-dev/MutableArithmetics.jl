@@ -1,7 +1,7 @@
 # MutableArithmetics.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaOpt.github.io/MutableArithmetics.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaOpt.github.io/MutableArithmetics.jl/dev)
+[![Stable][docs-stable-img]][docs-stable-url]
+[![Dev][docs-latest-img]][docs-latest-url]
 [![Build Status](https://travis-ci.com/JuliaOpt/MutableArithmetics.jl.svg?branch=master)](https://travis-ci.com/JuliaOpt/MutableArithmetics.jl)
 [![Codecov](https://codecov.io/gh/JuliaOpt/MutableArithmetics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaOpt/MutableArithmetics.jl)
 [![Coveralls](https://coveralls.io/repos/github/JuliaOpt/MutableArithmetics.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaOpt/MutableArithmetics.jl?branch=master)
@@ -19,6 +19,11 @@ method is available through the use of so-called *traits*, as well as providing
 a simple way forusers to make operations fall back to these implementations.
 Examples of implementations of this interface are given in the `examples`
 folder.
+
+## Documentation
+
+- [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
+- [**LATEST**][docs-latest-url] &mdash; *in-development version of the documentation.*
 
 ## Quick Example & Benchmark
 
@@ -61,3 +66,8 @@ display(trial2)
 ```
 
 > This package started out as a GSoC '19 project.
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
+[docs-stable-url]: https://juliaopt.github.io/MutableArithmetics.jl/stable
+[docs-latest-url]: https://juliaopt.github.io/MutableArithmetics.jl/latest
