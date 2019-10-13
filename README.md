@@ -12,7 +12,7 @@
 
 While in some cases, similar features have been included in packages
 idiosyncratically, the goal of this package is to provide a generic interface to
- allow anyone to make use of mutability when desired.
+allow anyone to make use of mutability when desired.
 
 The package allows users to indicate when a mutable implementation of a certain
 method is available through the use of so-called *traits*, as well as providing
