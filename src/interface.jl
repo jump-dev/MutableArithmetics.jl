@@ -33,7 +33,7 @@ mutability(x, op, args...) = mutability(typeof(x), op, typeof.(args)...)
 mutability(::Type) = NotMutable()
 
 function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...)
-    throw(ArgumentError("Cannot call `mutable_operate_to!($output, $op, $(args...))` as `$output` cannot be modifed to equal the result of the operation. Use `operate!` or `operate_to!` instead which returns the value of he result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
+    throw(ArgumentError("Cannot call `mutable_operate_to!($output, $op, $(args...))` as `$output` cannot be modifed to equal the result of the operation. Use `operate!` or `operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
 end
 
 function mutable_operate_to_fallback(::IsMutable, op::Function, args...)
