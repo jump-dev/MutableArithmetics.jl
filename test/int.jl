@@ -24,35 +24,35 @@ end
     @test MA.mul!(a, b) == 420
 end
 
-@testset "muladd_to! / muladd! / muladd_buf_to! /muladd_buf!" begin
-    @test MA.mutability(Int, MA.muladd_to!, Int, Int, Int) isa MA.NotMutable
-    @test MA.mutability(Int, MA.muladd!, Int, Int) isa MA.NotMutable
-    @test MA.mutability(Int, MA.muladd_buf_to!, Int, Int, Int, Int) isa MA.NotMutable
-    @test MA.mutability(Int, MA.muladd_buf!, Int, Int, Int) isa MA.NotMutable
+@testset "add_mul_to! / add_mul! / add_mul_buf_to! /add_mul_buf!" begin
+    @test MA.mutability(Int, MA.add_mul_to!, Int, Int, Int) isa MA.NotMutable
+    @test MA.mutability(Int, MA.add_mul!, Int, Int) isa MA.NotMutable
+    @test MA.mutability(Int, MA.add_mul_buf_to!, Int, Int, Int, Int) isa MA.NotMutable
+    @test MA.mutability(Int, MA.add_mul_buf!, Int, Int, Int) isa MA.NotMutable
     a = 5
     b = 9
     c = 3
     d = 20
     buf = 24
-    @test MA.muladd_to!(a, b, c, d) == 69
-    @test MA.muladd!(b, c, d) == 69
-    @test MA.muladd_buf_to!(buf, a, b, c, d) == 69
-    @test MA.muladd_buf!(buf, b, c, d) == 69
+    @test MA.add_mul_to!(a, b, c, d) == 69
+    @test MA.add_mul!(b, c, d) == 69
+    @test MA.add_mul_buf_to!(buf, a, b, c, d) == 69
+    @test MA.add_mul_buf!(buf, b, c, d) == 69
     a = 148
     b = 16
     c = 17
-    @test MA.muladd!(a, b, c) == 420
+    @test MA.add_mul!(a, b, c) == 420
     a = 148
     b = 16
     c = 17
     buf = 56
-    @test MA.muladd_buf!(buf, a, b, c) == 420
+    @test MA.add_mul_buf!(buf, a, b, c) == 420
     a = 148
     b = 16
     c = 17
     d = 42
     buf = 56
-    @test MA.muladd_buf_to!(buf, d, a, b, c) == 420
+    @test MA.add_mul_buf_to!(buf, d, a, b, c) == 420
 end
 
 @testset "zero!" begin

@@ -1,27 +1,31 @@
-# This example contains a full implementation of the MutableArithmetics API for the BigInt datatype.
+mutability(::Type{BigInt}) = IsMutable()
 
-using MutableArithmetics
-const MA = MutableArithmetics
+# zero
+promote_operation(::typeof(zero), ::Type{BigInt}) = BigInt
+mutable_operate!(::typeof(zero), x::BigInt) = Base.GMP.MPZ.set_si!(x, 0)
 
-# zero!
-MA.mutability(::Type{BigInt}, ::typeof(MA.zero!)) = MA.IsMutable()
-MA.zero_impl!(x::BigInt) = Base.GMP.MPZ.set_si!(x, 0)
+# one
+promote_operation(::typeof(one), ::Type{BigInt}) = BigInt
+mutable_operate!(::typeof(one), x::BigInt) = Base.GMP.MPZ.set_si!(x, 1)
 
-# one!
-MA.mutability(::Type{BigInt}, ::typeof(MA.one!)) = MA.IsMutable()
-MA.one_impl!(x::BigInt) = Base.GMP.MPZ.set_si!(x, 1)
+# +
+promote_operation(::typeof(+), ::Type{BigInt}...) = BigInt
+function mutable_operate_to!(output::BigInt, ::typeof(+), a::BigInt, b::BigInt)
+    return Base.GMP.MPZ.add!(output, a, b)
+end
 
-# add_to! / add!
-MA.mutability(::Type{BigInt}, ::typeof(MA.add_to!), ::Type{BigInt}, ::Type{BigInt}) = MA.IsMutable()
-MA.add_to_impl!(x::BigInt, a::BigInt, b::BigInt) = Base.GMP.MPZ.add!(x, a, b)
-MA.add_impl!(a::BigInt, b::BigInt) = Base.GMP.MPZ.add!(a, a, b)
+# *
+promote_operation(::typeof(*), ::Type{BigInt}...) = BigInt
+function mutable_operate_to!(output::BigInt, ::typeof(*), a::BigInt, b::BigInt)
+    return Base.GMP.MPZ.mul!(output, a, b)
+end
 
-# mul_to! / mul!
-MA.mutability(::Type{BigInt}, ::typeof(MA.mul_to!), ::Type{BigInt}, ::Type{BigInt}) = MA.IsMutable()
-MA.mul_to_impl!(x::BigInt, a::BigInt, b::BigInt) = Base.GMP.MPZ.mul!(x, a, b)
-MA.mul_impl!(a::BigInt, b::BigInt) = Base.GMP.MPZ.mul!(a, a, b)
-
-# muladd_to! / muladd! / muladd_buf!
-MA.muladd_to_impl!(dest::BigInt, b::BigInt, c::BigInt, d::BigInt) = Base.GMP.MPZ.add!(dest, Base.GMP.MPZ.mul!(BigInt(), c, d), b)
-MA.muladd_impl!(a::BigInt, b::BigInt, c::BigInt) = Base.GMP.MPZ.add!(a, a, Base.GMP.MPZ.mul!(BigInt(), b, c))
-MA.muladd_buf_impl!(buf::BigInt, a::BigInt, b::BigInt, c::BigInt) = Base.GMP.MPZ.add!(a, Base.GMP.MPZ.mul!(buf, b, c))
+# add_mul
+function mutable_operate_to!(output::BigInt, ::typeof(add_mul), args::BigInt...)
+    return mutable_buffered_operate_to!(BigInt(), output, add_mul, args...)
+end
+function mutable_buffered_operate_to!(buffer::BigInt, output::BigInt, ::typeof(add_mul),
+                                      a::BigInt, args::BigInt...)
+    mutable_operate_to!(buffer, *, args...)
+    return mutable_operate_to!(output, +, a, buffer)
+end

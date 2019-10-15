@@ -1,93 +1,15 @@
-# These functions suffixed by `_impl!` fail if the first argument cannot be modified to be the result
-
 # Example of mutable types that can implement this API: BigInt, Array, JuMP.AffExpr, MultivariatePolynomials.AbstractPolynomial
-# `..._impl!` functions are similar to `JuMP.add_to_expression`
-# `...!` functions are similar to `JuMP.destructive_add` and `MOI.Utilities.operate!`
+# `mutable_operate!(add_mul, ...)` is similar to `JuMP.add_to_expression(...)`
+# `operate!(add_mul, ...)` is similar to `JuMP.destructive_add(...)`
+# `operate!` is similar to `MOI.Utilities.operate!`
 
 """
-    add_to_impl!(a, b, c)
+    promote_operation(op::Function, ArgsTypes::Type...)
 
-Write the result of the sum of `b` and `c` to `a`.
+Returns the type returned to the call `operate(op, args...)` where the types of
+the arguments `args` are `ArgsTypes`.
 """
-function add_to_impl! end
-
-"""
-    add_impl!(a, b)
-
-Write the result of the sum of `a` and `b` to `a`.
-"""
-function add_impl! end
-# Fallback
-add_impl!(a, b) = add_to_impl!(a, a, b)
-
-"""
-    mul_to_impl!(a, b, c)
-
-Write the result of the product of `b` and `c` to `a`.
-"""
-function mul_to_impl! end
-
-"""
-    mul_impl!(a, b)
-
-Write the result of the product of `a` and `b` to `a`.
-"""
-function mul_impl! end
-# Fallback
-mul_impl!(a, b) = mul_to_impl!(a, a, b)
-
-"""
-    muladd_to_impl!(a, b, c, d)
-
-Write the result of `muladd(c, d, b)` to `a`.
-"""
-function muladd_to_impl! end
-
-"""
-    muladd_buf_to_impl!(buf, a, b, c, d)
-
-Write the result of `muladd(c, d, b)` to `a`, possibly modifying `buf`.
-"""
-function muladd_buf_to_impl! end
-# Fallback
-function muladd_buf_to_impl!(buf, a, b, c, d)
-    mul_to_impl!(buf, c, d)
-    return add_to_impl!(a, b, buf)
-end
-
-"""
-    muladd_impl!(a, b, c)
-
-Write the result of `muladd(b, c, a)` to `a`.
-"""
-function muladd_impl! end
-# Fallback
-muladd_impl!(a, b, c) = muladd_to_impl!(a, a, b, c)
-
-"""
-    muladd_buf_impl!(buf, a, b, c)
-
-Write the result of `muladd(b, c, a)` to `a`, possibly modifying `buf`.
-"""
-function muladd_buf_impl! end
-# No fallback as it depends on the type of arguments whether we should
-# redirect to `muladd_buf_to_impl!` or `muladd_impl!`
-
-
-"""
-    zero_impl!(a)
-
-Write the result of `zero(a)` to `a`.
-"""
-function zero_impl! end
-
-"""
-    one_impl!(a)
-
-Write the result of `one(a)` to `a`.
-"""
-function one_impl! end
-
+function promote_operation end
 
 # Define Traits
 abstract type MutableTrait end
@@ -97,150 +19,129 @@ struct NotMutable <: MutableTrait end
 """
     mutability(T::Type, ::typeof(op), args::Type...)::MutableTrait
 
-Return `IsMutable` to indicate that `op(a::T, ::args[1], ...)` returns `a`.
-That is, the result of the operation is stored in `a` and then `a` is returned.
-Equivalently, returns whether `op_impl` is supported.
+Return `IsMutable` to indicate an object of type `T` can be modified to be
+equal to `op(args...)`.
 """
-mutability(::Type, op, args::Type...) = NotMutable()
-mutability(x, op, args...) = mutability(typeof(x), op, typeof.(args)...)
-
-"""
-    add_to!(a, b, c)
-
-Return the sum of `b` and `c`, possibly modifying `a`.
-"""
-function add_to! end
-function add_to!(a, b, c)
-    add_to!(a, b, c, mutability(a, add_to!, b, c))
-end
-# generic fallbacks
-add_to!(a, b, c, ::NotMutable) = b + c
-add_to!(a, b, c, ::IsMutable) = add_to_impl!(a, b, c)
-
-
-"""
-    add!(a, b)
-
-Return the sum of `a` and `b`, possibly modifying `a`.
-"""
-function add! end
-add!(a, b) = add!(a, b, mutability(a, add!, b))
-# generic fallbacks
-add!(a, b, ::NotMutable) = a + b
-add!(a, b, ::IsMutable) = add_impl!(a, b)
-mutability(T::Type, ::typeof(add!), U::Type) = mutability(T, add_to!, T, U)
-
-"""
-    mul_to!(a, b, c)
-
-Return the product of `b` and `c`, possibly modifying `a`.
-"""
-function mul_to! end
-function mul_to!(a, b, c)
-    mul_to!(a, b, c, mutability(a, mul_to!, b, c))
-end
-# generic fallbacks
-mul_to!(a, b, c, ::NotMutable) = b * c
-mul_to!(a, b, c, ::IsMutable) = mul_to_impl!(a, b, c)
-
-"""
-    mul!(a, b)
-
-Return the product of `a` and `b`, possibly modifying `a`.
-"""
-function mul! end
-mul!(a, b) = mul!(a, b, mutability(a, mul!, b))
-# generic fallbacks
-mul!(a, b, ::NotMutable) = a * b
-mul!(a, b, ::IsMutable) = mul_impl!(a, b)
-mutability(T::Type, ::typeof(mul!), U::Type) = mutability(T, mul_to!, T, U)
-
-"""
-    muladd_to!(a, b, c, d)
-
-Return `muladd(c, d, b)`, possibly modifying `a`.
-"""
-function muladd_to! end
-function muladd_to!(a, b, c, d)
-    muladd_to!(a, b, c, d, mutability(a, muladd_to!, b, c, d))
-end
-# generic fallbacks
-muladd_to!(a, b, c, d, ::NotMutable) = muladd(c, d, b)
-muladd_to!(a, b, c, d, ::IsMutable) = muladd_to_impl!(a, b, c, d)
-function mutability(S::Type, ::typeof(muladd_to!), T::Type, U::Type, V::Type)
-    return mutability(S, add_to!, T, typeof(zero(U) * zero(V)))
-end
-
-"""
-    muladd!(a, b, c)
-
-Return `muladd(b, c, a)`, possibly modifying `a`.
-"""
-function muladd! end
-function muladd!(a, b, c)
-    muladd!(a, b, c, mutability(a, muladd!, b, c))
-end
-# generic fallbacks
-muladd!(a, b, c, ::NotMutable) = muladd(b, c, a)
-muladd!(a, b, c, ::IsMutable) = muladd_impl!(a, b, c)
-function mutability(S::Type, ::typeof(muladd!), T::Type, U::Type)
-    return mutability(S, add!, typeof(zero(T) * zero(U)))
-end
-
-
-"""
-    muladd_buf_to!(buf, a, b, c, d)
-
-Return `muladd(c, d, b)`, possibly modifying `a` and `buf`.
-"""
-function muladd_buf_to! end
-function muladd_buf_to!(buf, a, b, c, d)
-    muladd_buf_to!(buf, a, b, c, d, mutability(a, muladd_to!, b, c, d))
-end
-# generic fallbacks
-muladd_buf_to!(buf, a, b, c, d, ::NotMutable) = muladd(c, d, b)
-muladd_buf_to!(buf, a, b, c, d, ::IsMutable) = muladd_buf_to_impl!(buf, a, b, c, d)
-function mutability(S::Type, ::typeof(muladd_buf_to!), T::Type, U::Type, V::Type, W::Type)
-    if mutability(S, add_to!, U, typeof(zero(V) * zero(W))) isa IsMutable && mutability(T, add_to!, U, typeof(zero(V) * zero(W))) isa IsMutable
+function mutability(T::Type, op, args::Type...)
+    if mutability(T) isa IsMutable && promote_operation(op, args...) == T
         return IsMutable()
+    else
+        return NotMutable()
     end
-    return NotMutable()
+end
+mutability(x, op, args...) = mutability(typeof(x), op, typeof.(args)...)
+mutability(::Type) = NotMutable()
+
+function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...)
+    throw(ArgumentError("Cannot call `mutable_operate_to!($output, $op, $(args...))` as `$output` cannot be modifed to equal the result of the operation. Use `operate!` or `operate_to!` instead which returns the value of he result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
+end
+
+function mutable_operate_to_fallback(::IsMutable, op::Function, args...)
+    error("`mutable_operate_to!($op, $(args...))` is not implemented yet.")
 end
 
 """
-    muladd_buf!(buf, a, b, c)
+    mutable_operate_to!(output, op::Function, args...)
 
-Return `muladd(b, c, a)`, possibly modifying `a` and `buf`.
+Modify the value of `output` to be equal to the value of `op(args...)`. Can
+only be called if `mutability(output, op, args...)` returns `true`.
 """
-function muladd_buf! end
-function muladd_buf!(buf, a, b, c)
-    muladd_buf!(buf, a, b, c, mutability(a, muladd!, b, c))
-end
-# generic fallbacks
-muladd_buf!(buf, a, b, c, ::NotMutable) = muladd(b, c, a)
-muladd_buf!(buf, a, b, c, ::IsMutable) = muladd_buf_impl!(buf, a, b, c)
-function mutability(S::Type, ::typeof(muladd_buf!), T::Type, U::Type, V::Type)
-    return mutability(S, add_to!, T, typeof(zero(U) * zero(V)))
+function mutable_operate_to!(output, op::Function, args...)
+    mutable_operate_fallback(mutability(output, op, args...), output, op, args...)
 end
 
 """
-    zero!(a)
+    mutable_operate!(op::Function, args...)
 
-Return `zero(a)`, possibly modifying `a`.
+Modify the value of `args[1]` to be equal to the value of `op(args...)`. Can
+only be called if `mutability(args[1], op, args...)` returns `true`.
 """
-function zero! end
-zero!(x) = zero!(x, mutability(x, zero!))
-# fallback
-zero!(x, ::NotMutable) = zero(x)
-zero!(x, ::IsMutable) = zero_impl!(x)
+function mutable_operate!(op::Function, args...)
+    mutable_operate_to!(args[1], op, args...)
+end
 
 """
-    one!(a)
+    mutable_buffered_operate_to!(buffer, output, op::Function, args...)
 
-Return `one(a)`, possibly modifying `a`.
+Modify the value of `output` to be equal to the value of `op(args...)`,
+possibly modifying `buffer`. Can only be called if
+`mutability(output, op, args...)` returns `true`.
 """
-function one! end
-one!(x) = one!(x, mutability(x, one!))
-# fallback
-one!(x, ::NotMutable) = one(x)
-one!(x, ::IsMutable) = one_impl!(x)
+function mutable_buffered_operate_to! end
+
+"""
+    mutable_buffered_operate!(buffer, op::Function, args...)
+
+Modify the value of `args[1]` to be equal to the value of `op(args...)`,
+possibly modifying `buffer`. Can only be called if
+`mutability(args[1], op, args...)` returns `true`.
+"""
+function mutable_buffered_operate!(buffer, op::Function, args...)
+    mutable_buffered_operate_to!(buffer, args[1], op, args...)
+end
+
+"""
+    operate_to!(output, op::Function, args...)
+
+Returns the value of `op(args...)`, possibly modifying `output`.
+"""
+function operate_to!(output, op::Function, args...)
+    return operate_to_fallback!(mutability(output, op, args...), output, op, args...)
+end
+
+function operate_to_fallback!(::NotMutable, output, op::Function, args...)
+    return op(args...)
+end
+function operate_to_fallback!(::IsMutable, output, op::Function, args...)
+    return mutable_operate_to!(output, op, args...)
+end
+
+"""
+    operate!(op::Function, args...)
+
+Returns the value of `op(args...)`, possibly modifying `args[1]`.
+"""
+function operate!(op::Function, args...)
+    return operate_fallback!(mutability(args[1], op, args...), op, args...)
+end
+
+function operate_fallback!(::NotMutable, op::Function, args...)
+    return op(args...)
+end
+function operate_fallback!(::IsMutable, op::Function, args...)
+    return mutable_operate!(op, args...)
+end
+
+"""
+    buffered_operate_to!(buffer, output, op::Function, args...)
+
+Returns the value of `op(args...)`, possibly modifying `buffer` and `output`.
+"""
+function buffered_operate_to!(buffer, output, op::Function, args...)
+    return buffered_operate_to_fallback!(mutability(output, op, args...),
+                                         buffer, output, op, args...)
+end
+
+function buffered_operate_to_fallback!(::NotMutable, buffer, output, op::Function, args...)
+    return op(args...)
+end
+function buffered_operate_to_fallback!(::IsMutable, buffer, output, op::Function, args...)
+    return mutable_buffered_operate_to!(buffer, output, op, args...)
+end
+
+"""
+    buffered_operate!(buffer, op::Function, args...)
+
+Returns the value of `op(args...)`, possibly modifying `buffer`.
+"""
+function buffered_operate!(buffer, op::Function, args...)
+    return buffered_operate_fallback!(mutability(args[1], op, args...),
+                                      buffer, op, args...)
+end
+
+function buffered_operate_fallback!(::NotMutable, buffer, op::Function, args...)
+    return op(args...)
+end
+function buffered_operate_fallback!(::IsMutable, buffer, op::Function, args...)
+    return mutable_buffered_operate!(buffer, op, args...)
+end
