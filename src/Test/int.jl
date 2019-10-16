@@ -38,7 +38,7 @@ function int_mul_test(::Type{T}) where T
     end
 end
 function int_add_mul_test(::Type{T}) where T
-    @testset "add_mul_to! / add_mul! / add_mul_buf_to! /add_mul_buf!" begin
+    @testset "add_mul_to! / add_mul! / add_mul_buf_to! / add_mul_buf!" begin
         @test MA.mutability(T, MA.add_mul, T, T) isa MA.IsMutable
         @test MA.mutability(T, MA.add_mul, T, T, T) isa MA.IsMutable
         @test MA.mutability(T, MA.add_mul, T, T, T, T) isa MA.IsMutable
