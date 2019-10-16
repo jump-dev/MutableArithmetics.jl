@@ -29,7 +29,7 @@ mul!(args...) = operate!(*, args...)
 """
     add_mul(a, args...)
 
-Return `a + *(args...)`. Note that `add_mul(a, b, c) = addmul(b, c, a)`.
+Return `a + *(args...)`. Note that `add_mul(a, b, c) = muladd(b, c, a)`.
 """
 function add_mul end
 add_mul(a, b, c) = muladd(b, c, a)
