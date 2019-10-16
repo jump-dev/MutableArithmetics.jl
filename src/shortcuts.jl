@@ -82,4 +82,4 @@ zero!(a) = operate!(zero, a)
 
 Return `one(a)`, possibly modifying `a`.
 """
-one!(x) = operate!(one, x)
+one!(a) = operate!(one, a)
