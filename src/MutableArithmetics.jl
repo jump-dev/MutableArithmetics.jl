@@ -7,6 +7,7 @@
 module MutableArithmetics
 
 include("interface.jl")
+include("shortcuts.jl")
 
 # Test that can be used to test an implementation of the interface
 include("Test/Test.jl")

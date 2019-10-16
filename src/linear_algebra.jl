@@ -1,11 +1,11 @@
 import LinearAlgebra
 
-function mutability(::Type{<:Vector}, ::typeof(mul_to!),
-                    ::Type{<:AbstractVecOrMat}, ::Type{<:AbstractVector})
-    return IsMutable() # Assume the element type of the first vector is of correct type which is the case if it is called from `mul`
+mutability(::Type{<:Vector}) = IsMutable()
+function promote_operation(::typeof(*), ::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractVector{T}}) where {S, T}
+    return Vector{Base.promote_op(LinearAlgebra.matprod, S, T)}
 end
-function mul_to_impl!(C::Vector, A::AbstractVecOrMat, B::AbstractVector)
-    if mutability(eltype(C), muladd!, eltype(A), eltype(B)) isa NotMutable
+function mutable_operate_to!(C::Vector, ::typeof(*), A::AbstractMatrix, B::AbstractVector)
+    if mutability(eltype(C), add_mul, eltype(C), eltype(A), eltype(B)) isa NotMutable
         return LinearAlgebra.mul!(C, A, B)
     end
     # If `mutability(S, muladd!, T, U)` is `NotMutable`, we might as well redirect to `LinearAlgebra.mul!(C, A, B)`
@@ -33,19 +33,19 @@ function mul_to_impl!(C::Vector, A::AbstractVecOrMat, B::AbstractVector)
         b = B[k]
         for i = 1:mA
             # `C[i] = muladd_buf!(mul_buffer, C[i], A[aoffs + i], b)`
-            muladd_buf_impl!(mul_buffer, C[i], A[aoffs + i], b)
+            mutable_buffered_operate!(mul_buffer, add_mul, C[i], A[aoffs + i], b)
         end
     end
     end # @inbounds
     return C
 end
 
-function mul(A::AbstractVecOrMat{T}, B::AbstractVector{S}) where {T, S}
-    TS = Base.promote_op(LinearAlgebra.matprod, T, S)
-    C = similar(B, TS, axes(A,1))
+function mul(A::AbstractMatrix{S}, B::AbstractVector{T}) where {T, S}
+    U = Base.promote_op(LinearAlgebra.matprod, S, T)
+    C = similar(B, U, axes(A, 1))
     # C now contains only undefined values, we need to fill this with actual zeros
     for i in eachindex(C)
-        @inbounds C[i] = zero(TS)
+        @inbounds C[i] = zero(U)
     end
     return mul_to!(C, A, B)
 end
