@@ -75,7 +75,7 @@ end
 
 Return `zero(a)`, possibly modifying `a`.
 """
-zero!(x) = operate!(zero, x)
+zero!(a) = operate!(zero, a)
 
 """
     one!(a)
