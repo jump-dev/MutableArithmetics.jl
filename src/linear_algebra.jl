@@ -32,7 +32,6 @@ function mutable_operate_to!(C::Vector, ::typeof(*), A::AbstractMatrix, B::Abstr
             aoffs = (k-1) * Astride
             b = B[k]
             for i = Base.OneTo(mA)
-                # `C[i] = muladd_buf!(mul_buffer, C[i], A[aoffs + i], b)`
                 mutable_buffered_operate!(mul_buffer, add_mul, C[i], A[aoffs + i], b)
             end
         end
