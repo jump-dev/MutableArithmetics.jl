@@ -17,7 +17,7 @@ add!(args...) = operate!(+, args...)
 
 Return the product of `b` and `c`, possibly modifying `a`.
 """
-mul_to!(output, args...) = operate_to!(output, *, args...)
+mul_to!(output, args::Vararg{Any, N}) where {N} = operate_to!(output, *, args...)
 
 """
     mul!(a, b, ...)
@@ -34,7 +34,7 @@ Return `a + *(args...)`. Note that `add_mul(a, b, c) = muladd(b, c, a)`.
 function add_mul end
 add_mul(a, b, c) = muladd(b, c, a)
 
-function promote_operation(::typeof(add_mul), T::Type, args::Type...)
+function promote_operation(::typeof(add_mul), T::Type, args::Vararg{Type, N}) where N
     return promote_operation(+, T, promote_operation(*, args...))
 end
 

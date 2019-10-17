@@ -22,14 +22,14 @@ struct NotMutable <: MutableTrait end
 Return `IsMutable` to indicate an object of type `T` can be modified to be
 equal to `op(args...)`.
 """
-function mutability(T::Type, op, args::Type...)
+function mutability(T::Type, op, args::Vararg{Type, N}) where N
     if mutability(T) isa IsMutable && promote_operation(op, args...) == T
         return IsMutable()
     else
         return NotMutable()
     end
 end
-mutability(x, op, args...) = mutability(typeof(x), op, typeof.(args)...)
+mutability(x, op, args::Vararg{Any, N}) where {N} = mutability(typeof(x), op, typeof.(args)...)
 mutability(::Type) = NotMutable()
 
 function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...)
@@ -85,14 +85,14 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `output`.
 """
-function operate_to!(output, op::Function, args...)
+function operate_to!(output, op::Function, args::Vararg{Any, N}) where N
     return operate_to_fallback!(mutability(output, op, args...), output, op, args...)
 end
 
-function operate_to_fallback!(::NotMutable, output, op::Function, args...)
+function operate_to_fallback!(::NotMutable, output, op::Function, args::Vararg{Any, N}) where N
     return op(args...)
 end
-function operate_to_fallback!(::IsMutable, output, op::Function, args...)
+function operate_to_fallback!(::IsMutable, output, op::Function, args::Vararg{Any, N}) where N
     return mutable_operate_to!(output, op, args...)
 end
 

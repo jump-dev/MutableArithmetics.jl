@@ -27,16 +27,16 @@ function mutable_operate_to!(C::Vector, ::typeof(*), A::AbstractMatrix, B::Abstr
     end
 
     # We need a buffer to hold the intermediate multiplication.
-    mul_buffer = zero(zero(eltype(A)) * zero(eltype(B)))
-    for k = 1:mB
-        aoffs = (k-1)*Astride
+    mul_buffer = zero(promote_operation(*, eltype(A), eltype(B)))
+    @inbounds for k = Base.OneTo(mB)
+        aoffs = (k-1) * Astride
         b = B[k]
-        for i = 1:mA
+        for i = Base.OneTo(mA)
             # `C[i] = muladd_buf!(mul_buffer, C[i], A[aoffs + i], b)`
             mutable_buffered_operate!(mul_buffer, add_mul, C[i], A[aoffs + i], b)
         end
     end
-    end # @inbounds
+    end
     return C
 end
 
