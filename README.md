@@ -42,26 +42,48 @@ MA.mul(A, b)
 A2 = big.(A)
 b2 = big.(b)
 c2 = big.(c)
+```
 
-
-println("Default performance: ")
-trial = @benchmark MA.mul_to!($c2, $A2, $b2)
+The default implementation `LinearAlgebra.generic_matvecmul!` does not exploit
+the mutability of `BigInt` is quite slow and allocates a lot:
+```julia
+using LinearAlgebra
+trial = @benchmark LinearAlgebra.mul!($c2, $A2, $b2)
 display(trial)
 
-# Define MutableArithmetics API for numbers
-MA.mutability(::Type{BigInt}, ::typeof(MA.zero!)) = MA.IsMutable()
-MA.zero_impl!(x::BigInt) = Base.GMP.MPZ.set_si!(x, 0)
-MA.mutability(::Type{BigInt}, ::typeof(MA.one!)) = MA.IsMutable()
-MA.one_impl!(x::BigInt) = Base.GMP.MPZ.set_si!(x, 1)
-MA.mutability(::Type{BigInt}, ::typeof(MA.mul_to!), ::Type{BigInt}, ::Type{BigInt}) = MA.IsMutable()
-MA.mul_to_impl!(x::BigInt, a::BigInt, b::BigInt) = Base.GMP.MPZ.mul!(x, a, b)
-MA.mutability(::Type{BigInt}, ::typeof(MA.add_to!), ::Type{BigInt}, ::Type{BigInt}) = MA.IsMutable()
-MA.add_to_impl!(x::BigInt, a::BigInt, b::BigInt) = Base.GMP.MPZ.add!(x, a, b)
-MA.muladd_buf_impl!(buf::BigInt, a::BigInt, b::BigInt, c::BigInt) = Base.GMP.MPZ.add!(a, Base.GMP.MPZ.mul!(buf, b, c))
+# output
 
-println("MA performance after defining the MA interface: ")
+BenchmarkTools.Trial:
+  memory estimate:  3.67 MiB
+  allocs estimate:  238775
+  --------------
+  minimum time:     6.116 ms (0.00% GC)
+  median time:      6.263 ms (0.00% GC)
+  mean time:        11.711 ms (27.72% GC)
+  maximum time:     122.627 ms (70.45% GC)
+  --------------
+  samples:          429
+  evals/sample:     1
+```
+
+In `MA.mutable_operate_to(::Vector, ::typeof(*), ::Matrix, ::Vector)`, we
+exploit the mutability of `BigInt` through the MutableArithmetics API.
+This provides a significant speedup and a drastic reduction of memory usage:
+```julia
 trial2 = @benchmark MA.mul_to!($c2, $A2, $b2)
 display(trial2)
+
+BenchmarkTools.Trial:
+  memory estimate:  168 bytes
+  allocs estimate:  9
+  --------------
+  minimum time:     928.306 μs (0.00% GC)
+  median time:      933.144 μs (0.00% GC)
+  mean time:        952.015 μs (0.00% GC)
+  maximum time:     1.910 ms (0.00% GC)
+  --------------
+  samples:          5244
+  evals/sample:     1
 ```
 
 > This package started out as a GSoC '19 project.
