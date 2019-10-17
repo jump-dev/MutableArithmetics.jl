@@ -74,15 +74,15 @@ trial2 = @benchmark MA.mul_to!($c2, $A2, $b2)
 display(trial2)
 
 BenchmarkTools.Trial:
-  memory estimate:  168 bytes
-  allocs estimate:  9
+  memory estimate:  48 bytes
+  allocs estimate:  3
   --------------
-  minimum time:     928.306 μs (0.00% GC)
-  median time:      933.144 μs (0.00% GC)
-  mean time:        952.015 μs (0.00% GC)
-  maximum time:     1.910 ms (0.00% GC)
+  minimum time:     917.819 μs (0.00% GC)
+  median time:      999.239 μs (0.00% GC)
+  mean time:        1.042 ms (0.00% GC)
+  maximum time:     2.319 ms (0.00% GC)
   --------------
-  samples:          5244
+  samples:          4791
   evals/sample:     1
 ```
 
