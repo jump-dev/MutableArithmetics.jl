@@ -3,14 +3,14 @@
 
 Return the sum of `b` and `c`, possibly modifying `a`.
 """
-add_to!(output, args...) = operate_to!(output, +, args...)
+add_to!(output, args::Vararg{Any, N}) where {N} = operate_to!(output, +, args...)
 
 """
     add!(a, b, ...)
 
 Return the sum of `a`, `b`, ..., possibly modifying `a`.
 """
-add!(args...) = operate!(+, args...)
+add!(args::Vararg{Any, N}) where {N} = operate!(+, args...)
 
 """
     mul_to!(a, b, c)
@@ -24,7 +24,7 @@ mul_to!(output, args::Vararg{Any, N}) where {N} = operate_to!(output, *, args...
 
 Return the product of `a`, `b`, ..., possibly modifying `a`.
 """
-mul!(args...) = operate!(*, args...)
+mul!(args::Vararg{Any, N}) where {N} = operate!(*, args...)
 
 """
     add_mul(a, args...)
@@ -43,21 +43,21 @@ end
 
 Return `add_mul(args...)`, possibly modifying `output`.
 """
-add_mul_to!(output, args...) = operate_to!(output, add_mul, args...)
+add_mul_to!(output, args::Vararg{Any, N}) where {N} = operate_to!(output, add_mul, args...)
 
 """
     add_mul!(args...)
 
 Return `add_mul(args...)`, possibly modifying `args[1]`.
 """
-add_mul!(args...) = operate!(add_mul, args...)
+add_mul!(args::Vararg{Any, N}) where {N} = operate!(add_mul, args...)
 
 """
     add_mul_buf_to!(buffer, output, args...)
 
 Return `add_mul(args...)`, possibly modifying `output` and `buffer`.
 """
-function add_mul_buf_to!(buffer, output, args...)
+function add_mul_buf_to!(buffer, output, args::Vararg{Any, N}) where {N}
     buffered_operate_to!(buffer, output, add_mul, args...)
 end
 
@@ -66,7 +66,7 @@ end
 
 Return `add_mul(args...)`, possibly modifying `args[1]` and `buffer`.
 """
-function add_mul_buf!(buffer, args...)
+function add_mul_buf!(buffer, args::Vararg{Any, N}) where {N}
     buffered_operate!(buffer, add_mul, args...)
 end
 

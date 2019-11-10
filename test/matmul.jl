@@ -1,7 +1,3 @@
-function alloc_test(f, n)
-    f() # compile
-    @test n == @allocated f()
-end
 @testset "Matrix multiplication" begin
 	@testset "matrix-vector product" begin
 		A = BigInt[1 1 1; 1 1 1; 1 1 1]
