@@ -10,6 +10,9 @@ Returns the type returned to the call `operate(op, args...)` where the types of
 the arguments `args` are `ArgsTypes`.
 """
 function promote_operation end
+function promote_operation(op::Function, args::Vararg{Type, N}) where N
+    return typeof(op(zero.(args)...))
+end
 
 # Define Traits
 abstract type MutableTrait end
@@ -36,7 +39,7 @@ function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...
     throw(ArgumentError("Cannot call `mutable_operate_to!($output, $op, $(args...))` as `$output` cannot be modifed to equal the result of the operation. Use `operate!` or `operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
 end
 
-function mutable_operate_to_fallback(::IsMutable, op::Function, args...)
+function mutable_operate_to_fallback(::IsMutable, output, op::Function, args...)
     error("`mutable_operate_to!($op, $(args...))` is not implemented yet.")
 end
 
@@ -46,8 +49,8 @@ end
 Modify the value of `output` to be equal to the value of `op(args...)`. Can
 only be called if `mutability(output, op, args...)` returns `true`.
 """
-function mutable_operate_to!(output, op::Function, args...)
-    mutable_operate_fallback(mutability(output, op, args...), output, op, args...)
+function mutable_operate_to!(output, op::Function, args::Vararg{Any, N}) where N
+    mutable_operate_to_fallback(mutability(output, op, args...), output, op, args...)
 end
 
 """
@@ -56,7 +59,7 @@ end
 Modify the value of `args[1]` to be equal to the value of `op(args...)`. Can
 only be called if `mutability(args[1], op, args...)` returns `true`.
 """
-function mutable_operate!(op::Function, args...)
+function mutable_operate!(op::Function, args::Vararg{Any, N}) where N
     mutable_operate_to!(args[1], op, args...)
 end
 
@@ -76,7 +79,7 @@ Modify the value of `args[1]` to be equal to the value of `op(args...)`,
 possibly modifying `buffer`. Can only be called if
 `mutability(args[1], op, args...)` returns `true`.
 """
-function mutable_buffered_operate!(buffer, op::Function, args...)
+function mutable_buffered_operate!(buffer, op::Function, args::Vararg{Any, N}) where N
     mutable_buffered_operate_to!(buffer, args[1], op, args...)
 end
 
@@ -101,14 +104,14 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `args[1]`.
 """
-function operate!(op::Function, args...)
+function operate!(op::Function, args::Vararg{Any, N}) where N
     return operate_fallback!(mutability(args[1], op, args...), op, args...)
 end
 
-function operate_fallback!(::NotMutable, op::Function, args...)
+function operate_fallback!(::NotMutable, op::Function, args::Vararg{Any, N}) where N
     return op(args...)
 end
-function operate_fallback!(::IsMutable, op::Function, args...)
+function operate_fallback!(::IsMutable, op::Function, args::Vararg{Any, N}) where N
     return mutable_operate!(op, args...)
 end
 
@@ -117,15 +120,15 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `buffer` and `output`.
 """
-function buffered_operate_to!(buffer, output, op::Function, args...)
+function buffered_operate_to!(buffer, output, op::Function, args::Vararg{Any, N}) where N
     return buffered_operate_to_fallback!(mutability(output, op, args...),
                                          buffer, output, op, args...)
 end
 
-function buffered_operate_to_fallback!(::NotMutable, buffer, output, op::Function, args...)
+function buffered_operate_to_fallback!(::NotMutable, buffer, output, op::Function, args::Vararg{Any, N}) where N
     return op(args...)
 end
-function buffered_operate_to_fallback!(::IsMutable, buffer, output, op::Function, args...)
+function buffered_operate_to_fallback!(::IsMutable, buffer, output, op::Function, args::Vararg{Any, N}) where N
     return mutable_buffered_operate_to!(buffer, output, op, args...)
 end
 
@@ -134,14 +137,14 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `buffer`.
 """
-function buffered_operate!(buffer, op::Function, args...)
+function buffered_operate!(buffer, op::Function, args::Vararg{Any, N}) where N
     return buffered_operate_fallback!(mutability(args[1], op, args...),
                                       buffer, op, args...)
 end
 
-function buffered_operate_fallback!(::NotMutable, buffer, op::Function, args...)
+function buffered_operate_fallback!(::NotMutable, buffer, op::Function, args::Vararg{Any, N}) where N
     return op(args...)
 end
-function buffered_operate_fallback!(::IsMutable, buffer, op::Function, args...)
+function buffered_operate_fallback!(::IsMutable, buffer, op::Function, args::Vararg{Any, N}) where N
     return mutable_buffered_operate!(buffer, op, args...)
 end

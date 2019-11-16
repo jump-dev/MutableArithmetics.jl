@@ -2,6 +2,11 @@ using Test
 import MutableArithmetics
 const MA = MutableArithmetics
 
+function alloc_test(f, n)
+    f() # compile
+    @test n == @allocated f()
+end
+
 @testset "Int" begin
     include("int.jl")
 end

@@ -6,6 +6,12 @@
 
 module MutableArithmetics
 
+# Performance note:
+# We use `Vararg` instead of splatting `...` as using `where N` forces Julia to
+# specialize in the number of arguments `N`. Otherwise, we get allocations and
+# slowdown because it compiles something that works for any `N`. See
+# https://github.com/JuliaLang/julia/issues/32761 for details.
+
 include("interface.jl")
 include("shortcuts.jl")
 

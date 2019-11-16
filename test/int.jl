@@ -1,3 +1,11 @@
+@testset "promote_operation" begin
+    @test MA.promote_operation(MA.zero, Int) == Int
+    @test MA.promote_operation(MA.one, Int) == Int
+    @test MA.promote_operation(+, Int, Int) == Int
+    @test MA.promote_operation(-, Int, Int) == Int
+    @test MA.promote_operation(*, Int, Int) == Int
+    @test MA.promote_operation(MA.add_mul, Int, Int, Int) == Int
+end
 @testset "add_to! / add!" begin
     @test MA.mutability(Int, MA.add_to!, Int, Int) isa MA.NotMutable
     @test MA.mutability(Int, MA.add!, Int) isa MA.NotMutable
