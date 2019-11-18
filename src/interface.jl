@@ -13,6 +13,13 @@ function promote_operation end
 function promote_operation(op::Function, args::Vararg{Type, N}) where N
     return typeof(op(zero.(args)...))
 end
+#promote_operation(::typeof(*), ::Type{T}) where {T} = T
+#function promote_operation(op::typeof(*), ::Type{Array{T, N}}, ::Type{S}) where {S, T, N}
+#    return Array{promote_operation(op, T, S), N}
+#end
+#function promote_operation(op::typeof(*), ::Type{S}, ::Type{Array{T, N}}) where {S, T, N}
+#    return Array{promote_operation(op, S, T), N}
+#end
 
 # Define Traits
 abstract type MutableTrait end

@@ -22,4 +22,10 @@ include("Test/Test.jl")
 include("bigint.jl")
 include("linear_algebra.jl")
 
+isequal_canonical(a, b) = a == b
+
+include("rewrite.jl")
+
+include("dispatch.jl")
+
 end # module

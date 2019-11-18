@@ -14,3 +14,4 @@ end
     include("bigint.jl")
 end
 include("matmul.jl")
+include("rewrite.jl")
