@@ -1,6 +1,62 @@
 import LinearAlgebra
 
-mutability(::Type{<:Vector}) = IsMutable()
+mutability(::Type{<:Array}) = IsMutable()
+
+# Sum
+
+function promote_operation(op::typeof(+), ::Type{Array{S, N}}, ::Type{Array{T, N}}) where {S, T, N}
+    return Array{promote_operation(op, S, T), N}
+end
+function mutable_operate!(::typeof(+), A::Array{S, N}, B::Array{T, N}) where{S, T, N}
+    for i in eachindex(A)
+        A[i] = operate!(+, A[i], B[i])
+    end
+    return A
+end
+
+# UniformScaling
+const Scaling = Union{Number, LinearAlgebra.UniformScaling}
+function promote_operation(op::typeof(+), ::Type{Array{T, 2}}, ::Type{LinearAlgebra.UniformScaling{S}}) where {S, T}
+    return Array{promote_operation(op, T, S), 2}
+end
+function promote_operation(op::typeof(+), ::Type{LinearAlgebra.UniformScaling{S}}, ::Type{Array{T, 2}}) where {S, T}
+    return Array{promote_operation(op, S, T), 2}
+end
+function mutable_operate!(::typeof(+), A::Matrix, B::LinearAlgebra.UniformScaling)
+    n = LinearAlgebra.checksquare(A)
+    for i in 1:n
+        A[i, i] = operate!(+, A[i, i], B)
+    end
+    return A
+end
+function mutable_operate!(::typeof(add_mul), A::Matrix, B::Scaling, C::Scaling, D::Vararg{Scaling, N}) where N
+    return mutable_operate!(+, A, *(B, C, D...))
+end
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, B::Array{T, N}, α::Vararg{Scaling, M}) where {S, T, N, M}
+    for i in eachindex(A)
+        A[i] = operate!(add_mul, A[i], B[i], α...)
+    end
+    return A
+end
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α::Scaling, B::Array{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+    for i in eachindex(A)
+        A[i] = operate!(add_mul, A[i], α, B[i], β...)
+    end
+    return A
+end
+
+# Product
+
+function promote_operation(op::typeof(*), ::Type{Array{T, N}}, ::Type{S}) where {S, T, N}
+    return Array{promote_operation(op, T, S), N}
+end
+function promote_operation(op::typeof(*), ::Type{S}, ::Type{Array{T, N}}) where {S, T, N}
+    return Array{promote_operation(op, S, T), N}
+end
+
+function promote_operation(::typeof(*), ::Type{Matrix{S}}, ::Type{Vector{T}}) where {S, T}
+    return Vector{Base.promote_op(LinearAlgebra.matprod, S, T)}
+end
 function promote_operation(::typeof(*), ::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractVector{T}}) where {S, T}
     return Vector{Base.promote_op(LinearAlgebra.matprod, S, T)}
 end

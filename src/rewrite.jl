@@ -14,8 +14,22 @@ Base.:(+)(x, zero::Zero) = copy(x)
 
 using Base.Meta
 
+# See `JuMP._try_parse_idx_set`
+function _try_parse_idx_set(arg::Expr)
+    # [i=1] and x[i=1] parse as Expr(:vect, Expr(:(=), :i, 1)) and
+    # Expr(:ref, :x, Expr(:kw, :i, 1)) respectively.
+    if arg.head === :kw || arg.head === :(=)
+        @assert length(arg.args) == 2
+        return true, arg.args[1], arg.args[2]
+    elseif isexpr(arg, :call) && arg.args[1] === :in
+        return true, arg.args[2], arg.args[3]
+    else
+        return false, nothing, nothing
+    end
+end
+
 function _parse_idx_set(arg::Expr)
-    parse_done, idxvar, idxset = Containers._try_parse_idx_set(arg)
+    parse_done, idxvar, idxset = _try_parse_idx_set(arg)
     if parse_done
         return idxvar, idxset
     end
@@ -60,6 +74,9 @@ function _parse_gen(ex, atleaf)
     end
     return loop
 end
+
+# See `JuMP._is_sum`
+_is_sum(s::Symbol) = (s == :sum) || (s == :∑) || (s == :Σ)
 
 function _parse_generator(x::Expr, aff::Symbol, lcoeffs, rcoeffs, newaff=gensym())
     @assert isexpr(x,:call)
@@ -175,7 +192,7 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, newaff::Symb
                         x.args[i] = esc(x.args[i])
                     end
                 end
-                callexpr = Expr(:call, :operate!, add_mul, aff,
+                callexpr = Expr(:call, :(MutableArithmetics.operate!), add_mul, aff,
                                 lcoeffs..., x.args[2:end]..., rcoeffs...)
                 push!(blk.args, :($newaff = $callexpr))
                 return newaff, blk
@@ -187,7 +204,7 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, newaff::Symb
                 s = gensym()
                 newaff_, parsed = _rewrite_toplevel(x.args[2], s)
                 push!(blk.args, :($s = Zero(); $parsed))
-                push!(blk.args, :($newaff = operate!(add_mul,
+                push!(blk.args, :($newaff = MutableArithmetics.operate!(add_mul,
                     $aff, $(Expr(:call, :*, lcoeffs..., newaff_, newaff_,
                                  rcoeffs...)))))
                 return newaff, blk
@@ -225,6 +242,6 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, newaff::Symb
                      " become a syntax error in a future release."
     end
     # at the lowest level
-    callexpr = Expr(:call, :operate!, add_mul, aff, lcoeffs..., esc(x), rcoeffs...)
+    callexpr = Expr(:call, :(MutableArithmetics.operate!), add_mul, aff, lcoeffs..., esc(x), rcoeffs...)
     return newaff, :($newaff = $callexpr)
 end

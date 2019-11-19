@@ -239,6 +239,10 @@ function vectorized_test(x, X11, X23, Xd)
     v = [4, 5, 6]
 
     @testset "Sum of matrices" begin
+        @test_rewrite(x + x)
+        @test_rewrite(x + 2x)
+        @test_rewrite(x + x * 2)
+        @test_rewrite(x + 2x * 2)
         @test_rewrite(Xd + Yd)
         @test_rewrite(Xd + 2Yd)
         @test_rewrite(Xd + Yd * 2)

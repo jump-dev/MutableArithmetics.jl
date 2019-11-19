@@ -13,13 +13,10 @@ function promote_operation end
 function promote_operation(op::Function, args::Vararg{Type, N}) where N
     return typeof(op(zero.(args)...))
 end
-#promote_operation(::typeof(*), ::Type{T}) where {T} = T
-#function promote_operation(op::typeof(*), ::Type{Array{T, N}}, ::Type{S}) where {S, T, N}
-#    return Array{promote_operation(op, T, S), N}
-#end
-#function promote_operation(op::typeof(*), ::Type{S}, ::Type{Array{T, N}}) where {S, T, N}
-#    return Array{promote_operation(op, S, T), N}
-#end
+promote_operation(::typeof(*), ::Type{T}) where {T} = T
+function promote_operation(::typeof(*), ::Type{S}, ::Type{T}, ::Type{U}, args::Vararg{Type, N}) where {S, T, U, N}
+    return promote_operation(*, promote_operation(*, S, T), U, args...)
+end
 
 # Define Traits
 abstract type MutableTrait end
@@ -47,7 +44,8 @@ function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...
 end
 
 function mutable_operate_to_fallback(::IsMutable, output, op::Function, args...)
-    error("`mutable_operate_to!($op, $(args...))` is not implemented yet.")
+    error("`mutable_operate_to!($(typeof(output)), $op, ", join(typeof.(args), ", "),
+          ")` is not implemented yet.")
 end
 
 """
