@@ -13,6 +13,9 @@ promote_operation(::typeof(+), ::Vararg{Type{BigInt}, N}) where {N} = BigInt
 function mutable_operate_to!(output::BigInt, ::typeof(+), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.add!(output, a, b)
 end
+function mutable_operate_to!(output::BigInt, op::typeof(+), a::BigInt, b::LinearAlgebra.UniformScaling)
+    return mutable_operate_to!(output, op, a, b.λ)
+end
 
 # *
 promote_operation(::typeof(*), ::Vararg{Type{BigInt}, N}) where {N} = BigInt

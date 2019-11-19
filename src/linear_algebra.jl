@@ -1,5 +1,3 @@
-import LinearAlgebra
-
 mutability(::Type{<:Array}) = IsMutable()
 
 # Sum

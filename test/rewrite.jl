@@ -434,11 +434,14 @@ function non_array_test(x, x2)
         if !MA._one_indexed(x2)
             @test_throws DimensionMismatch x + x2
         end
-        @testset "diagm" begin
-            if !MA._one_indexed(x2) && eltype(x2) isa MA.AbstractMutable
-                @test_throws AssertionError diagm(x2)
-            else
-                @test diagm(x) == diagm(x2)
+        # `diagm` not defined for Int before Julia v1.2
+        if !(eltype(x2) <: Integer) || VERSION >= v"1.2"
+            @testset "diagm" begin
+                if !MA._one_indexed(x2) && eltype(x2) isa MA.AbstractMutable
+                    @test_throws AssertionError diagm(x2)
+                else
+                    @test diagm(x) == diagm(x2)
+                end
             end
         end
     end
@@ -484,22 +487,29 @@ end
 using LinearAlgebra
 using OffsetArrays
 
-@testset "@rewrite with Int" begin
-    basic_operators_test(1, 2, 3, 4)
-    sum_test(rand(Int, 3, 3))
-    dot_test(rand(Int, 3), rand(Int, 2, 2), rand(Int, 2, 2, 2))
-    issue_656(3)
-    transpose_test(rand(Int, 3), rand(Int, 2, 3), rand(Int, 5))
-    vectorized_test([3, 2, 6], 4, 5, [8 1 9; 4 3 1; 2 0 8])
-    broadcast_test([2 4; 1 3])
-    x = [2, 4, 3]
+@testset "@rewrite with $T" for T in [
+        Int,
+        Float64
+        #, BigInt
+    ]
+    basic_operators_test(T(1), T(2), T(3), T(4))
+    sum_test(T[5 1 9; -7 2 4; -2 -7 5])
+    S = zeros(T, 2, 2, 2)
+    S[1, :, :] = T[5 -8; 3 -7]
+    S[2, :, :] = T[-2 8; 8 -1]
+    dot_test(T[-7, 1, 4], T[0 -4; 6 -5], S)
+    issue_656(T(3))
+    transpose_test(T[9, -3, 8], T[-4 4 1; 4 -8 -6], T[6, 9, 2, 4, -3])
+    vectorized_test(T[3, 2, 6], T(4), T(5), T[8 1 9; 4 3 1; 2 0 8])
+    broadcast_test(T[2 4; 1 3])
+    x = T[2, 4, 3]
     non_array_test(x, x)
     non_array_test(x, OffsetArray(x, -length(x)))
     non_array_test(x, view(x, :))
     non_array_test(x, sparse(x))
-    unary_matrix([1 2; 3 4])
-    unary_matrix(Symmetric([1 2; 2 4]))
-    scalar_uniform_scaling(3)
-    matrix_uniform_scaling([1 2; 3 4])
-    matrix_uniform_scaling(Symmetric([1 2; 2 4]))
+    unary_matrix(T[1 2; 3 4])
+    unary_matrix(Symmetric(T[1 2; 2 4]))
+    scalar_uniform_scaling(T(3))
+    matrix_uniform_scaling(T[1 2; 3 4])
+    matrix_uniform_scaling(Symmetric(T[1 2; 2 4]))
 end

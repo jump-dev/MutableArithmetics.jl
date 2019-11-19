@@ -6,6 +6,8 @@
 
 module MutableArithmetics
 
+import LinearAlgebra
+
 # Performance note:
 # We use `Vararg` instead of splatting `...` as using `where N` forces Julia to
 # specialize in the number of arguments `N`. Otherwise, we get allocations and
