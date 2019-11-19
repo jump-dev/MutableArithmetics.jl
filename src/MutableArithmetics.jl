@@ -6,13 +6,14 @@
 
 module MutableArithmetics
 
-import LinearAlgebra
-
 # Performance note:
 # We use `Vararg` instead of splatting `...` as using `where N` forces Julia to
 # specialize in the number of arguments `N`. Otherwise, we get allocations and
 # slowdown because it compiles something that works for any `N`. See
 # https://github.com/JuliaLang/julia/issues/32761 for details.
+
+# `copy(::BigInt)` and `copy(::Array)` does not copy its elements so we need `deepcopy`.
+mutable_copy(x) = deepcopy(x)
 
 include("interface.jl")
 include("shortcuts.jl")
@@ -21,6 +22,8 @@ include("shortcuts.jl")
 include("Test/Test.jl")
 
 # Implementation of the interface for Base types
+import LinearAlgebra
+const Scaling = Union{Number, LinearAlgebra.UniformScaling}
 include("bigint.jl")
 include("linear_algebra.jl")
 

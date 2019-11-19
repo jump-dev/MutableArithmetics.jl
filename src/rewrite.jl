@@ -8,9 +8,9 @@ end
 struct Zero end
 # We need to copy `x` as it will be used as might be given by the user and be
 # given as first argument of `operate!`.
-Base.:(+)(zero::Zero, x) = copy(x)
+Base.:(+)(zero::Zero, x) = mutable_copy(x)
 # `add_mul(zero, ...)` redirects to `muladd(..., zero)` which calls `... + zero`.
-Base.:(+)(x, zero::Zero) = copy(x)
+Base.:(+)(x, zero::Zero) = mutable_copy(x)
 
 using Base.Meta
 

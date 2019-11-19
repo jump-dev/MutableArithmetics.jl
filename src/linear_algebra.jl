@@ -13,7 +13,6 @@ function mutable_operate!(::typeof(+), A::Array{S, N}, B::Array{T, N}) where{S, 
 end
 
 # UniformScaling
-const Scaling = Union{Number, LinearAlgebra.UniformScaling}
 function promote_operation(op::typeof(+), ::Type{Array{T, 2}}, ::Type{LinearAlgebra.UniformScaling{S}}) where {S, T}
     return Array{promote_operation(op, T, S), 2}
 end

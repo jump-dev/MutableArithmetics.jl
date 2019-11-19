@@ -402,10 +402,11 @@ function broadcast_test(x)
     @test MA.isequal_canonical(y.*A, y.*B)
 
     @test MA.isequal_canonical(x .* x, [x[1,1]^2 x[1,2]^2; x[2,1]^2 x[2,2]^2])
-    @test MA.isequal_canonical(x./A, [1/1*x[1,1]  1/2*x[1,2];
-                        1/3*x[2,1]  1/4*x[2,2]])
-    @test MA.isequal_canonical(x./A, x./B)
-    @test MA.isequal_canonical(x./A, y./A)
+    @test MA.isequal_canonical(x ./ A, [
+        x[1,1] / 1  x[1,2] / 2;
+        x[2,1] / 3  x[2,2] / 4])
+    @test MA.isequal_canonical(x ./ A, x ./ B)
+    @test MA.isequal_canonical(x ./ A, y ./ A)
 
     # TODO: Refactor to avoid calling the internal JuMP function
     # `_densify_with_jump_eltype`.
@@ -421,27 +422,26 @@ function non_array_test(x, x2)
     # This is needed to compare arrays that have nonstandard indexing
     elements_equal(A::AbstractArray{T, N}, B::AbstractArray{T, N}) where {T, N} = all(a == b for (a, b) in zip(A, B))
 
-    for x2 in (OffsetArray(x, -length(x)), view(x, :), sparse(x))
-        @test elements_equal(+x, +x2)
-        @test elements_equal(-x, -x2)
-        @test elements_equal(x .+ first(x), x2 .+ first(x2))
-        @test elements_equal(x .- first(x), x2 .- first(x2))
-        @test elements_equal(first(x) .- x, first(x2) .- x2)
-        @test elements_equal(first(x) .+ x, first(x2) .+ x2)
-        @test elements_equal(2 .* x, 2 .* x2)
-        @test elements_equal(first(x) .+ x2, first(x2) .+ x)
-        @test sum(x) == sum(x2)
-        if !MA._one_indexed(x2)
-            @test_throws DimensionMismatch x + x2
-        end
-        # `diagm` not defined for Int before Julia v1.2
-        if !(eltype(x2) <: Integer) || VERSION >= v"1.2"
-            @testset "diagm" begin
-                if !MA._one_indexed(x2) && eltype(x2) isa MA.AbstractMutable
-                    @test_throws AssertionError diagm(x2)
-                else
-                    @test diagm(x) == diagm(x2)
-                end
+    @test elements_equal(+x, +x2)
+    @test elements_equal(-x, -x2)
+    @test elements_equal(x .+ first(x), x2 .+ first(x2))
+    @test elements_equal(x .- first(x), x2 .- first(x2))
+    @test elements_equal(first(x) .- x, first(x2) .- x2)
+    @test elements_equal(first(x) .+ x, first(x2) .+ x2)
+    @test elements_equal(2 .* x, 2 .* x2)
+    @test elements_equal(first(x) .+ x2, first(x2) .+ x)
+    @test sum(x) == sum(x2)
+    if !MA._one_indexed(x2)
+        @test_throws DimensionMismatch x + x2
+    end
+    # `diagm` only define with `Pair` in Julia v1.0 and v1.1
+    @testset "diagm" begin
+        if !MA._one_indexed(x2) && eltype(x2) isa MA.AbstractMutable
+            @test_throws AssertionError diagm(x2)
+        else
+            @test diagm(0 => x) == diagm(0 => x2)
+            if VERSION >= v"1.2"
+                @test diagm(x) == diagm(x2)
             end
         end
     end
@@ -489,8 +489,8 @@ using OffsetArrays
 
 @testset "@rewrite with $T" for T in [
         Int,
-        Float64
-        #, BigInt
+        Float64,
+        BigInt
     ]
     basic_operators_test(T(1), T(2), T(3), T(4))
     sum_test(T[5 1 9; -7 2 4; -2 -7 5])
@@ -501,7 +501,7 @@ using OffsetArrays
     issue_656(T(3))
     transpose_test(T[9, -3, 8], T[-4 4 1; 4 -8 -6], T[6, 9, 2, 4, -3])
     vectorized_test(T[3, 2, 6], T(4), T(5), T[8 1 9; 4 3 1; 2 0 8])
-    broadcast_test(T[2 4; 1 3])
+    broadcast_test(T[2 4; -1 3])
     x = T[2, 4, 3]
     non_array_test(x, x)
     non_array_test(x, OffsetArray(x, -length(x)))
