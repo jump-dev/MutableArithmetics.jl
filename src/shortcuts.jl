@@ -26,16 +26,6 @@ Return the product of `a`, `b`, ..., possibly modifying `a`.
 """
 mul!(args::Vararg{Any, N}) where {N} = operate!(*, args...)
 
-"""
-    add_mul(a, args...)
-
-Return `a + *(args...)`. Note that `add_mul(a, b, c) = muladd(b, c, a)`.
-"""
-function add_mul end
-add_mul(a, b) = a + b
-add_mul(a, b, c) = muladd(b, c, a)
-add_mul(a, b, c::Vararg{Any, N}) where {N} = add_mul(a, b *(c...))
-
 function promote_operation(::typeof(add_mul), T::Type, args::Vararg{Type, N}) where N
     return promote_operation(+, T, promote_operation(*, args...))
 end

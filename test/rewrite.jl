@@ -239,13 +239,20 @@ function vectorized_test(x, X11, X23, Xd)
     v = [4, 5, 6]
 
     @testset "Sum of matrices" begin
+        @test_rewrite(x - x)
         @test_rewrite(x + x)
         @test_rewrite(x + 2x)
+        @test_rewrite(x - 2x)
         @test_rewrite(x + x * 2)
+        @test_rewrite(x - x * 2)
         @test_rewrite(x + 2x * 2)
+        @test_rewrite(x - 2x * 2)
         @test_rewrite(Xd + Yd)
+        @test_rewrite(Xd - Yd)
         @test_rewrite(Xd + 2Yd)
+        @test_rewrite(Xd - 2Yd)
         @test_rewrite(Xd + Yd * 2)
+        @test_rewrite(Xd - Yd * 2)
         @test_rewrite(Yd + Xd)
         @test_rewrite(Yd + 2Xd)
         @test_rewrite(Yd + Xd * 2)
@@ -262,6 +269,14 @@ function vectorized_test(x, X11, X23, Xd)
         @test_rewrite(Xd + 2Zd)
         @test_rewrite(Xd + Zd * 2)
     end
+
+    @test_rewrite(x')
+    @test_rewrite(x' * A)
+    # Complex expression
+    @test_rewrite(x' * ones(3, 3))
+    @test_rewrite(x' * A * x)
+    # Complex expression
+    @test_rewrite(x' * ones(3, 3) * x)
 
     @test MA.isequal_canonical(A*x, [2x[1] +  x[2]
                        2x[2] +  x[1] + x[3]

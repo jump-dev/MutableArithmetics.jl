@@ -104,7 +104,7 @@ function rewrite(x)
     variable = gensym()
     new_variable, code = _rewrite_toplevel(x, variable)
     return quote
-        $variable = Zero()
+        $variable = MutableArithmetics.Zero()
         $code
         $new_variable
     end
@@ -186,13 +186,13 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, newaff::Symb
                     if _is_complex_expr(x.args[i])
                         s = gensym()
                         newaff_, parsed = _rewrite_toplevel(x.args[i], s)
-                        push!(blk.args, :($s = 0.0; $parsed))
+                        push!(blk.args, :($s = MutableArithmetics.Zero(); $parsed))
                         x.args[i] = newaff_
                     else
                         x.args[i] = esc(x.args[i])
                     end
                 end
-                callexpr = Expr(:call, :(MutableArithmetics.operate!), add_mul, aff,
+                callexpr = Expr(:call, :(MutableArithmetics.add_mul!), aff,
                                 lcoeffs..., x.args[2:end]..., rcoeffs...)
                 push!(blk.args, :($newaff = $callexpr))
                 return newaff, blk
@@ -203,8 +203,8 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, newaff::Symb
                 blk = Expr(:block)
                 s = gensym()
                 newaff_, parsed = _rewrite_toplevel(x.args[2], s)
-                push!(blk.args, :($s = Zero(); $parsed))
-                push!(blk.args, :($newaff = MutableArithmetics.operate!(add_mul,
+                push!(blk.args, :($s = MutableArithmetics.Zero(); $parsed))
+                push!(blk.args, :($newaff = MutableArithmetics.add_mul!(
                     $aff, $(Expr(:call, :*, lcoeffs..., newaff_, newaff_,
                                  rcoeffs...)))))
                 return newaff, blk
@@ -216,8 +216,8 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, newaff::Symb
                 blk = Expr(:block)
                 s = gensym()
                 newaff_, parsed = _rewrite_toplevel(x.args[2], s)
-                push!(blk.args, :($s = Zero(); $parsed))
-                push!(blk.args, :($newaff = _destructive_add_with_reorder!(
+                push!(blk.args, :($s = MutableArithmetics.Zero(); $parsed))
+                push!(blk.args, :($newaff = MutableArithmetics.add_mul!(
                     $aff, $(Expr(:call, :*, lcoeffs...,
                                  Expr(:call, :^, newaff_, esc(x.args[3])),
                                       rcoeffs...)))))
@@ -242,6 +242,6 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, newaff::Symb
                      " become a syntax error in a future release."
     end
     # at the lowest level
-    callexpr = Expr(:call, :(MutableArithmetics.operate!), add_mul, aff, lcoeffs..., esc(x), rcoeffs...)
+    callexpr = Expr(:call, :(MutableArithmetics.add_mul!), aff, lcoeffs..., esc(x), rcoeffs...)
     return newaff, :($newaff = $callexpr)
 end

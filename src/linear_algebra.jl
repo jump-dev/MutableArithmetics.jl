@@ -2,12 +2,12 @@ mutability(::Type{<:Array}) = IsMutable()
 
 # Sum
 
-function promote_operation(op::typeof(+), ::Type{Array{S, N}}, ::Type{Array{T, N}}) where {S, T, N}
+function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{Array{S, N}}, ::Type{Array{T, N}}) where {S, T, N}
     return Array{promote_operation(op, S, T), N}
 end
-function mutable_operate!(::typeof(+), A::Array{S, N}, B::Array{T, N}) where{S, T, N}
+function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N}, B::Array{T, N}) where {S, T, N}
     for i in eachindex(A)
-        A[i] = operate!(+, A[i], B[i])
+        A[i] = operate!(op, A[i], B[i])
     end
     return A
 end
@@ -40,6 +40,9 @@ function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α::Scaling, B::Arr
         A[i] = operate!(add_mul, A[i], α, B[i], β...)
     end
     return A
+end
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α1::Scaling, α2::Scaling, B::Array{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+    return mutable_operate!(add_mul, A, α1 * α2, B, β...)
 end
 
 # Product

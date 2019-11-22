@@ -18,6 +18,14 @@ function promote_operation(::typeof(*), ::Type{S}, ::Type{T}, ::Type{U}, args::V
     return promote_operation(*, promote_operation(*, S, T), U, args...)
 end
 
+# Helpful error for common mistake
+function promote_operation(op::Union{typeof(+), typeof(-), typeof(add_mul)}, A::Type{<:Array}, α::Type{<:Number})
+    error("Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.")
+end
+function promote_operation(op::Union{typeof(+), typeof(-), typeof(add_mul)}, α::Type{<:Number}, A::Type{<:Array})
+    error("Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.")
+end
+
 # Define Traits
 abstract type MutableTrait end
 struct IsMutable <: MutableTrait end
