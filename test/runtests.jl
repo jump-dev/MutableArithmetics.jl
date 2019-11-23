@@ -2,10 +2,7 @@ using Test
 import MutableArithmetics
 const MA = MutableArithmetics
 
-function alloc_test(f, n)
-    f() # compile
-    @test n == @allocated f()
-end
+include("utilities.jl")
 
 @testset "Int" begin
     include("int.jl")

@@ -84,6 +84,8 @@ function mutable_operate!(op::Function, args::Vararg{Any, N}) where N
     mutable_operate_to!(args[1], op, args...)
 end
 
+buffer_for(::Function, args::Vararg{Type, N}) where {N} = nothing
+
 """
     mutable_buffered_operate_to!(buffer, output, op::Function, args...)
 
@@ -91,7 +93,9 @@ Modify the value of `output` to be equal to the value of `op(args...)`,
 possibly modifying `buffer`. Can only be called if
 `mutability(output, op, args...)` returns `true`.
 """
-function mutable_buffered_operate_to! end
+function mutable_buffered_operate_to!(::Nothing, output, op::Function, args::Vararg{Any, N}) where N
+    return mutable_operate_to!(output, op, args...)
+end
 
 """
     mutable_buffered_operate!(buffer, op::Function, args...)

@@ -31,6 +31,7 @@ function mutable_operate_to!(output::BigInt, op::Union{typeof(*), typeof(+)},
 end
 
 # add_mul
+buffer_for(::typeof(add_mul), args::Vararg{Type{BigInt}, N}) where {N} = BigInt()
 function mutable_operate_to!(output::BigInt, ::typeof(add_mul), args::Vararg{BigInt, N}) where N
     return mutable_buffered_operate_to!(BigInt(), output, add_mul, args...)
 end
@@ -43,6 +44,6 @@ end
 scaling_to_bigint(x::BigInt) = x
 scaling_to_bigint(x::Number) = convert(BigInt, x)
 scaling_to_bigint(J::LinearAlgebra.UniformScaling) = scaling_to_bigint(J.λ)
-function mutable_operate_to!(output::BigInt, op::Function, args::Vararg{Scaling, N}) where N
+function mutable_operate_to!(output::BigInt, op::Union{typeof(+), typeof(*), typeof(add_mul)}, args::Vararg{Scaling, N}) where N
     return mutable_operate_to!(output, op, scaling_to_bigint.(args)...)
 end
