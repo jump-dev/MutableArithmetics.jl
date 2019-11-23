@@ -13,6 +13,18 @@ function promote_operation end
 function promote_operation(op::Function, args::Vararg{Type, N}) where N
     return typeof(op(zero.(args)...))
 end
+promote_operation(::typeof(*), ::Type{T}) where {T} = T
+function promote_operation(::typeof(*), ::Type{S}, ::Type{T}, ::Type{U}, args::Vararg{Type, N}) where {S, T, U, N}
+    return promote_operation(*, promote_operation(*, S, T), U, args...)
+end
+
+# Helpful error for common mistake
+function promote_operation(op::Union{typeof(+), typeof(-), typeof(add_mul)}, A::Type{<:Array}, α::Type{<:Number})
+    error("Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.")
+end
+function promote_operation(op::Union{typeof(+), typeof(-), typeof(add_mul)}, α::Type{<:Number}, A::Type{<:Array})
+    error("Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.")
+end
 
 # Define Traits
 abstract type MutableTrait end
@@ -35,12 +47,21 @@ end
 mutability(x, op, args::Vararg{Any, N}) where {N} = mutability(typeof(x), op, typeof.(args)...)
 mutability(::Type) = NotMutable()
 
+# `copy(::BigInt)` and `copy(::Array)` does not copy its elements so we need `deepcopy`.
+function mutable_copy end
+mutable_copy(x) = deepcopy(x)
+mutable_copy(A::AbstractArray) = mutable_copy.(A)
+copy_if_mutable_fallback(::NotMutable, x) = x
+copy_if_mutable_fallback(::IsMutable, x) = mutable_copy(x)
+copy_if_mutable(x) = copy_if_mutable_fallback(mutability(typeof(x)), x)
+
 function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...)
     throw(ArgumentError("Cannot call `mutable_operate_to!($output, $op, $(args...))` as `$output` cannot be modifed to equal the result of the operation. Use `operate!` or `operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
 end
 
 function mutable_operate_to_fallback(::IsMutable, output, op::Function, args...)
-    error("`mutable_operate_to!($op, $(args...))` is not implemented yet.")
+    error("`mutable_operate_to!($(typeof(output)), $op, ", join(typeof.(args), ", "),
+          ")` is not implemented yet.")
 end
 
 """

@@ -1,4 +1,5 @@
 mutability(::Type{BigInt}) = IsMutable()
+mutable_copy(x::BigInt) = deepcopy(x)
 
 # zero
 promote_operation(::typeof(zero), ::Type{BigInt}) = BigInt
@@ -13,11 +14,20 @@ promote_operation(::typeof(+), ::Vararg{Type{BigInt}, N}) where {N} = BigInt
 function mutable_operate_to!(output::BigInt, ::typeof(+), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.add!(output, a, b)
 end
+#function mutable_operate_to!(output::BigInt, op::typeof(+), a::BigInt, b::LinearAlgebra.UniformScaling)
+#    return mutable_operate_to!(output, op, a, b.λ)
+#end
 
 # *
 promote_operation(::typeof(*), ::Vararg{Type{BigInt}, N}) where {N} = BigInt
 function mutable_operate_to!(output::BigInt, ::typeof(*), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.mul!(output, a, b)
+end
+
+function mutable_operate_to!(output::BigInt, op::Union{typeof(*), typeof(+)},
+                             a::BigInt, b::BigInt, c::Vararg{BigInt, N}) where N
+    mutable_operate_to!(output, op, a, b)
+    return mutable_operate!(op, output, c...)
 end
 
 # add_mul
@@ -30,6 +40,9 @@ function mutable_buffered_operate_to!(buffer::BigInt, output::BigInt, ::typeof(a
     return mutable_operate_to!(output, +, a, buffer)
 end
 
-function mutable_operate_to!(output::BigInt, op::Function, a::Integer, b::Integer)
-    return mutable_operate_to!(output, op, convert(BigInt, a), convert(BigInt, b))
+scaling_to_bigint(x::BigInt) = x
+scaling_to_bigint(x::Number) = convert(BigInt, x)
+scaling_to_bigint(J::LinearAlgebra.UniformScaling) = scaling_to_bigint(J.λ)
+function mutable_operate_to!(output::BigInt, op::Function, args::Vararg{Scaling, N}) where N
+    return mutable_operate_to!(output, op, scaling_to_bigint.(args)...)
 end

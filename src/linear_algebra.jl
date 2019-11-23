@@ -1,7 +1,73 @@
-import LinearAlgebra
+mutability(::Type{<:Array}) = IsMutable()
+mutable_copy(A::Array) = copy_if_mutable.(A)
 
-mutability(::Type{<:Vector}) = IsMutable()
-function promote_operation(::typeof(*), ::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractVector{T}}) where {S, T}
+# Sum
+
+function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{Array{S, N}}, ::Type{Array{T, N}}) where {S, T, N}
+    return Array{promote_operation(op, S, T), N}
+end
+function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N}, B::Array{T, N}) where {S, T, N}
+    for i in eachindex(A)
+        A[i] = operate!(op, A[i], B[i])
+    end
+    return A
+end
+
+# UniformScaling
+function promote_operation(op::typeof(+), ::Type{Array{T, 2}}, ::Type{LinearAlgebra.UniformScaling{S}}) where {S, T}
+    return Array{promote_operation(op, T, S), 2}
+end
+function promote_operation(op::typeof(+), ::Type{LinearAlgebra.UniformScaling{S}}, ::Type{Array{T, 2}}) where {S, T}
+    return Array{promote_operation(op, S, T), 2}
+end
+function mutable_operate!(::typeof(+), A::Matrix, B::LinearAlgebra.UniformScaling)
+    n = LinearAlgebra.checksquare(A)
+    for i in 1:n
+        A[i, i] = operate!(+, A[i, i], B)
+    end
+    return A
+end
+function mutable_operate!(::typeof(add_mul), A::Matrix, B::Scaling, C::Scaling, D::Vararg{Scaling, N}) where N
+    return mutable_operate!(+, A, *(B, C, D...))
+end
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, B::Array{T, N}, α::Vararg{Scaling, M}) where {S, T, N, M}
+    for i in eachindex(A)
+        A[i] = operate!(add_mul, A[i], B[i], α...)
+    end
+    return A
+end
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α::Scaling, B::Array{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+    for i in eachindex(A)
+        A[i] = operate!(add_mul, A[i], α, B[i], β...)
+    end
+    return A
+end
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α1::Scaling, α2::Scaling, B::Array{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+    return mutable_operate!(add_mul, A, α1 * α2, B, β...)
+end
+# Fallback, we may be able to be more efficient in more cases by adding more specialized methods
+function mutable_operate!(::typeof(add_mul), A::Array, x, y, args::Vararg{Any, N}) where N
+    return mutable_operate!(+, A, *(x, y, args...))
+end
+
+# Product
+
+similar_array_type(::Type{Array{T, N}}, ::Type{S}) where {S, T, N} = Array{S, N}
+function promote_operation(op::typeof(*), A::Type{<:AbstractArray{T}}, ::Type{S}) where {S, T}
+    return similar_array_type(A, promote_operation(op, T, S))
+end
+function promote_operation(op::typeof(*), ::Type{S}, A::Type{<:AbstractArray{T}}) where {S, T}
+    return similar_array_type(A, promote_operation(op, S, T))
+end
+# `{S}` and `{T}` are used to avoid ambiguity with above methods.
+function promote_operation(op::typeof(*), A::Type{<:AbstractArray{S}}, B::Type{<:AbstractArray{T}}) where {S, T}
+    return promote_array_mul(A, B)
+end
+
+function promote_array_mul(::Type{Matrix{S}}, ::Type{Vector{T}}) where {S, T}
+    return Vector{Base.promote_op(LinearAlgebra.matprod, S, T)}
+end
+function promote_array_mul(::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractVector{T}}) where {S, T}
     return Vector{Base.promote_op(LinearAlgebra.matprod, S, T)}
 end
 function mutable_operate_to!(C::Vector, ::typeof(*), A::AbstractMatrix, B::AbstractVector)
