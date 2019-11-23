@@ -375,6 +375,21 @@ function vectorized_test(x, X11, X23, Xd)
     @test MA.isequal_canonical(A*X, B*X)
     @test MA.isequal_canonical(A*X', B*X')
     @test MA.isequal_canonical(A'*X, B'*X)
+
+    A = [1 2 3
+         0 4 5
+         6 0 7]
+    B = sparse(A)
+
+    @test_rewrite reshape(x, (1, 3)) * A * x .- 1
+    @test_rewrite x'*A*x .- 1
+    @test_rewrite x'*B*x .- 1
+    for (A1, A2) in [(A, A), (A, B), (B, A), (B, B)]
+        @test_rewrite (x'A1)' + 2A2*x
+        @test_rewrite (x'A1)' + 2A2*x .- 1
+        @test_rewrite (x'A1)' + 2A2*x .- [3:-1:1;]
+        @test_rewrite (x'A1)' + 2A2*x - [3:-1:1;]
+    end
 end
 
 function broadcast_test(x)

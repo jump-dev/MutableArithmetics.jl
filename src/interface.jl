@@ -47,6 +47,14 @@ end
 mutability(x, op, args::Vararg{Any, N}) where {N} = mutability(typeof(x), op, typeof.(args)...)
 mutability(::Type) = NotMutable()
 
+# `copy(::BigInt)` and `copy(::Array)` does not copy its elements so we need `deepcopy`.
+function mutable_copy end
+mutable_copy(x) = deepcopy(x)
+mutable_copy(A::AbstractArray) = mutable_copy.(A)
+copy_if_mutable_fallback(::NotMutable, x) = x
+copy_if_mutable_fallback(::IsMutable, x) = mutable_copy(x)
+copy_if_mutable(x) = copy_if_mutable_fallback(mutability(typeof(x)), x)
+
 function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...)
     throw(ArgumentError("Cannot call `mutable_operate_to!($output, $op, $(args...))` as `$output` cannot be modifed to equal the result of the operation. Use `operate!` or `operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
 end

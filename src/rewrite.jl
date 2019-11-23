@@ -2,15 +2,15 @@
 
 export @rewrite
 macro rewrite(expr)
-    return rewrite(expr)
+    return rewrite_and_return(expr)
 end
 
 struct Zero end
 # We need to copy `x` as it will be used as might be given by the user and be
 # given as first argument of `operate!`.
-Base.:(+)(zero::Zero, x) = mutable_copy(x)
+Base.:(+)(zero::Zero, x) = copy_if_mutable(x)
 # `add_mul(zero, ...)` redirects to `muladd(..., zero)` which calls `... + zero`.
-Base.:(+)(x, zero::Zero) = mutable_copy(x)
+Base.:(+)(x, zero::Zero) = copy_if_mutable(x)
 
 using Base.Meta
 
@@ -100,17 +100,17 @@ end
 
 _is_complex_expr(ex) = isa(ex, Expr) && !isexpr(ex, :ref)
 
+function rewrite_and_return(x)
+    variable, code = rewrite(x)
+    return :($code; $variable)
+end
 function rewrite(x)
     variable = gensym()
-    new_variable, code = _rewrite_toplevel(x, variable)
-    return quote
-        $variable = MutableArithmetics.Zero()
-        $code
-        $new_variable
-    end
+    new_variable, code = rewrite_to(x, variable)
+    return new_variable, :($variable = MutableArithmetics.Zero(); $code)
 end
 
-_rewrite_toplevel(x, variable::Symbol) = _rewrite(x, variable, [], [])
+rewrite_to(x, variable::Symbol) = _rewrite(x, variable, [], [])
 
 function _is_comparison(ex::Expr)
     if isexpr(ex, :comparison)
@@ -192,7 +192,7 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, new_var::Sym
                 for i in 2:length(x.args)
                     if _is_complex_expr(x.args[i])
                         s = gensym()
-                        new_var_, parsed = _rewrite_toplevel(x.args[i], s)
+                        new_var_, parsed = rewrite_to(x.args[i], s)
                         push!(blk.args, :($s = MutableArithmetics.Zero(); $parsed))
                         x.args[i] = new_var_
                     else
@@ -209,7 +209,7 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, new_var::Sym
             if x.args[3] == 2
                 blk = Expr(:block)
                 s = gensym()
-                new_var_, parsed = _rewrite_toplevel(x.args[2], s)
+                new_var_, parsed = rewrite_to(x.args[2], s)
                 push!(blk.args, :($s = MutableArithmetics.Zero(); $parsed))
                 push!(blk.args, :($new_var = MutableArithmetics.add_mul!(
                     $aff, $(Expr(:call, :*, lcoeffs..., new_var_, new_var_,
@@ -222,7 +222,7 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, new_var::Sym
             else
                 blk = Expr(:block)
                 s = gensym()
-                new_var_, parsed = _rewrite_toplevel(x.args[2], s)
+                new_var_, parsed = rewrite_to(x.args[2], s)
                 push!(blk.args, :($s = MutableArithmetics.Zero(); $parsed))
                 push!(blk.args, :($new_var = MutableArithmetics.add_mul!(
                     $aff, $(Expr(:call, :*, lcoeffs...,

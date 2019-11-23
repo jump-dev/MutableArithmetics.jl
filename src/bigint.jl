@@ -1,4 +1,5 @@
 mutability(::Type{BigInt}) = IsMutable()
+mutable_copy(x::BigInt) = deepcopy(x)
 
 # zero
 promote_operation(::typeof(zero), ::Type{BigInt}) = BigInt
