@@ -55,7 +55,7 @@ julia> MutableArithmetics.rewrite_generator(:(i for i in 1:2 if isodd(i)), i -> 
 """
 function rewrite_generator(ex, inner)
     if isexpr(ex, :flatten)
-        return _parse_gen(ex.args[1], inner)
+        return rewrite_generator(ex.args[1], inner)
     end
     if !isexpr(ex, :generator)
         return inner(ex)
@@ -74,14 +74,14 @@ function rewrite_generator(ex, inner)
     if isexpr(ex.args[2], :filter) # if condition
         loop = Expr(:for, esc(itrsets(ex.args[2].args[2:end])),
                     Expr(:if, esc(ex.args[2].args[1]),
-                          _parse_gen(ex.args[1], inner)))
+                          rewrite_generator(ex.args[1], inner)))
         for idxset in ex.args[2].args[2:end]
             idxvar, s = _parse_idx_set(idxset)
             push!(idxvars, idxvar)
         end
     else
         loop = Expr(:for, esc(itrsets(ex.args[2:end])),
-                         _parse_gen(ex.args[1], inner))
+                         rewrite_generator(ex.args[1], inner))
         for idxset in ex.args[2:end]
             idxvar, s = _parse_idx_set(idxset)
             push!(idxvars, idxvar)
@@ -109,7 +109,7 @@ function _parse_generator_sum(x::Expr, aff::Symbol, lcoeffs, rcoeffs, new_var)
     # We used to preallocate the expression at the lowest level of the loop.
     # When rewriting this some benchmarks revealed that it actually doesn't
     # seem to help anymore, so might as well keep the code simple.
-    code = _parse_gen(x, t -> _rewrite(t, aff, lcoeffs, rcoeffs, aff)[2])
+    code = rewrite_generator(x, t -> _rewrite(t, aff, lcoeffs, rcoeffs, aff)[2])
     return :($code; $new_var=$aff)
 end
 

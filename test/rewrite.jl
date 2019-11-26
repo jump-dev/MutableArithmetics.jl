@@ -182,9 +182,11 @@ function sum_test(matrix)
     end
     @testset "sum(affs::Array{AffExpr})" begin
         @test_rewrite sum([2matrix[i, j] for i in 1:size(matrix, 1), j in 1:size(matrix, 2)])
+        @test_rewrite sum(2matrix[i, j] for i in 1:size(matrix, 1), j in 1:size(matrix, 2))
     end
     @testset "sum(quads::Array{QuadExpr})" begin
         @test_rewrite sum([2matrix[i, j]^2 for i in 1:size(matrix, 1), j in 1:size(matrix, 2)])
+        @test_rewrite sum(2matrix[i, j]^2 for i in 1:size(matrix, 1), j in 1:size(matrix, 2))
     end
 end
 
