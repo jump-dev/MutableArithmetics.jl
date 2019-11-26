@@ -23,9 +23,18 @@ include("utilities.jl")
         @test_throws DimensionMismatch MA.mul(BigInt[1 1; 1 1], BigInt[])
         @test_throws DimensionMismatch MA.mul_to!(BigInt[], BigInt[1 1; 1 1], BigInt[1; 1])
 
+        @testset "mutability" begin
+            alloc_test(() -> MA.promote_operation(*, typeof(A), typeof(x)), 0)
+            alloc_test(() -> MA.promote_operation(+, typeof(y), MA.promote_operation(*, typeof(A), typeof(x))), 0)
+            alloc_test(() -> MA.promote_operation(MA.add_mul, typeof(y), typeof(A), typeof(x)), 0)
+            alloc_test(() -> MA.mutability(typeof(y), MA.add_mul, typeof(y), typeof(A), typeof(x)), 0)
+            alloc_test(() -> MA.mutability(y, MA.add_mul, y, A, x), 0)
+        end
+
         # 40 bytes to create the buffer
         # 8 bytes in the double for loop. FIXME: figure out why
         alloc_test(() -> MA.add_mul!(y, A, x), 48)
+        alloc_test(() -> MA.operate_fallback!(MA.IsMutable(), MA.add_mul, y, A, x), 48)
         alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), 48)
         alloc_test(() -> MA.mutable_operate!(MA.add_mul, y, A, x), 48)
     end
@@ -51,6 +60,14 @@ include("utilities.jl")
         @test MA.mutability(C, *, A, B) isa MA.IsMutable
         @test_throws DimensionMismatch MA.mul(BigInt[1 1; 1 1], zeros(BigInt, 1, 1))
         @test_throws DimensionMismatch MA.mul_to!(zeros(BigInt, 1, 1), BigInt[1 1; 1 1], zeros(BigInt, 2, 1))
+
+        @testset "mutability" begin
+            alloc_test(() -> MA.promote_operation(*, typeof(A), typeof(B)), 0)
+            alloc_test(() -> MA.promote_operation(+, typeof(C), MA.promote_operation(*, typeof(A), typeof(B))), 0)
+            alloc_test(() -> MA.promote_operation(MA.add_mul, typeof(C), typeof(A), typeof(B)), 0)
+            alloc_test(() -> MA.mutability(typeof(C), MA.add_mul, typeof(C), typeof(A), typeof(B)), 0)
+            alloc_test(() -> MA.mutability(C, MA.add_mul, C, A, B), 0)
+        end
 
         # 40 bytes to create the buffer
         # 8 bytes in the double for loop. FIXME: figure out why

@@ -107,6 +107,9 @@ possibly modifying `buffer`. Can only be called if
 function mutable_buffered_operate!(buffer, op::Function, args::Vararg{Any, N}) where N
     mutable_buffered_operate_to!(buffer, args[1], op, args...)
 end
+function mutable_buffered_operate!(::Nothing, op::Function, args::Vararg{Any, N}) where N
+    return mutable_operate!(op, args...)
+end
 
 """
     operate_to!(output, op::Function, args...)
