@@ -87,6 +87,13 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
     return ret
 end
 function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
+                          A::SparseMat, B::SparseMat,
+                          α::Vararg{Union{T, Scaling}, N}) where {T, N}
+    # Resolve ambiguity (detected on Julia v1.3) with two methods above.
+    # TODO adapt implementation of `SparseArray.spmatmul`
+    mutable_operate!(add_mul, ret, Matrix(A), B, α...)
+end
+function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
                           A::AbstractMatrix,
                           adjB::TransposeOrAdjoint{<:Any, <:SparseMat},
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
@@ -104,6 +111,20 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
         end
     end
     return ret
+end
+function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
+                          A::SparseMat, B::TransposeOrAdjoint{<:Any, <:SparseMat},
+                          α::Vararg{Union{T, Scaling}, N}) where {T, N}
+    # Resolve ambiguity (detected on Julia v1.3) with two methods above.
+    # TODO adapt implementation of `SparseArray.spmatmul`
+    mutable_operate!(add_mul, ret, Matrix(A), B, α...)
+end
+function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
+                          A::TransposeOrAdjoint{<:Any, <:SparseMat}, B::SparseMat,
+                          α::Vararg{Union{T, Scaling}, N}) where {T, N}
+    # Resolve ambiguity (detected on Julia v1.3) with two methods above.
+    # TODO adapt implementation of `SparseArray.spmatmul`
+    mutable_operate!(add_mul, ret, Matrix(A), B, α...)
 end
 
 # TODO
