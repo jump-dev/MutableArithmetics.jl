@@ -32,10 +32,7 @@ include("Test/Test.jl")
 # Implementation of the interface for Base types
 import LinearAlgebra
 const Scaling = Union{Number, LinearAlgebra.UniformScaling}
-#mutable_copy(A::LinearAlgebra.Symmetric) = LinearAlgebra.Symmetric(mutable_copy(parent(A)), ifelse(A.uplo == 'U', :U, :L))
-## Broadcast applies the transpose
-#mutable_copy(A::LinearAlgebra.Transpose) = LinearAlgebra.Transpose(mutable_copy(parent(A)))
-#mutable_copy(A::LinearAlgebra.Adjoint) = LinearAlgebra.Adjoint(mutable_copy(parent(A)))
+scaling(x::Scaling) = x
 include("bigint.jl")
 include("linear_algebra.jl")
 
@@ -43,8 +40,8 @@ isequal_canonical(a, b) = a == b
 
 include("rewrite.jl")
 
-include("dispatch.jl")
-
 include("sparse_arrays.jl")
+
+include("dispatch.jl")
 
 end # module

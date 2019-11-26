@@ -36,14 +36,31 @@ function _parse_idx_set(arg::Expr)
     error("Invalid syntax: $arg")
 end
 
-# takes a generator statement and returns a properly nested for loop
-# with nested filters as specified
-function _parse_gen(ex, atleaf)
+"""
+    rewrite_generator(expr::Expr, inner::Function)
+
+Rewrites the generator statements `expr` and returns a properly nested for loop
+with nested filters as specified.
+
+# Examples
+
+```jldoctest
+julia> using MutableArithmetics
+
+julia> MutableArithmetics.rewrite_generator(:(i for i in 1:2 if isodd(i)), i -> :(\$i + 1))
+:(for \$(Expr(:escape, :(i = 1:2)))
+      if \$(Expr(:escape, :(isodd(i))))
+          i + 1
+      end
+  end)
+```
+"""
+function rewrite_generator(ex, inner)
     if isexpr(ex, :flatten)
-        return _parse_gen(ex.args[1], atleaf)
+        return rewrite_generator(ex.args[1], inner)
     end
     if !isexpr(ex, :generator)
-        return atleaf(ex)
+        return inner(ex)
     end
     function itrsets(sets)
         if isa(sets, Expr)
@@ -59,14 +76,14 @@ function _parse_gen(ex, atleaf)
     if isexpr(ex.args[2], :filter) # if condition
         loop = Expr(:for, esc(itrsets(ex.args[2].args[2:end])),
                     Expr(:if, esc(ex.args[2].args[1]),
-                          _parse_gen(ex.args[1], atleaf)))
+                          rewrite_generator(ex.args[1], inner)))
         for idxset in ex.args[2].args[2:end]
             idxvar, s = _parse_idx_set(idxset)
             push!(idxvars, idxvar)
         end
     else
         loop = Expr(:for, esc(itrsets(ex.args[2:end])),
-                         _parse_gen(ex.args[1], atleaf))
+                         rewrite_generator(ex.args[1], inner))
         for idxset in ex.args[2:end]
             idxvar, s = _parse_idx_set(idxset)
             push!(idxvars, idxvar)
@@ -94,7 +111,7 @@ function _parse_generator_sum(x::Expr, aff::Symbol, lcoeffs, rcoeffs, new_var)
     # We used to preallocate the expression at the lowest level of the loop.
     # When rewriting this some benchmarks revealed that it actually doesn't
     # seem to help anymore, so might as well keep the code simple.
-    code = _parse_gen(x, t -> _rewrite(t, aff, lcoeffs, rcoeffs, aff)[2])
+    code = rewrite_generator(x, t -> _rewrite(t, aff, lcoeffs, rcoeffs, aff)[2])
     return :($code; $new_var=$aff)
 end
 
@@ -170,7 +187,7 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, new_var::Sym
                 aff_ = aff
                 start = 2
             end
-            return rewrite_sum(x.args[start:end], aff_, vcat(-1.0, lcoeffs), rcoeffs, new_var, block)
+            return rewrite_sum(x.args[start:end], aff_, vcat(-1, lcoeffs), rcoeffs, new_var, block)
         elseif x.args[1] == :*
             # we might need to recurse on multiple arguments, e.g.,
             # (x+y)*(x+y)
@@ -239,7 +256,7 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, new_var::Sym
             return new_var, _parse_generator(x, aff, lcoeffs, rcoeffs, new_var)
         end
     elseif isexpr(x, :curly)
-        _error_curly(x)
+        Base.error("The curly syntax (sum{},prod{},norm2{}) is no longer supported. Expression: $x.")
     end
     if isa(x, Expr) && _is_comparison(x)
         error("Unexpected comparison in expression $x.")
