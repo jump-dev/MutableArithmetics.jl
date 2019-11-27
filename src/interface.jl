@@ -10,6 +10,9 @@ Returns the type returned to the call `operate(op, args...)` where the types of
 the arguments `args` are `ArgsTypes`.
 """
 function promote_operation end
+# Julia v1.0.x has trouble with inference with the `Vararg` method, see
+# https://travis-ci.org/JuliaOpt/JuMP.jl/jobs/617606373
+promote_operation(op::Function, x::Type, y::Type) = typeof(op(zero(x), zero(y)))
 function promote_operation(op::Function, args::Vararg{Type, N}) where N
     return typeof(op(zero.(args)...))
 end
