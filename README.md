@@ -16,7 +16,7 @@ allow anyone to make use of mutability when desired.
 
 The package allows users to indicate when a mutable implementation of a certain
 method is available through the use of so-called *traits*, as well as providing
-a simple way forusers to make operations fall back to these implementations.
+a simple way for users to make operations fall back to these implementations.
 An example implementation of this interface is given in `src/bigint.jl`.
 
 ## Documentation
