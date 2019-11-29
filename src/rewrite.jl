@@ -22,8 +22,11 @@ function _try_parse_idx_set(arg::Expr)
         @assert length(arg.args) == 2
         return true, arg.args[1], arg.args[2]
     elseif isexpr(arg, :call) && arg.args[1] === :in
+        # FIXME It seems not to be called anymore on Julia v1.0 as `i in idx`
+        #       is parsed as `i = idx`.
         return true, arg.args[2], arg.args[3]
     else
+        # FIXME When is this called ?
         return false, nothing, nothing
     end
 end
@@ -141,8 +144,10 @@ _rewrite_to(x, variable::Symbol) = _rewrite(x, variable, [], [])
 
 function _is_comparison(ex::Expr)
     if isexpr(ex, :comparison)
+        # Range comparison `_ <= _ <= _`.
         return true
     elseif isexpr(ex, :call)
+        # Binary comparison `_ <= _`.
         if ex.args[1] in (:<=, :≤, :>=, :≥, :(==))
             return true
         else
@@ -153,10 +158,10 @@ function _is_comparison(ex::Expr)
     end
 end
 
-# x[i=1] <= 2 is a somewhat common user error. Catch it here.
+# `x[i = 1]` is a somewhat common user error. Catch it here.
 function _has_assignment_in_ref(ex::Expr)
     if isexpr(ex, :ref)
-        return any(x -> isexpr(x, :(=)), ex.args)
+        return any(x -> isexpr(x, :kw), ex.args)
     else
         return any(_has_assignment_in_ref, ex.args)
     end
@@ -266,14 +271,13 @@ function _rewrite(x, aff::Symbol, lcoeffs::Vector, rcoeffs::Vector, new_var::Sym
             return new_var, _parse_generator(x, aff, lcoeffs, rcoeffs, new_var)
         end
     elseif isexpr(x, :curly)
-        Base.error("The curly syntax (sum{},prod{},norm2{}) is no longer supported. Expression: $x.")
+        Base.error("The curly syntax (sum{},prod{},norm2{}) is no longer supported. Expression: `$x`.")
     end
     if isa(x, Expr) && _is_comparison(x)
-        error("Unexpected comparison in expression $x.")
+        error("Unexpected comparison in expression `$x`.")
     end
     if isa(x, Expr) && _has_assignment_in_ref(x)
-        @warn "Unexpected assignment in expression $x. This will" *
-                     " become a syntax error in a future release."
+        error("Unexpected assignment in expression `$x`.")
     end
     # at the lowest level
     callexpr = Expr(:call, :(MutableArithmetics.add_mul!), aff, lcoeffs..., esc(x), rcoeffs...)

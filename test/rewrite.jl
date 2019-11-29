@@ -2,6 +2,18 @@ using LinearAlgebra, SparseArrays, Test
 import MutableArithmetics
 const MA = MutableArithmetics
 
+# Test that the macro call `m` throws an error exception during pre-compilation
+macro test_macro_throws(error, m)
+    # See https://discourse.julialang.org/t/test-throws-with-macros-after-pr-23533/5878
+    return quote
+        @test_throws $(esc(error)) try
+            @eval $m
+        catch catched_error
+            throw(catched_error.error)
+        end
+    end
+end
+
 macro test_rewrite(expr)
     esc(quote
         @test MA.isequal_canonical(MA.@rewrite($expr), $expr)
@@ -9,6 +21,38 @@ macro test_rewrite(expr)
 end
 
 include("dummy.jl")
+
+function error_test(x, y, z)
+    err = ErrorException("Unexpected assignment in expression `y[j=1]`.")
+    @test_macro_throws err MA.@rewrite y[j = 1]
+    err = ErrorException("Unexpected assignment in expression `x[i=1]`.")
+    @test_macro_throws err MA.@rewrite y + x[i = 1] + z
+    err = ErrorException("The curly syntax (sum{},prod{},norm2{}) is no longer supported. Expression: `sum{(i for i = 1:2)}`.")
+    @test_macro_throws err MA.@rewrite sum{i for i in 1:2}
+    err = ErrorException("Unexpected comparison in expression `z >= y`.")
+    @test_macro_throws err MA.@rewrite z >= y
+    err = ErrorException("Unexpected comparison in expression `y <= z`.")
+    @test_macro_throws err MA.@rewrite y <= z
+    err = ErrorException("Unexpected comparison in expression `x <= y <= z`.")
+    @test_macro_throws err MA.@rewrite x <= y <= z
+end
+
+function cube_test(x)
+    @test_rewrite x^3
+    @test_rewrite (x + 1)^3
+    @test_rewrite x^2 * x
+    @test_rewrite (x + 1)^2 * x
+    @test_rewrite x^2 * (x + 1)
+    @test_rewrite (x + 1)^2 * (x + 1)
+    @test_rewrite x * x^2
+    @test_rewrite (x + 1) * x^2
+    @test_rewrite x * (x + 1)^2
+    @test_rewrite (x + 1) * (x + 1)^2
+    @test_rewrite x * x * x
+    @test_rewrite (x + 1) * x * x
+    @test_rewrite x * (x + 1) * x
+    @test_rewrite x * x * (x + 1)
+end
 
 function basic_operators_test(w, x, y, z; supports_float = true)
     a = 7
@@ -551,6 +595,12 @@ using OffsetArrays
         (BigInt, true),
         (DummyBigInt, false)
     ]
+    @testset "Error" begin
+        error_test(T(1), T(2), T(3))
+    end
+    @testset "Cube" begin
+        cube_test(T(2))
+    end
     @testset "Basic" begin
         basic_operators_test(T(1), T(2), T(3), T(4), supports_float = supports_float)
     end
