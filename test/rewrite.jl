@@ -23,6 +23,8 @@ end
 include("dummy.jl")
 
 function error_test(x, y, z)
+    err = ErrorException("Expected `sum` outside generator expression; got `prod`.")
+    @test_macro_throws err MA.@rewrite(prod(i for i in 1:2))
     err = ErrorException("Unexpected assignment in expression `y[j=1]`.")
     @test_macro_throws err MA.@rewrite y[j = 1]
     err = ErrorException("Unexpected assignment in expression `x[i=1]`.")

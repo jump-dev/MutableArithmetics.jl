@@ -58,14 +58,21 @@ function mutable_broadcast!(op::Function, A::Array, args::Vararg{Any, N}) where 
     return copyto!(A, mutable_broadcasted(instantiated))
 end
 
-
 """
     broadcast!(op::Function, args...)
 
 Returns the value of `broadcast(op, args...)`, possibly modifying `args[1]`.
 """
 function broadcast!(op::Function, args::Vararg{Any, N}) where N
-    return broadcast_fallback!(broadcast_mutability(args[1], op, args...), op, args...)
+    # TODO use traits instead
+    if any(x -> x isa LinearAlgebra.UniformScaling, args)
+        return broadcast_with_uniform_scaling!(op, args...)
+    else
+        return broadcast_fallback!(broadcast_mutability(args[1], op, args...), op, args...)
+    end
+end
+function broadcast_with_uniform_scaling!(op::Function, args::Vararg{Any, N}) where N
+    return op(args...)
 end
 
 function broadcast_fallback!(::NotMutable, op::Function, args::Vararg{Any, N}) where N

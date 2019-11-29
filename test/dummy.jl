@@ -4,7 +4,11 @@ struct DummyBigInt <: MA.AbstractMutable
     data::BigInt
 end
 DummyBigInt(J::UniformScaling) = DummyBigInt(J.λ)
+
+# Broadcast
+Base.ndims(::Type{DummyBigInt}) = 0
 Base.broadcastable(x::DummyBigInt) = Ref(x)
+
 Base.promote_rule(::Type{DummyBigInt}, ::Type{<:Union{Integer, UniformScaling{<:Integer}}}) = DummyBigInt
 # `copy` on BigInt returns the same instance anyway
 Base.copy(x::DummyBigInt) = x
