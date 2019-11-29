@@ -15,3 +15,4 @@ end
 end
 include("matmul.jl")
 include("rewrite.jl")
+include("hygiene.jl")
