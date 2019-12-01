@@ -11,6 +11,24 @@ function mutable_operate!(::typeof(zero), A::SparseMat)
     return A
 end
 
+function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{<:SparseArrays.AbstractSparseArray{Tv, Ti, N}}, ::Type{Array{T, N}}) where {Tv, Ti, T, N}
+    return Array{promote_operation(op, Tv, T), N}
+end
+function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{Array{T, N}}, ::Type{<:SparseArrays.AbstractSparseArray{Tv, Ti, N}}) where {Tv, Ti, T, N}
+    return Array{promote_operation(op, Tv, T), N}
+end
+function _mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Matrix, B::SparseMat, left_factors::Tuple, right_factors::Tuple)
+    B_nonzeros = SparseArrays.nonzeros(B)
+    B_rowvals = SparseArrays.rowvals(B)
+    for col in 1:size(B, 2)
+        for k ∈ SparseArrays.nzrange(B, col)
+            row = B_rowvals[k]
+            A[row, col] = operate!(mul_rhs(op), A[row, col], left_factors..., B_nonzeros[k], right_factors...)
+        end
+    end
+    return A
+end
+
 similar_array_type(::Type{SparseArrays.SparseVector{Tv, Ti}}, ::Type{T}) where {T, Tv, Ti} = SparseArrays.SparseVector{T, Ti}
 similar_array_type(::Type{SparseMat{Tv, Ti}}, ::Type{T}) where {T, Tv, Ti} = SparseMat{T, Ti}
 

@@ -26,22 +26,21 @@ include("interface.jl")
 include("shortcuts.jl")
 include("broadcast.jl")
 
-# Test that can be used to test an implementation of the interface
-include("Test/Test.jl")
-
 # Implementation of the interface for Base types
 import LinearAlgebra
 const Scaling = Union{Number, LinearAlgebra.UniformScaling}
 scaling(x::Scaling) = x
 include("bigint.jl")
 include("linear_algebra.jl")
+include("sparse_arrays.jl")
 
 isequal_canonical(a, b) = a == b
 
 include("rewrite.jl")
-
-include("sparse_arrays.jl")
-
 include("dispatch.jl")
+
+# Test that can be used to test an implementation of the interface
+include("Test/Test.jl")
+
 
 end # module

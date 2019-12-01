@@ -152,25 +152,34 @@ Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable, <:SparseMat}, B::StridedMatr
 # elements here.
 
 function Base.:*(A::Scaling, B::SparseMat{<:AbstractMutable})
-    return SparseMat(B.m, B.n, copy(B.colptr), copy(rowvals(B)), A .* nonzeros(B))
+    return SparseMat(B.m, B.n, copy(B.colptr), copy(SparseArrays.rowvals(B)), A .* SparseArrays.nonzeros(B))
+end
+# Fix ambiguity with Base method
+function Base.:*(A::Number, B::SparseMat{<:AbstractMutable})
+    return SparseMat(B.m, B.n, copy(B.colptr), copy(SparseArrays.rowvals(B)), A .* SparseArrays.nonzeros(B))
 end
 
 function Base.:*(A::SparseMat{<:AbstractMutable}, B::Scaling)
-    return SparseMat(A.m, A.n, copy(A.colptr), copy(rowvals(A)), nonzeros(A) .* B)
+    return SparseMat(A.m, A.n, copy(A.colptr), copy(SparseArrays.rowvals(A)), SparseArrays.nonzeros(A) .* B)
+end
+# Fix ambiguity with Base method
+function Base.:*(A::SparseMat{<:AbstractMutable}, B::Number)
+    return SparseMat(A.m, A.n, copy(A.colptr), copy(SparseArrays.rowvals(A)), SparseArrays.nonzeros(A) .* B)
 end
 
 function Base.:*(A::AbstractMutable, B::SparseMat)
-    return SparseMat(B.m, B.n, copy(B.colptr), copy(rowvals(B)), A .* nonzeros(B))
+    return SparseMat(B.m, B.n, copy(B.colptr), copy(SparseArrays.rowvals(B)), A .* SparseArrays.nonzeros(B))
 end
 
 function Base.:*(A::SparseMat, B::AbstractMutable)
-    return SparseMat(A.m, A.n, copy(A.colptr), copy(rowvals(A)), nonzeros(A) .* B)
+    return SparseMat(A.m, A.n, copy(A.colptr), copy(SparseArrays.rowvals(A)), SparseArrays.nonzeros(A) .* B)
 end
 
 function Base.:/(A::SparseMat{<:AbstractMutable}, B::Scaling)
-    return SparseMat(A.m, A.n, copy(A.colptr), copy(rowvals(A)), nonzeros(A) ./ B)
+    return SparseMat(A.m, A.n, copy(A.colptr), copy(SparseArrays.rowvals(A)), SparseArrays.nonzeros(A) ./ B)
 end
 
+# +(::SparseMatrixCSC) is not defined for generic types in Base.
 Base.:+(A::AbstractArray{<:AbstractMutable}) = A
 
 # Fix https://github.com/JuliaLang/julia/issues/32374 as done in
