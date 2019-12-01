@@ -37,6 +37,11 @@ end
 
 # Special-case because the the base version wants to do fill!(::Array{AbstractVariableRef}, zero(GenericAffExpr{Float64,eltype(x)}))
 _one_indexed(A) = all(x -> isa(x, Base.OneTo), axes(A))
+function LinearAlgebra.diagm_container(size, kv::Pair{<:Integer,<:AbstractVector{<:AbstractMutable}}...)
+    T = promote_type(map(x -> promote_type(eltype(x.second)), kv)...)
+    U = promote_type(T, promote_operation(zero, T))
+    return zeros(U, LinearAlgebra.diagm_size(size, kv...)...)
+end
 function LinearAlgebra.diagm(x::AbstractVector{<:AbstractMutable})
     @assert _one_indexed(x) # `LinearAlgebra.diagm` doesn't work for non-one-indexed arrays in general.
     ZeroType = promote_operation(zero, eltype(x))
@@ -177,6 +182,11 @@ end
 
 function Base.:/(A::SparseMat{<:AbstractMutable}, B::Scaling)
     return SparseMat(A.m, A.n, copy(A.colptr), copy(SparseArrays.rowvals(A)), SparseArrays.nonzeros(A) ./ B)
+end
+
+# Base assumes that the element type is unaffected by `-`
+function Base.:-(A::SparseMat{<:AbstractMutable})
+    return SparseMat(A.m, A.n, copy(A.colptr), copy(SparseArrays.rowvals(A)), -SparseArrays.nonzeros(A))
 end
 
 # +(::SparseMatrixCSC) is not defined for generic types in Base.

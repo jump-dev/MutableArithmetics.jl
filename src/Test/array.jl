@@ -220,7 +220,7 @@ end
 
 function _broadcast_test(x, A)
     B = sparse(A)
-    y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), vec(x))
+    y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), collect(vec(x)))
 
     @test MA.isequal_canonical(A .+ x, B .+ x)
     @test MA.isequal_canonical(A .+ x, A .+ y)
@@ -287,7 +287,7 @@ end
 
 function _broadcast_division_test(x, A)
     B = sparse(A)
-    y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), vec(x))
+    y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), collect(vec(x)))
 
     @test MA.isequal_canonical(x ./ A, x ./ B)
     @test MA.isequal_canonical(x ./ A, y ./ A)
@@ -306,13 +306,13 @@ function broadcast_division_test(x)
 end
 
 function symmetric_unary_test(x)
-    if x isa AbstractMatrix
+    if x isa AbstractMatrix && size(x, 1) == size(x, 2)
         unary_test(LinearAlgebra.Symmetric(x))
     end
 end
 
 function matrix_uniform_scaling_test(x)
-    if !(x isa AbstractMatrix)
+    if !(x isa AbstractMatrix && size(x, 1) == size(x, 2))
         return
     end
     add_test(x, I)
@@ -329,7 +329,7 @@ function matrix_uniform_scaling_test(x)
 end
 
 function symmetric_matrix_uniform_scaling_test(x)
-    if x isa AbstractMatrix
+    if x isa AbstractMatrix && size(x, 1) == size(x, 2)
         matrix_uniform_scaling_test(LinearAlgebra.Symmetric(x))
     end
 end
