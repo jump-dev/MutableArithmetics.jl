@@ -37,10 +37,19 @@ end
 
 # Special-case because the the base version wants to do fill!(::Array{AbstractVariableRef}, zero(GenericAffExpr{Float64,eltype(x)}))
 _one_indexed(A) = all(x -> isa(x, Base.OneTo), axes(A))
-function LinearAlgebra.diagm_container(size, kv::Pair{<:Integer,<:AbstractVector{<:AbstractMutable}}...)
-    T = promote_type(map(x -> promote_type(eltype(x.second)), kv)...)
-    U = promote_type(T, promote_operation(zero, T))
-    return zeros(U, LinearAlgebra.diagm_size(size, kv...)...)
+if VERSION <= v"1.2"
+    function LinearAlgebra.diagm_container(kv::Pair{<:Integer,<:AbstractVector{<:AbstractMutable}}...)
+        T = promote_type(map(x -> eltype(x.second), kv)...)
+        U = promote_type(T, promote_operation(zero, T))
+        n = mapreduce(x -> length(x.second) + abs(x.first), max, kv)
+        return zeros(U, n, n)
+    end
+else
+    function LinearAlgebra.diagm_container(size, kv::Pair{<:Integer,<:AbstractVector{<:AbstractMutable}}...)
+        T = promote_type(map(x -> promote_type(eltype(x.second)), kv)...)
+        U = promote_type(T, promote_operation(zero, T))
+        return zeros(U, LinearAlgebra.diagm_size(size, kv...)...)
+    end
 end
 function LinearAlgebra.diagm(x::AbstractVector{<:AbstractMutable})
     @assert _one_indexed(x) # `LinearAlgebra.diagm` doesn't work for non-one-indexed arrays in general.
