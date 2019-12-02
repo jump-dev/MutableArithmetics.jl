@@ -6,45 +6,52 @@ mutable_copy(A::Array) = copy_if_mutable.(A)
 function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{Array{S, N}}, ::Type{Array{T, N}}) where {S, T, N}
     return Array{promote_operation(op, S, T), N}
 end
-function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N}, B::Array{T, N}) where {S, T, N}
-    for i in eachindex(A)
-        A[i] = operate!(op, A[i], B[i])
-    end
-    return A
+function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{LinearAlgebra.UniformScaling{S}}, ::Type{Matrix{T}}) where {S, T}
+    return Matrix{promote_operation(op, S, T)}
+end
+function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{Matrix{T}}, ::Type{LinearAlgebra.UniformScaling{S}}) where {S, T}
+    return Matrix{promote_operation(op, S, T)}
 end
 
-# UniformScaling
-function promote_operation(op::typeof(+), ::Type{Array{T, 2}}, ::Type{LinearAlgebra.UniformScaling{S}}) where {S, T}
-    return Array{promote_operation(op, T, S), 2}
-end
-function promote_operation(op::typeof(+), ::Type{LinearAlgebra.UniformScaling{S}}, ::Type{Array{T, 2}}) where {S, T}
-    return Array{promote_operation(op, S, T), 2}
-end
-function mutable_operate!(::typeof(+), A::Matrix, B::LinearAlgebra.UniformScaling)
+# Only `Scaling`
+function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Matrix, B::LinearAlgebra.UniformScaling)
     n = LinearAlgebra.checksquare(A)
     for i in 1:n
-        A[i, i] = operate!(+, A[i, i], B)
+        A[i, i] = operate!(op, A[i, i], B)
     end
     return A
 end
 function mutable_operate!(::typeof(add_mul), A::Matrix, B::Scaling, C::Scaling, D::Vararg{Scaling, N}) where N
     return mutable_operate!(+, A, *(B, C, D...))
 end
-function mutable_operate!(::typeof(add_mul), A::Array{S, N}, B::Array{T, N}, α::Vararg{Scaling, M}) where {S, T, N, M}
+
+function sub_mul end
+operate!(::typeof(sub_mul), x, args::Vararg{Any, N}) where {N} = operate!(add_mul, x, -1, args...)
+
+mul_rhs(::typeof(+)) = add_mul
+mul_rhs(::typeof(-)) = sub_mul
+
+# `Scaling` and `Array`
+function _mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N}, B::Array{T, N}, left_factors::Tuple, right_factors::Tuple) where {S, T, N}
     for i in eachindex(A)
-        A[i] = operate!(add_mul, A[i], B[i], α...)
+        A[i] = operate!(mul_rhs(op), A[i], left_factors..., B[i], right_factors...)
     end
     return A
 end
-function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α::Scaling, B::Array{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
-    for i in eachindex(A)
-        A[i] = operate!(add_mul, A[i], α, B[i], β...)
-    end
-    return A
+
+function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N}, B::AbstractArray{T, N}) where {S, T, N}
+    return _mutable_operate!(op, A, B, tuple(), tuple())
 end
-function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α1::Scaling, α2::Scaling, B::Array{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
-    return mutable_operate!(add_mul, A, α1 * α2, B, β...)
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, B::AbstractArray{T, N}, α::Vararg{Scaling, M}) where {S, T, N, M}
+    return _mutable_operate!(+, A, B, tuple(), α)
 end
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α::Scaling, B::AbstractArray{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+    return _mutable_operate!(+, A, B, (α,), β)
+end
+function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α1::Scaling, α2::Scaling, B::AbstractArray{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+    return _mutable_operate!(+, A, B, (α1, α2), β)
+end
+
 # Fallback, we may be able to be more efficient in more cases by adding more specialized methods
 function mutable_operate!(::typeof(add_mul), A::Array, x, y, args::Vararg{Any, N}) where N
     return mutable_operate!(add_mul, A, x, *(y, args...))

@@ -2,14 +2,14 @@ macro test_suite(setname, subsets=false)
     testname = Symbol(string(setname) * "_test")
     testdict = Symbol(string(testname) * "s")
     if subsets
-        runtest = :( f(T, exclude) )
+        runtest = :( f(args...; exclude = exclude) )
     else
-        runtest = :( f(T) )
+        runtest = :( f(args...) )
     end
     esc(:(
-        function $testname(::Type{T},
+        function $testname(args...;
                            exclude::Vector{String} = String[]) where T
-            for (name,f) in $testdict
+            for (name, f) in $testdict
                 if name in exclude
                     continue
                 end
