@@ -185,7 +185,9 @@ function dot_test(x)
     @test_rewrite dot(A, x)
     @test_rewrite dot(x, A)
 
-    y = repeat(x, outer = (one.(size(x))..., size(x, 1)))
+    # Needed for Julia v1.0.x, as repeat to an array of more dimension fails.
+    xx = reshape(x, (size(x)..., 1))
+    y = repeat(xx, outer = (one.(size(x))..., size(x, 1)))
     @test_rewrite dot(x, _constant(x)) - dot(y, _constant(y))
 end
 
