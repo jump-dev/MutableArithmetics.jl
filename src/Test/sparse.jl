@@ -20,8 +20,8 @@ function sparse_test(X11, X23, Xd)
           0     0      0]
 
     _mat_mat_test(Xd, Yd)
-    _mat_mat_test(Yd, Zd)
-    _mat_mat_test(Zd, Xd)
+    _add_test(Yd, Zd)
+    _add_test(Zd, Xd)
     _mat_mat_test(Xd, Y)
     _mat_mat_test(Xd, Xd)
 

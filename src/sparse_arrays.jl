@@ -54,7 +54,6 @@ function mutable_operate!(::typeof(add_mul), ret::VecOrMat{T},
                           B::AbstractVecOrMat,
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
     _dim_check(ret, adjA, B)
-    λ = scaling.(α)
     A = parent(adjA)
     A_nonzeros = SparseArrays.nonzeros(A)
     A_rowvals = SparseArrays.rowvals(A)
@@ -64,7 +63,7 @@ function mutable_operate!(::typeof(add_mul), ret::VecOrMat{T},
             # TODO replace by nzrange
             for j ∈ A.colptr[col]:(A.colptr[col + 1] - 1)
                 A_val = _mirror_transpose_or_adjoint(A_nonzeros[j], adjA)
-                mutable_operate!(add_mul, cur, A_val, B[A_rowvals[j], k], λ...)
+                mutable_operate!(add_mul, cur, A_val, B[A_rowvals[j], k], α...)
             end
         end
     end
@@ -74,12 +73,11 @@ function mutable_operate!(::typeof(add_mul), ret::VecOrMat{T},
                           A::SparseMat, B::AbstractVecOrMat,
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
     _dim_check(ret, A, B)
-    λ = scaling.(α)
     A_nonzeros = SparseArrays.nonzeros(A)
     A_rowvals = SparseArrays.rowvals(A)
     for col ∈ 1:size(A, 2)
         for k ∈ 1:size(ret, 2)
-            αxj = *(B[col,k], λ...)
+            αxj = *(B[col,k], α...)
             for j ∈ SparseArrays.nzrange(A, col)
                 mutable_operate!(add_mul, ret[A_rowvals[j], k], A_nonzeros[j], αxj)
             end
@@ -91,14 +89,13 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
                           A::AbstractMatrix, B::SparseMat,
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
     _dim_check(ret, A, B)
-    λ = scaling.(α)
     rowval = SparseArrays.rowvals(B)
     B_nonzeros = SparseArrays.nonzeros(B)
     for multivec_row in 1:size(A, 1)
         for col ∈ 1:size(B, 2)
             cur = ret[multivec_row, col]
             for k ∈ SparseArrays.nzrange(B, col)
-                mutable_operate!(add_mul, cur, A[multivec_row, rowval[k]], B_nonzeros[k], λ...)
+                mutable_operate!(add_mul, cur, A[multivec_row, rowval[k]], B_nonzeros[k], α...)
             end
         end
     end
@@ -116,14 +113,13 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
                           adjB::TransposeOrAdjoint{<:Any, <:SparseMat},
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
     _dim_check(ret, A, adjB)
-    λ = scaling.(α)
     B = parent(adjB)
     B_rowvals = SparseArrays.rowvals(B)
     B_nonzeros = SparseArrays.nonzeros(B)
     for B_col ∈ 1:size(B, 2), k ∈ SparseArrays.nzrange(B, B_col)
         B_row = B_rowvals[k]
         B_val = _mirror_transpose_or_adjoint(B_nonzeros[k], adjB)
-        αB_val = *(B_val, λ...)
+        αB_val = *(B_val, α...)
         for A_row in 1:size(A, 1)
             mutable_operate!(add_mul, ret[A_row, B_row], A[A_row, B_col], αB_val)
         end

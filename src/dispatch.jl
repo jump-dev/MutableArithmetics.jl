@@ -62,14 +62,14 @@ function _mul!(output, A, B, α, β)
         if iszero(β)
             mutable_operate!(zero, output)
         else
-            rmul!(output, β)
+            rmul!(output, scaling(β))
         end
     end
-    return mutable_operate!(add_mul, output, A, B, α)
+    return mutable_operate!(add_mul, output, A, B, scaling(α))
 end
 function _mul!(output, A, B, α)
     mutable_operate!(zero, output)
-    return mutable_operate!(add_mul, output, A, B, α)
+    return mutable_operate!(add_mul, output, A, B, scaling(α))
 end
 function _mul!(output, A, B)
     mutable_operate!(zero, output)
@@ -187,6 +187,14 @@ end
 # Base assumes that the element type is unaffected by `-`
 function Base.:-(A::SparseMat{<:AbstractMutable})
     return SparseMat(A.m, A.n, copy(A.colptr), copy(SparseArrays.rowvals(A)), -SparseArrays.nonzeros(A))
+end
+
+# Matrix(::SparseMatrixCSC) assumes that `zero` does not affect the element type of `S`.
+function Base.Matrix(S::SparseMat{T}) where T<:AbstractMutable
+    U = promote_operation(+, promote_operation(zero, T), T)
+    A = Matrix{U}(undef, size(S)...)
+    mutable_operate!(zero, A)
+    return mutable_operate!(+, A, S)
 end
 
 # +(::SparseMatrixCSC) is not defined for generic types in Base.

@@ -177,9 +177,9 @@ function non_array_test(x)
 end
 
 function dot_test(x)
-    @test_rewrite dot(x[1], x[1])
-    @test_rewrite dot(2, x[1])
-    @test_rewrite dot(x[1], 2)
+    @test_rewrite dot(first(x), first(x))
+    @test_rewrite dot(2, first(x))
+    @test_rewrite dot(first(x), 2)
 
     A = _constant(x)
     @test_rewrite dot(A, x)
@@ -334,7 +334,7 @@ function symmetric_matrix_uniform_scaling_test(x)
     end
 end
 
-const matrix_tests = Dict(
+const array_tests = Dict(
     "matrix_vector_division" => matrix_vector_division_test,
     "non_array" => non_array_test,
     "matrix_vector" => matrix_vector_test,
@@ -349,4 +349,4 @@ const matrix_tests = Dict(
     "symmetric_matrix_uniform_scaling" => symmetric_matrix_uniform_scaling_test
 )
 
-@test_suite matrix
+@test_suite array

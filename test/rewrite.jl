@@ -58,20 +58,20 @@ using OffsetArrays
     end
     exclude = T == DummyBigInt ? ["broadcast_division", "matrix_vector_division"] : String[]
     @testset "Vector" begin
-        MA.Test.matrix_test(T[-7, 1, 4], exclude = exclude)
-        MA.Test.matrix_test(T[3, 2, 6], exclude = exclude)
+        MA.Test.array_test(T[-7, 1, 4], exclude = exclude)
+        MA.Test.array_test(T[3, 2, 6], exclude = exclude)
     end
     @testset "Matrix" begin
-        MA.Test.matrix_test(T[1 2; 2 4], exclude = exclude)
-        MA.Test.matrix_test(T[2 4; -1 3], exclude = exclude)
-        MA.Test.matrix_test(T[0 -4; 6 -5], exclude = exclude)
-        MA.Test.matrix_test(T[5 1 9; -7 2 4; -2 -7 5], exclude = exclude)
+        MA.Test.array_test(T[1 2; 2 4], exclude = exclude)
+        MA.Test.array_test(T[2 4; -1 3], exclude = exclude)
+        MA.Test.array_test(T[0 -4; 6 -5], exclude = exclude)
+        MA.Test.array_test(T[5 1 9; -7 2 4; -2 -7 5], exclude = exclude)
     end
     @testset "Tensor" begin
         S = zeros(T, 2, 2, 2)
         S[1, :, :] = T[5 -8; 3 -7]
         S[2, :, :] = T[-2 8; 8 -1]
-        MA.Test.matrix_test(S, exclude = exclude)
+        MA.Test.array_test(S, exclude = exclude)
     end
     @testset "Non-array" begin
         x = T[2, 4, 3]
