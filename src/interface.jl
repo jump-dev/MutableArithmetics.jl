@@ -10,6 +10,11 @@ Returns the type returned to the call `operate(op, args...)` where the types of
 the arguments `args` are `ArgsTypes`.
 """
 function promote_operation end
+function promote_operation(op::Function, x::Type{<:AbstractArray}, y::Type{<:AbstractArray})
+    # `zero` is not defined for `AbstractArray` so the fallback would fail with a cryptic MethodError.
+    # We replace it by a more helpful error here.
+    error("`promote_operation($op, $x, $y)` not implemented yet, please report this.")
+end
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/JuliaOpt/JuMP.jl/jobs/617606373
 function promote_operation(op::Function, x::Type, y::Type)
