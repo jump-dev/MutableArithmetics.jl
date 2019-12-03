@@ -4,6 +4,23 @@ const MA = MutableArithmetics
 
 include("utilities.jl")
 
+struct CustomArray{T, N} <: AbstractArray{T, N} end
+
+@testset "Errors" begin
+    @testset "`promote_op` error" begin
+        AT = CustomArray{Int, 3}
+        err = ErrorException("`promote_operation(+, CustomArray{Int64,3}, CustomArray{Int64,3})` not implemented yet, please report this.")
+        @test_throws err MA.promote_operation(+, AT, AT)
+    end
+
+    @testset "Dimension mismatch" begin
+        A = zeros(1, 1)
+        B = zeros(2, 2)
+        err = DimensionMismatch("Cannot sum matrices of size `(1, 1)` and size `(2, 2)`, the size of the two matrices must be equal.")
+        @test_throws err MA.@rewrite A + B
+    end
+end
+
 @testset "Matrix multiplication" begin
     @testset "matrix-vector product" begin
         A = [1 1 1; 1 1 1; 1 1 1]

@@ -313,6 +313,14 @@ function symmetric_unary_test(x)
     end
 end
 
+function symmetric_add_test(x)
+    if x isa AbstractMatrix && size(x, 1) == size(x, 2)
+        y = LinearAlgebra.Symmetric(x)
+        add_test(y, y)
+        add_test(x, y)
+    end
+end
+
 function matrix_uniform_scaling_test(x)
     if !(x isa AbstractMatrix && size(x, 1) == size(x, 2))
         return
@@ -347,6 +355,7 @@ const array_tests = Dict(
     "broadcast_division" => broadcast_division_test,
     "unary" => unary_test,
     "symmetric_unary" => symmetric_unary_test,
+    "symmetric_add" => symmetric_add_test,
     "matrix_uniform_scaling" => matrix_uniform_scaling_test,
     "symmetric_matrix_uniform_scaling" => symmetric_matrix_uniform_scaling_test
 )

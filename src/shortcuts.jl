@@ -30,6 +30,9 @@ mul!(args::Vararg{Any, N}) where {N} = operate!(*, args...)
 function promote_operation(::typeof(add_mul), T::Type, x::Type, y::Type)
     return promote_operation(+, T, promote_operation(*, x, y))
 end
+function promote_operation(::typeof(add_mul), x::Type{<:AbstractArray}, y::Type{<:AbstractArray})
+    return promote_operation(+, x, y)
+end
 function promote_operation(::typeof(add_mul), T::Type, args::Vararg{Type, N}) where N
     return promote_operation(+, T, promote_operation(*, args...))
 end

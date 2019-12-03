@@ -12,6 +12,9 @@ end
 function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{Matrix{T}}, ::Type{LinearAlgebra.UniformScaling{S}}) where {S, T}
     return Matrix{promote_operation(op, S, T)}
 end
+function promote_operation(op::Union{typeof(+), typeof(-)}, ::Type{Matrix{T}}, ::Type{<:LinearAlgebra.Symmetric{S}}) where {S, T}
+    return Matrix{promote_operation(op, S, T)}
+end
 
 # Only `Scaling`
 function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Matrix, B::LinearAlgebra.UniformScaling)
@@ -32,23 +35,35 @@ mul_rhs(::typeof(+)) = add_mul
 mul_rhs(::typeof(-)) = sub_mul
 
 # `Scaling` and `Array`
-function _mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N}, B::Array{T, N}, left_factors::Tuple, right_factors::Tuple) where {S, T, N}
+function _mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N},
+                           B::Union{Array{T, N}, LinearAlgebra.Symmetric{T}},
+                           left_factors::Tuple, right_factors::Tuple) where {S, T, N}
     for i in eachindex(A)
         A[i] = operate!(mul_rhs(op), A[i], left_factors..., B[i], right_factors...)
     end
     return A
 end
 
+function _check_dims(A, B)
+    if size(A) != size(B)
+        throw(DimensionMismatch("Cannot sum matrices of size `$(size(A))` and size `$(size(B))`, the size of the two matrices must be equal."))
+    end
+end
+
 function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N}, B::AbstractArray{T, N}) where {S, T, N}
+    _check_dims(A, B)
     return _mutable_operate!(op, A, B, tuple(), tuple())
 end
 function mutable_operate!(::typeof(add_mul), A::Array{S, N}, B::AbstractArray{T, N}, α::Vararg{Scaling, M}) where {S, T, N, M}
+    _check_dims(A, B)
     return _mutable_operate!(+, A, B, tuple(), α)
 end
 function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α::Scaling, B::AbstractArray{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+    _check_dims(A, B)
     return _mutable_operate!(+, A, B, (α,), β)
 end
 function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α1::Scaling, α2::Scaling, B::AbstractArray{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+    _check_dims(A, B)
     return _mutable_operate!(+, A, B, (α1, α2), β)
 end
 
@@ -59,6 +74,7 @@ end
 
 # Product
 
+similar_array_type(::Type{LinearAlgebra.Symmetric{T, MT}}, ::Type{S}) where {S, T, MT} = LinearAlgebra.Symmetric{S, similar_array_type(MT, S)}
 similar_array_type(::Type{Array{T, N}}, ::Type{S}) where {S, T, N} = Array{S, N}
 function promote_operation(op::typeof(*), A::Type{<:AbstractArray{T}}, ::Type{S}) where {S, T}
     return similar_array_type(A, promote_operation(op, T, S))
