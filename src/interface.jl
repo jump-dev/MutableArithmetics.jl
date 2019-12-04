@@ -66,11 +66,14 @@ copy_if_mutable_fallback(::IsMutable, x) = mutable_copy(x)
 copy_if_mutable(x) = copy_if_mutable_fallback(mutability(typeof(x)), x)
 
 function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...)
-    throw(ArgumentError("Cannot call `mutable_operate_to!($output, $op, $(args...))` as `$output` cannot be modifed to equal the result of the operation. Use `operate!` or `operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
+    throw(ArgumentError("Cannot call `mutable_operate_to!(::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(output))` cannot be modifed to equal the result of the operation. Use `operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
 end
 
+function mutable_operate_to_fallback(::IsMutable, output, op::typeof(add_mul), x, y)
+    return mutable_operate_to!(output, +, x, y)
+end
 function mutable_operate_to_fallback(::IsMutable, output, op::Function, args...)
-    error("`mutable_operate_to!($(typeof(output)), $op, ", join(typeof.(args), ", "),
+    error("`mutable_operate_to!(::$(typeof(output)), $op, ::", join(typeof.(args), ", ::"),
           ")` is not implemented yet.")
 end
 
@@ -84,6 +87,18 @@ function mutable_operate_to!(output, op::Function, args::Vararg{Any, N}) where N
     mutable_operate_to_fallback(mutability(output, op, args...), output, op, args...)
 end
 
+function mutable_operate_fallback(::NotMutable, op::Function, args...)
+    throw(ArgumentError("Cannot call `mutable_operate!($op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `operate!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
+end
+
+function mutable_operate_fallback(::IsMutable, op::typeof(add_mul), x, y)
+    return mutable_operate!(+, x, y)
+end
+function mutable_operate_fallback(::IsMutable, op::Function, args...)
+    error("`mutable_operate!($op, ::", join(typeof.(args), ", ::"),
+          ")` is not implemented yet.")
+end
+
 """
     mutable_operate!(op::Function, args...)
 
@@ -91,7 +106,7 @@ Modify the value of `args[1]` to be equal to the value of `op(args...)`. Can
 only be called if `mutability(args[1], op, args...)` returns `true`.
 """
 function mutable_operate!(op::Function, args::Vararg{Any, N}) where N
-    mutable_operate_to!(args[1], op, args...)
+    mutable_operate_fallback(mutability(args[1], op, args...), op, args...)
 end
 
 buffer_for(::Function, args::Vararg{Type, N}) where {N} = nothing
@@ -114,9 +129,7 @@ Modify the value of `args[1]` to be equal to the value of `op(args...)`,
 possibly modifying `buffer`. Can only be called if
 `mutability(args[1], op, args...)` returns `true`.
 """
-function mutable_buffered_operate!(buffer, op::Function, args::Vararg{Any, N}) where N
-    mutable_buffered_operate_to!(buffer, args[1], op, args...)
-end
+function mutable_buffered_operate! end
 function mutable_buffered_operate!(::Nothing, op::Function, args::Vararg{Any, N}) where N
     return mutable_operate!(op, args...)
 end

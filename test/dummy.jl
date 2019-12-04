@@ -26,8 +26,16 @@ MA.promote_operation(::typeof(+), ::Type{DummyBigInt}, ::Type{DummyBigInt}) = Du
 _data(x) = x
 _data(x::DummyBigInt) = x.data
 MA.scaling(x::DummyBigInt) = x
+
 MA.mutable_operate_to!(x::DummyBigInt, op::Function, args...) = DummyBigInt(MA.mutable_operate_to!(x.data, op, _data.(args)...))
-MA.mutable_operate!(op::Union{typeof(zero), typeof(one)}, x::DummyBigInt, args...) = DummyBigInt(MA.mutable_operate!(op, x.data, _data.(args)...))
+function MA.mutable_operate!(op::Function, x::DummyBigInt, args::Vararg{Any, N}) where N
+    MA.mutable_operate_to!(x, op, x, args...)
+end
+
+function MA.mutable_operate!(op::Union{typeof(zero), typeof(one)}, x::DummyBigInt)
+    return DummyBigInt(MA.mutable_operate!(op, x.data))
+end
+
 MA.promote_operation(::typeof(*), ::Type{DummyBigInt}, ::Type{DummyBigInt}) = DummyBigInt
 Base.convert(::Type{DummyBigInt}, x::Int) = DummyBigInt(x)
 Base.:(==)(x::DummyBigInt, y::DummyBigInt) = x.data == y.data

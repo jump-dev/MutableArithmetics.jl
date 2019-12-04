@@ -167,7 +167,7 @@ end
 function _add_mul_array(C::Vector, A::AbstractMatrix, B::AbstractVector)
     Astride = size(A, 1)
     # We need a buffer to hold the intermediate multiplication.
-    mul_buffer = buffer_for(add_mul, eltype(A), eltype(B))
+    mul_buffer = buffer_for(add_mul, eltype(C), eltype(A), eltype(B))
 
     #@inbounds begin
         for k = eachindex(B)
@@ -184,7 +184,7 @@ end
 
 # This is incorrect if `C` is `LinearAlgebra.Symmetric` as we modify twice the same diagonal element.
 function _add_mul_array(C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
-    mul_buffer = buffer_for(add_mul, eltype(A), eltype(B))
+    mul_buffer = buffer_for(add_mul, eltype(C), eltype(A), eltype(B))
 
     #@inbounds begin
         for i = 1:size(A, 1), j = 1:size(B, 2)

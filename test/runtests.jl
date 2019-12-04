@@ -4,6 +4,8 @@ const MA = MutableArithmetics
 
 include("utilities.jl")
 
+include("interface.jl")
+
 @testset "Int" begin
     include("int.jl")
 end
