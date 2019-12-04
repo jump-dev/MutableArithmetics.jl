@@ -82,6 +82,16 @@ end
 
 Modify the value of `output` to be equal to the value of `op(args...)`. Can
 only be called if `mutability(output, op, args...)` returns `true`.
+
+If `output === args[i]` for some `i`,
+* The user should expect to get an error. `operate!` or `mutable_operate!` should be used instead.
+* Any method not supporting this case should throw an error.
+
+For instance, in DynamicPolynomials, `mutable_operate_to!(p, +, p, q)` throws an
+error because otherwise, the algorithm would fill `p` while iterating over the
+terms of `p` and `q` hence it will never terminate. On the other hand
+`mutable_operate!(+, p, q)` uses a different algorithm that efficiently inserts
+the terms of `q` in the sorted list of terms of `p` with minimal displacement.
 """
 function mutable_operate_to!(output, op::Function, args::Vararg{Any, N}) where N
     mutable_operate_to_fallback(mutability(output, op, args...), output, op, args...)
