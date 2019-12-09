@@ -24,9 +24,10 @@ function _dot(x::AbstractArray, y::AbstractArray)
     end
 
     # We need a buffer to hold the intermediate multiplication.
-    mul_buffer = buffer_for(add_mul, eltype(x), eltype(y))
 
-    s = zero(promote_operation(add_mul, eltype(x), eltype(x), eltype(y)))
+    SumType = promote_operation(add_mul, eltype(x), eltype(x), eltype(y))
+    mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
+    s = zero(SumType)
 
     for (Ix, Iy) in zip(eachindex(x), eachindex(y))
         s = @inbounds buffered_operate!(mul_buffer, add_mul, s, x[Ix], y[Iy])

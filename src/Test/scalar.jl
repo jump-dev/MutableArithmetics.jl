@@ -1,3 +1,24 @@
+function iszero_test(x)
+    x_copy = x
+
+    @test iszero(x - x)
+    @test iszero(MA.@rewrite(x - x))
+    @test MA.iszero!(x - x)
+    @test MA.iszero!(MA.@rewrite(x - x))
+
+    @test iszero(0 * x)
+    @test iszero(MA.@rewrite(0 * x))
+    @test MA.iszero!(0 * x)
+    @test MA.iszero!(MA.@rewrite(0 * x))
+
+    @test iszero(x - 2x + x)
+    @test iszero(MA.@rewrite(x - 2x + x))
+    @test MA.iszero!(x - 2x + x)
+    @test MA.iszero!(MA.@rewrite(x - 2x + x))
+
+    @test MA.isequal_canonical(x_copy, x)
+end
+
 function cube_test(x)
     @test_rewrite x^3
     @test_rewrite (x + 1)^3
@@ -37,6 +58,7 @@ end
 
 const scalar_tests = Dict(
     "cube" => cube_test,
+    "iszero" => iszero_test,
     "scalar_in_any" => scalar_in_any_test,
     "scalar_uniform_scaling" => scalar_uniform_scaling_test
 )

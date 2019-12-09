@@ -50,6 +50,10 @@ function quadratic_isequal_canonical_test(w, x, y, z)
 end
 
 function quadratic_add_test(w, x, y, z)
+    w_copy = MA.copy_if_mutable(w)
+    x_copy = MA.copy_if_mutable(x)
+    y_copy = MA.copy_if_mutable(y)
+    z_copy = MA.copy_if_mutable(z)
     a = 7
     b = 2
     c = 1
@@ -72,11 +76,21 @@ function quadratic_add_test(w, x, y, z)
         @test_rewrite y * z - x
     end
 
+    @test MA.isequal_canonical(w, w_copy)
+    @test MA.isequal_canonical(x, x_copy)
+    @test MA.isequal_canonical(y, y_copy)
+    @test MA.isequal_canonical(z, z_copy)
+
     aff = @inferred a * x + b
     @test_rewrite a * x + b
     @test aff == aff
     aff2 = @inferred c * y + c
     @test_rewrite c * y + c
+
+    @test MA.isequal_canonical(w, w_copy)
+    @test MA.isequal_canonical(x, x_copy)
+    @test MA.isequal_canonical(y, y_copy)
+    @test MA.isequal_canonical(z, z_copy)
 
     @testset "Affine" begin
         unary_test(aff)
@@ -99,6 +113,11 @@ function quadratic_add_test(w, x, y, z)
         @test string((x+x)*(x+3)) == string((x+3)*(x+x))  # Issue #288
     end
 
+    @test MA.isequal_canonical(w, w_copy)
+    @test MA.isequal_canonical(x, x_copy)
+    @test MA.isequal_canonical(y, y_copy)
+    @test MA.isequal_canonical(z, z_copy)
+
     @testset "Quadratic" begin
         @test_rewrite 2 * x * x + 1 * y * y + z + 3
 
@@ -115,6 +134,11 @@ function quadratic_add_test(w, x, y, z)
         q2 = @inferred 8 * x * z + aff2
         add_test(q, q2)
    end
+
+    @test MA.isequal_canonical(w, w_copy)
+    @test MA.isequal_canonical(x, x_copy)
+    @test MA.isequal_canonical(y, y_copy)
+    @test MA.isequal_canonical(z, z_copy)
 end
 
 const quadratic_tests = Dict(
