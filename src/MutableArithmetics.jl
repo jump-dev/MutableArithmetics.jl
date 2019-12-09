@@ -22,6 +22,20 @@ add_mul(a, b) = a + b
 add_mul(a, b, c) = muladd(b, c, a)
 add_mul(a, b, c::Vararg{Any, N}) where {N} = add_mul(a, b *(c...))
 
+"""
+    iszero!(x)
+
+Return a `Bool` indicating whether `x` is zero, possibly modifying `x`.
+
+## Examples
+
+In MathOptInterface, a `ScalarAffineFunction` may contain duplicate terms.
+In `Base.iszero`, duplicate terms need to be merged but the function is left
+with duplicates as it cannot be modified. If `iszero!` is called instead,
+the function will be canonicalized in addition for checking whether it is zero.
+"""
+iszero!(x) = iszero(x)
+
 include("interface.jl")
 include("shortcuts.jl")
 include("broadcast.jl")
@@ -30,6 +44,12 @@ include("broadcast.jl")
 import LinearAlgebra
 const Scaling = Union{Number, LinearAlgebra.UniformScaling}
 scaling(x::Scaling) = x
+function scaling_convert(::Type{LinearAlgebra.UniformScaling{T}}, x::LinearAlgebra.UniformScaling) where T
+    # `convert(::Type{<:UniformScaling}, ::UniformScaling)` is not defined in LinearAlgebra.
+    return LinearAlgebra.UniformScaling(convert(T, x.λ))
+end
+scaling_convert(T::Type, x::LinearAlgebra.UniformScaling) = convert(T, x.λ)
+scaling_convert(T::Type, x) = convert(T, x)
 include("bigint.jl")
 include("linear_algebra.jl")
 include("sparse_arrays.jl")

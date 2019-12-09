@@ -6,6 +6,14 @@ include("utilities.jl")
 
 struct CustomArray{T, N} <: AbstractArray{T, N} end
 
+import LinearAlgebra
+
+@testset "Scaling convert" begin
+    @test MA.scaling_convert(LinearAlgebra.UniformScaling{Int}, LinearAlgebra.I) isa LinearAlgebra.UniformScaling
+    @test MA.scaling_convert(Int, LinearAlgebra.I) === 1
+    @test MA.scaling_convert(Int, 1) === 1
+end
+
 @testset "Errors" begin
     @testset "`promote_op` error" begin
         AT = CustomArray{Int, 3}
