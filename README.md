@@ -17,7 +17,15 @@ allow anyone to make use of mutability when desired.
 The package allows users to indicate when a mutable implementation of a certain
 method is available through the use of so-called *traits*, as well as providing
 a simple way for users to make operations fall back to these implementations.
-An example implementation of this interface is given in `src/bigint.jl`.
+An example implementation of this interface for the `Base.BigInt` type is given
+in `src/bigint.jl`. Other types implementing this interface can be found at:
+* The interface for multivariate polynomials [MultivariatePolynomials](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl)
+  as well as its two implementations [DynamicPolynomials](https://github.com/JuliaAlgebra/DynamicPolynomials.jl)
+  and [TypedPolynomials](https://github.com/JuliaAlgebra/TypedPolynomials.jl).
+* The scalar and quadratic functions used to define an Optimization Program in
+  [MathOptInterface](https://github.com/JuliaOpt/MathOptInterface.jl).
+* The scalar and quadratic expressions used to model optimization in
+  [JuMP](https://github.com/JuliaOpt/JuMP.jl).
 
 ## Documentation
 
