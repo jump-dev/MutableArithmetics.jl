@@ -138,6 +138,14 @@ Base.:*(A::SparseMat{<:AbstractMutable}, x::StridedVector) = mul(A, x)
 Base.:*(A::SparseMat, x::StridedVector{<:AbstractMutable}) = mul(A, x)
 Base.:*(A::SparseMat{<:AbstractMutable}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
 
+# These six methods are needed on Julia v1.2 and earlier
+Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable, <:SparseMat}, x::StridedVector) = mul(A, x)
+Base.:*(A::LinearAlgebra.Adjoint{<:Any, <:SparseMat}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
+Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable, <:SparseMat}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
+Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable, <:SparseMat}, x::StridedVector) = mul(A, x)
+Base.:*(A::LinearAlgebra.Transpose{<:Any, <:SparseMat}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
+Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable, <:SparseMat}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
+
 Base.:*(A::SparseMat{<:AbstractMutable}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::SparseMat{<:Any}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::SparseMat{<:AbstractMutable}, B::SparseMat{<:Any}) = mul(A, B)
@@ -149,6 +157,9 @@ Base.:*(A::SparseMat{<:AbstractMutable}, B::LinearAlgebra.Adjoint{<:Any, <:Spars
 Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable, <:SparseMat}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::LinearAlgebra.Adjoint{<:Any, <:SparseMat}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable, <:SparseMat}, B::SparseMat{<:Any}) = mul(A, B)
+Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable, <:SparseMat}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::LinearAlgebra.Transpose{<:Any, <:SparseMat}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable, <:SparseMat}, B::SparseMat{<:Any}) = mul(A, B)
 
 Base.:*(A::StridedMatrix{<:AbstractMutable}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::StridedMatrix{<:Any}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
@@ -161,6 +172,9 @@ Base.:*(A::SparseMat{<:AbstractMutable}, B::StridedMatrix{<:Any}) = mul(A, B)
 Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable, <:SparseMat}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::LinearAlgebra.Adjoint{<:Any, <:SparseMat}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable, <:SparseMat}, B::StridedMatrix{<:Any}) = mul(A, B)
+Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable, <:SparseMat}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::LinearAlgebra.Transpose{<:Any, <:SparseMat}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable, <:SparseMat}, B::StridedMatrix{<:Any}) = mul(A, B)
 
 # Base doesn't define efficient fallbacks for sparse array arithmetic involving
 # non-`<:Number` scalar elements, so we define some of these for `<:AbstractMutable` scalar
