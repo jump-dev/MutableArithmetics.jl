@@ -26,8 +26,12 @@ function quadratic_isequal_canonical_test(w, x, y, z)
     c = 1
     @test MA.isequal_canonical((@inferred 3w + 2y), @inferred 2y + 3w)
     @test !MA.isequal_canonical((@inferred 3w + 2y + 1), @inferred 3w + 2y)
-    @test !MA.isequal_canonical((@inferred 3w + 2y), @inferred 3y + 2w)
-    @test !MA.isequal_canonical((@inferred 3w + 2y), @inferred 3w + y)
+    if !MA.isequal_canonical(w, y)
+        @test !MA.isequal_canonical((@inferred 3w + 2y), @inferred 3y + 2w)
+    end
+    if !MA.isequal_canonical(w, y)
+        @test !MA.isequal_canonical((@inferred 3w + 2y), @inferred 3w + y)
+    end
 
     aff = @inferred a * x + b
     aff2 = @inferred c * y + c
@@ -35,18 +39,30 @@ function quadratic_isequal_canonical_test(w, x, y, z)
     @test !MA.isequal_canonical(aff2, aff)
 
     q = @inferred b * y * z + aff
-    @test  MA.isequal_canonical(q, @inferred b*z*y + aff)
+    if MA.isequal_canonical(y * z, z * y)
+        @test MA.isequal_canonical(q, @inferred b*z*y + aff)
+    end
     @test !MA.isequal_canonical(q, @inferred b*y*z + aff2)
-    @test !MA.isequal_canonical(q, @inferred b*x*z + aff)
-    @test !MA.isequal_canonical(q, @inferred b*y*x + aff)
+    if !MA.isequal_canonical(x, y)
+        @test !MA.isequal_canonical(q, @inferred b*x*z + aff)
+    end
+    if !MA.isequal_canonical(x, z)
+        @test !MA.isequal_canonical(q, @inferred b*y*x + aff)
+    end
     @test !MA.isequal_canonical(q, @inferred (b-1)*y*z + aff)
 
     q2 = @inferred 8 * x * z + aff2
-    @test  MA.isequal_canonical(q2, @inferred 8z*x + aff2)
+    if MA.isequal_canonical(x * z, z * x)
+        @test MA.isequal_canonical(q2, @inferred 8z*x + aff2)
+    end
     @test !MA.isequal_canonical(q2, @inferred 8x*z + aff)
     @test !MA.isequal_canonical(q2, @inferred 7x*z + aff2)
-    @test !MA.isequal_canonical(q2, @inferred 8x*y + aff2)
-    @test !MA.isequal_canonical(q2, @inferred 8y*z + aff2)
+    if !MA.isequal_canonical(y, z)
+        @test !MA.isequal_canonical(q2, @inferred 8x*y + aff2)
+    end
+    if !MA.isequal_canonical(x, y)
+        @test !MA.isequal_canonical(q2, @inferred 8y*z + aff2)
+    end
 end
 
 function quadratic_add_test(w, x, y, z)
