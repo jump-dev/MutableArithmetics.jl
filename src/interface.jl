@@ -59,7 +59,6 @@ mutability(::Type) = NotMutable()
 
 # `copy(::BigInt)` and `copy(::Array)` does not copy its elements so we need `deepcopy`.
 function mutable_copy end
-mutable_copy(x) = deepcopy(x)
 mutable_copy(A::AbstractArray) = mutable_copy.(A)
 copy_if_mutable_fallback(::NotMutable, x) = x
 copy_if_mutable_fallback(::IsMutable, x) = mutable_copy(x)

@@ -12,6 +12,7 @@ Base.broadcastable(x::DummyBigInt) = Ref(x)
 Base.promote_rule(::Type{DummyBigInt}, ::Type{<:Union{Integer, UniformScaling{<:Integer}}}) = DummyBigInt
 # `copy` on BigInt returns the same instance anyway
 Base.copy(x::DummyBigInt) = x
+MA.mutable_copy(x::DummyBigInt) = DummyBigInt(MA.mutable_copy(x.data))
 LinearAlgebra.symmetric_type(::Type{DummyBigInt}) = DummyBigInt
 LinearAlgebra.symmetric(x::DummyBigInt, ::Symbol) = x
 LinearAlgebra.dot(x::DummyBigInt, y::DummyBigInt) = x * y
