@@ -78,11 +78,33 @@ end
 mutability(x, op, args::Vararg{Any, N}) where {N} = mutability(typeof(x), op, typeof.(args)...)
 mutability(::Type) = NotMutable()
 
-# `copy(::BigInt)` and `copy(::Array)` does not copy its elements so we need `deepcopy`.
+"""
+    mutable_copy(x)
+
+Return a copy of `x` that can be mutated with MultableArithmetics's API without
+altering `x`.
+
+## Examples
+
+The copy of a JuMP affine expression does not copy the underlying model as it
+cannot be modified though the MultableArithmetics's API, however, it calls
+[`copy_if_mutable`](@ref) on the coefficients and on the constant as they could
+be mutated.
+"""
 function mutable_copy end
 mutable_copy(A::AbstractArray) = mutable_copy.(A)
 copy_if_mutable_fallback(::NotMutable, x) = x
 copy_if_mutable_fallback(::IsMutable, x) = mutable_copy(x)
+
+"""
+    copy_if_mutable(x)
+
+Return a copy of `x` that can be mutated with MultableArithmetics's API without
+altering `x`. If `mutability(x)` is `NotMutable` then `x` is returned as none of
+`x` can be mutated. Otherwise, it redirects to [`mutable_copy`](@ref).
+Mutable types should not implement a method for this function but should
+implement a method for [`mutable_copy`](@ref) instead.
+"""
 copy_if_mutable(x) = copy_if_mutable_fallback(mutability(typeof(x)), x)
 
 function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...)

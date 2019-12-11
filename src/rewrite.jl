@@ -1,6 +1,26 @@
 # Heavily inspired from `JuMP/src/parse_expr.jl` code.
 
 export @rewrite
+
+"""
+    @macro(expr)
+
+Return the value of `expr` exploiting the mutability of the temporary
+expressions created for the computation of the result.
+
+## Examples
+
+The expression
+```julia
+MA.@rewrite(x + y * z + u * v * w)
+```
+is rewritten into
+```julia
+MA.add_mul!(MA.add_mul!(MA.copy_if_mutable(x),
+                        y, z),
+            u, v, w)
+```
+"""
 macro rewrite(expr)
     return rewrite_and_return(expr)
 end
@@ -136,11 +156,25 @@ function _is_decomposable_with_factors(ex)
     )
 end
 
+"""
+    rewrite(x)
+
+Rewrite the expression `x` as specified in [`@rewrite`](@ref).
+Return a variable name as `Symbol` and the rewritten expression assigning the
+value of the expression `x` to the variable.
+"""
 function rewrite(x)
     variable = gensym()
     code = rewrite_and_return(x)
     return variable, :($variable = $code)
 end
+
+"""
+    rewrite_and_return(x)
+
+Rewrite the expression `x` as specified in [`@rewrite`](@ref).
+Return the rewritten expression returning the result.
+"""
 function rewrite_and_return(x)
     output_variable, code = _rewrite(false, x, nothing, [], [])
     # We need to use `let` because `rewrite(:(sum(i for i in 1:2))`
