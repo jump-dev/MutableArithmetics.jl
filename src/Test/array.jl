@@ -225,27 +225,29 @@ function transpose_test(x)
     end
 end
 
+_matrix(x::Matrix) = x
+_matrix(x::AbstractMatrix) = Matrix(x)
+_matrix_equal(x::AbstractMatrix, y::AbstractMatrix) = MA.isequal_canonical(_matrix(x), _matrix(y))
+
 function _broadcast_test(x, A)
     B = sparse(A)
     y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), collect(vec(x)))
 
     # `SparseMatrixCSC .+ Array` give `SparseMatrixCSC` so we cast it with `Matrix`
     # before comparing.
-    _eq(x, y) = MA.isequal_canonical(Matrix(x), Matrix(y))
+    @test _matrix_equal(A .+ x, B .+ x)
+    @test _matrix_equal(A .+ x, A .+ y)
+    @test _matrix_equal(A .+ y, B .+ y)
+    @test _matrix_equal(x .+ A, x .+ B)
+    @test _matrix_equal(x .+ A, y .+ A)
+    @test _matrix_equal(y .+ A, y .+ B)
 
-    @test _eq(A .+ x, B .+ x)
-    @test _eq(A .+ x, A .+ y)
-    @test _eq(A .+ y, B .+ y)
-    @test _eq(x .+ A, x .+ B)
-    @test _eq(x .+ A, y .+ A)
-    @test _eq(y .+ A, y .+ B)
-
-    @test _eq(A .- x, B .- x)
-    @test _eq(A .- x, A .- y)
-    @test _eq(A .- y, B .- y)
-    @test _eq(x .- A, x .- B)
-    @test _eq(x .- A, y .- A)
-    @test _eq(y .- A, y .- B)
+    @test _matrix_equal(A .- x, B .- x)
+    @test _matrix_equal(A .- x, A .- y)
+    @test _matrix_equal(A .- y, B .- y)
+    @test _matrix_equal(x .- A, x .- B)
+    @test _matrix_equal(x .- A, y .- A)
+    @test _matrix_equal(y .- A, y .- B)
 end
 function broadcast_test(x)
     if !(x isa AbstractMatrix)
@@ -276,16 +278,12 @@ function _broadcast_multiplication_test(x, A)
     B = sparse(A)
     y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), collect(vec(x)))
 
-    # `SparseMatrixCSC .+ Array` give `SparseMatrixCSC` so we cast it with `Matrix`
-    # before comparing.
-    _eq(x, y) = MA.isequal_canonical(Matrix(x), Matrix(y))
-
-    @test _eq(A .* x, B .* x)
-    @test _eq(A .* x, A .* y)
-    @test _eq(A .* y, B .* y)
-    @test _eq(x .* A, x .* B)
-    @test _eq(x .* A, y .* A)
-    @test _eq(y .* A, y .* B)
+    @test _matrix_equal(A .* x, B .* x)
+    @test _matrix_equal(A .* x, A .* y)
+    @test _matrix_equal(A .* y, B .* y)
+    @test _matrix_equal(x .* A, x .* B)
+    @test _matrix_equal(x .* A, y .* A)
+    @test _matrix_equal(y .* A, y .* B)
 end
 
 function broadcast_multiplication_test(x)
@@ -319,12 +317,8 @@ function _broadcast_division_test(x, A)
     B = sparse(A)
     y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), collect(vec(x)))
 
-    # `SparseMatrixCSC .+ Array` give `SparseMatrixCSC` so we cast it with `Matrix`
-    # before comparing.
-    _eq(x, y) = MA.isequal_canonical(Matrix(x), Matrix(y))
-
-    @test _eq(x ./ A, x ./ B)
-    @test _eq(x ./ A, y ./ A)
+    @test _matrix_equal(x ./ A, x ./ B)
+    @test _matrix_equal(x ./ A, y ./ A)
 end
 function broadcast_division_test(x)
     if !(x isa AbstractMatrix)

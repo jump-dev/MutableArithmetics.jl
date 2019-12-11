@@ -1,8 +1,8 @@
 function _mat_mat_test(A, B)
-    @test MA.isequal_canonical(copy(transpose(A)) * B, A' * B)
-    @test MA.isequal_canonical(A * copy(transpose(B)), A * B')
-    @test MA.isequal_canonical(copy(transpose(B)) * A, B' * A)
-    @test MA.isequal_canonical(B * copy(transpose(A)), B * A')
+    @test _matrix_equal(copy(transpose(A)) * B, A' * B)
+    @test _matrix_equal(A * copy(transpose(B)), A * B')
+    @test _matrix_equal(copy(transpose(B)) * A, B' * A)
+    @test _matrix_equal(B * copy(transpose(A)), B * A')
 end
 
 function sparse_linear_test(X11, X23, Xd)
@@ -35,32 +35,32 @@ function sparse_linear_test(X11, X23, Xd)
     add_test(Y, A)
     _mat_mat_test(Y, A)
 
-    @test MA.isequal_canonical(X * A,  [
+    @test _matrix_equal(X * A,  [
         2X11  X11  0
         0     X23  2X23
         0     0    0   ])
-    @test MA.isequal_canonical(A * X,  [
+    @test _matrix_equal(A * X,  [
         2X11  0    X23
          X11  0   2X23
          0    0    X23])
-    @test MA.isequal_canonical(A * X', [
+    @test _matrix_equal(A * X', [
         2X11  0     0
          X11   X23  0
         0     2X23  0])
-    @test MA.isequal_canonical(X' * A, [
+    @test _matrix_equal(X' * A, [
         2X11  X11   0
          0     0    0
          X23   2X23 X23])
-    @test MA.isequal_canonical(A' * X, [
+    @test _matrix_equal(A' * X, [
         2X11  0  X23
          X11  0 2X23
          0    0  X23])
 
     B = sparse(A)
-    @test MA.isequal_canonical(X * A, X * B)
-    @test MA.isequal_canonical(A * X, B * X)
-    @test MA.isequal_canonical(A * X', B * X')
-    @test MA.isequal_canonical(A' * X, B' * X)
+    @test _matrix_equal(X * A, X * B)
+    @test _matrix_equal(A * X, B * X)
+    @test _matrix_equal(A * X', B * X')
+    @test _matrix_equal(A' * X, B' * X)
 end
 
 function sparse_quadratic_test(X11, X23, Xd)
