@@ -14,10 +14,10 @@ function quadratic_iszero_test(w, x, y, z)
     b = 2
     aff = @inferred a * x + b
     @test !iszero(aff)
-    @test iszero(zero(aff))
+    @test iszero(zero(typeof(aff)))
     q = @inferred b * y * z + aff
     @test !iszero(q)
-    @test iszero(zero(q))
+    @test iszero(zero(typeof(q)))
 end
 
 function quadratic_isequal_canonical_test(w, x, y, z)
@@ -126,7 +126,6 @@ function quadratic_add_test(w, x, y, z)
         @test_rewrite aff - a * x
         # 3-3 AffExpr--AffExpr
         @test_rewrite aff * aff2
-        @test string((x+x)*(x+3)) == string((x+3)*(x+x))  # Issue #288
     end
 
     @test MA.isequal_canonical(w, w_copy)

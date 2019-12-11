@@ -42,7 +42,7 @@ function scalar_in_any_test(x)
     anys = Array{Any}(undef, 2)
     anys[1] = 10
     anys[2] = 20 + x
-    @test dot(ints, anys) == 10 + 40 + 2x
+    @test MA.isequal_canonical(dot(ints, anys), 10 + 40 + 2x)
 end
 
 function scalar_uniform_scaling_test(x)

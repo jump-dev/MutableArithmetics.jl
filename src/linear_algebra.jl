@@ -88,13 +88,13 @@ function promote_operation(op::typeof(*), A::Type{<:AbstractArray{S}}, B::Type{<
 end
 
 function promote_array_mul(::Type{Matrix{S}}, ::Type{Vector{T}}) where {S, T}
-    return Vector{Base.promote_op(LinearAlgebra.matprod, S, T)}
+    return Vector{promote_operation(add_mul, S, S, T)}
 end
 function promote_array_mul(::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractMatrix{T}}) where {S, T}
-    return Matrix{Base.promote_op(LinearAlgebra.matprod, S, T)}
+    return Matrix{promote_operation(add_mul, S, S, T)}
 end
 function promote_array_mul(::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractVector{T}}) where {S, T}
-    return Vector{Base.promote_op(LinearAlgebra.matprod, S, T)}
+    return Vector{promote_operation(add_mul, S, S, T)}
 end
 
 ################################################################################
@@ -229,14 +229,14 @@ end
 # type, allocate the resulting array but it redirects to `mul_to!` instead of
 # `LinearAlgebra.mul!`.
 function mul(A::AbstractMatrix{S}, B::AbstractVector{T}) where {T, S}
-    U = Base.promote_op(LinearAlgebra.matprod, S, T)
+    U = promote_operation(add_mul, S, S, T)
     # `similar` gives SparseMatrixCSC if `B` is SparseMatrixCSC
     #C = similar(B, U, axes(A, 1))
     C = Vector{U}(undef, size(A, 1))
     return mutable_operate_to!(C, *, A, B)
 end
 function mul(A::AbstractMatrix{S}, B::AbstractMatrix{T}) where {T, S}
-    U = Base.promote_op(LinearAlgebra.matprod, S, T)
+    U = promote_operation(add_mul, S, S, T)
     # `similar` gives SparseMatrixCSC if `B` is SparseMatrixCSC
     #C = similar(B, U, axes(A, 1), axes(B, 2))
     C = Matrix{U}(undef, size(A, 1), size(B, 2))

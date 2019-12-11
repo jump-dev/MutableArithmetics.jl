@@ -60,6 +60,12 @@ function isequal_canonical(a::AT, b::AT) where AT <: Union{Array, LinearAlgebra.
         return isequal_canonical(elements...)
     end
 end
+function isequal_canonical(x::LinearAlgebra.Adjoint, y::LinearAlgebra.Adjoint)
+    return isequal_canonical(parent(x), parent(y))
+end
+function isequal_canonical(x::LinearAlgebra.Transpose, y::LinearAlgebra.Transpose)
+    return isequal_canonical(parent(x), parent(y))
+end
 
 include("rewrite.jl")
 include("dispatch.jl")

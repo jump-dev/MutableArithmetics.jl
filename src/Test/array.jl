@@ -137,7 +137,7 @@ _constant(x) = reshape(collect(1:length(x)), size(x)...)
 
 function non_array_test(x, x2)
     # This is needed to compare arrays that have nonstandard indexing
-    elements_equal(A::AbstractArray{T, N}, B::AbstractArray{T, N}) where {T, N} = all(a == b for (a, b) in zip(A, B))
+    elements_equal(A::AbstractArray{T, N}, B::AbstractArray{T, N}) where {T, N} = all(MA.isequal_canonical(a, b) for (a, b) in zip(A, B))
 
     @test elements_equal(+x, +x2)
     @test elements_equal(-x, -x2)
@@ -147,7 +147,7 @@ function non_array_test(x, x2)
     @test elements_equal(first(x) .+ x, first(x2) .+ x2)
     @test elements_equal(2 .* x, 2 .* x2)
     @test elements_equal(first(x) .+ x2, first(x2) .+ x)
-    @test sum(x) == sum(x2)
+    @test MA.isequal_canonical(sum(x), sum(x2))
     if !MA._one_indexed(x2)
         @test_throws DimensionMismatch x + x2
     end
@@ -157,9 +157,9 @@ function non_array_test(x, x2)
             if !MA._one_indexed(x2) && eltype(x2) <: MA.AbstractMutable
                 @test_throws AssertionError diagm(x2)
             else
-                @test diagm(0 => x) == diagm(0 => x2)
+                @test MA.isequal_canonical(diagm(0 => x), diagm(0 => x2))
                 if VERSION >= v"1.2"
-                    @test diagm(x) == diagm(x2)
+                    @test MA.isequal_canonical(diagm(x), diagm(x2))
                 end
             end
         end

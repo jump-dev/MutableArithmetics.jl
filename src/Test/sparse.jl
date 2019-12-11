@@ -26,11 +26,11 @@ function sparse_test(X11, X23, Xd)
     _mat_mat_test(Xd, Xd)
 
     v = [4, 5, 6]
-    @test MA.isequal_canonical(X * v,  [4X11; 6X23; 0])
-    @test MA.isequal_canonical(v' * X,  [4X11  0   5X23])
-    @test MA.isequal_canonical(copy(transpose(v)) * X, [4X11  0   5X23])
-    @test MA.isequal_canonical(X' * v,  [4X11;  0;  5X23])
-    @test MA.isequal_canonical(copy(transpose(X)) * v, [4X11; 0;  5X23])
+    @test MA.isequal_canonical(X * v,  [4X11, 6X23, 0])
+    @test MA.isequal_canonical((v' * X)',  [4X11, 0, 5X23])
+    @test MA.isequal_canonical(transpose(copy(transpose(v)) * X), [4X11, 0, 5X23])
+    @test MA.isequal_canonical(X' * v,  [4X11, 0, 5X23])
+    @test MA.isequal_canonical(copy(transpose(X)) * v, [4X11, 0, 5X23])
 
     A = [2 1 0
          1 2 1

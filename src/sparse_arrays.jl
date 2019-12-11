@@ -106,7 +106,7 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
     # Resolve ambiguity (detected on Julia v1.3) with two methods above.
     # TODO adapt implementation of `SparseArray.spmatmul`
-    mutable_operate!(add_mul, ret, Matrix{Base.promote_op(zero, eltype(A))}(A), B, α...)
+    mutable_operate!(add_mul, ret, Matrix{promote_operation(zero, eltype(A))}(A), B, α...)
 end
 function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
                           A::AbstractMatrix,
@@ -131,14 +131,14 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
     # Resolve ambiguity (detected on Julia v1.3) with two methods above.
     # TODO adapt implementation of `SparseArray.spmatmul`
-    mutable_operate!(add_mul, ret, Matrix{Base.promote_op(zero, eltype(A))}(A), B, α...)
+    mutable_operate!(add_mul, ret, Matrix{promote_operation(zero, eltype(A))}(A), B, α...)
 end
 function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
                           A::TransposeOrAdjoint{<:Any, <:SparseMat}, B::SparseMat,
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
     # Resolve ambiguity (detected on Julia v1.3) with two methods above.
     # TODO adapt implementation of `SparseArray.spmatmul`
-    mutable_operate!(add_mul, ret, Matrix{Base.promote_op(zero, eltype(A))}(A), B, α...)
+    mutable_operate!(add_mul, ret, Matrix{promote_operation(zero, eltype(A))}(A), B, α...)
 end
 
 # TODO
