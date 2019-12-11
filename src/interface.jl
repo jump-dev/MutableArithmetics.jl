@@ -37,15 +37,36 @@ function promote_operation(op::Union{typeof(+), typeof(-), typeof(add_mul)}, α:
 end
 
 # Define Traits
+
+"""
+    abstract type MutableTrait end
+
+Abstract type for [`IsMutable`](@ref) and [`NotMutable`](@ref) that are
+returned by [`mutability`](@ref).
+"""
 abstract type MutableTrait end
+
+"""
+    struct IsMutable <: MutableTrait end
+
+When this is returned by [`mutability`](@ref), it means that object of the given
+type can always be mutated to equal the result of the operation.
+"""
 struct IsMutable <: MutableTrait end
+
+"""
+    struct NotMutable <: MutableTrait end
+
+When this is returned by [`mutability`](@ref), it means that object of the given
+type cannot be mutated to equal the result of the operation.
+"""
 struct NotMutable <: MutableTrait end
 
 """
     mutability(T::Type, ::typeof(op), args::Type...)::MutableTrait
 
-Return `IsMutable` to indicate an object of type `T` can be modified to be
-equal to `op(args...)`.
+Return either [`IsMutable`](@ref) to indicate an object of type `T` can be
+modified to be equal to `op(args...)` or [`NotMutable`](@ref) otherwise.
 """
 function mutability(T::Type, op, args::Vararg{Type, N}) where N
     if mutability(T) isa IsMutable && promote_operation(op, args...) == T

@@ -196,6 +196,11 @@ function sum_test(matrix)
     if matrix isa AbstractMatrix
         @test_rewrite sum([2matrix[i, j] for i in 1:size(matrix, 1), j in 1:size(matrix, 2)])
         @test_rewrite sum(2matrix[i, j] for i in 1:size(matrix, 1), j in 1:size(matrix, 2))
+    end
+end
+
+function sum_multiplication_test(matrix)
+    if matrix isa AbstractMatrix
         @test_rewrite sum([2matrix[i, j]^2 for i in 1:size(matrix, 1), j in 1:size(matrix, 2)])
         @test_rewrite sum(2matrix[i, j]^2 for i in 1:size(matrix, 1), j in 1:size(matrix, 2))
     end
@@ -224,26 +229,23 @@ function _broadcast_test(x, A)
     B = sparse(A)
     y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), collect(vec(x)))
 
-    @test MA.isequal_canonical(A .+ x, B .+ x)
-    @test MA.isequal_canonical(A .+ x, A .+ y)
-    @test MA.isequal_canonical(A .+ y, B .+ y)
-    @test MA.isequal_canonical(x .+ A, x .+ B)
-    @test MA.isequal_canonical(x .+ A, y .+ A)
-    @test MA.isequal_canonical(y .+ A, y .+ B)
+    # `SparseMatrixCSC .+ Array` give `SparseMatrixCSC` so we cast it with `Matrix`
+    # before comparing.
+    _eq(x, y) = MA.isequal_canonical(Matrix(x), Matrix(y))
 
-    @test MA.isequal_canonical(A .- x, B .- x)
-    @test MA.isequal_canonical(A .- x, A .- y)
-    @test MA.isequal_canonical(A .- y, B .- y)
-    @test MA.isequal_canonical(x .- A, x .- B)
-    @test MA.isequal_canonical(x .- A, y .- A)
-    @test MA.isequal_canonical(y .- A, y .- B)
+    @test _eq(A .+ x, B .+ x)
+    @test _eq(A .+ x, A .+ y)
+    @test _eq(A .+ y, B .+ y)
+    @test _eq(x .+ A, x .+ B)
+    @test _eq(x .+ A, y .+ A)
+    @test _eq(y .+ A, y .+ B)
 
-    @test MA.isequal_canonical(A .* x, B .* x)
-    @test MA.isequal_canonical(A .* x, A .* y)
-    @test MA.isequal_canonical(A .* y, B .* y)
-    @test MA.isequal_canonical(x .* A, x .* B)
-    @test MA.isequal_canonical(x .* A, y .* A)
-    @test MA.isequal_canonical(y .* A, y .* B)
+    @test _eq(A .- x, B .- x)
+    @test _eq(A .- x, A .- y)
+    @test _eq(A .- y, B .- y)
+    @test _eq(x .- A, x .- B)
+    @test _eq(x .- A, y .- A)
+    @test _eq(y .- A, y .- B)
 end
 function broadcast_test(x)
     if !(x isa AbstractMatrix)
@@ -262,11 +264,36 @@ function broadcast_test(x)
         @test MA.isequal_canonical(A .- x, [
             1-x[1,1]  3-x[1,2];
             2-x[2,1]  4-x[2,2]])
-        @test MA.isequal_canonical(x .- x, [zero(x[1] - x[1]) for _1 in 1:2, _2 in 1:2])
+        @test MA.isequal_canonical(x .- x, [zero(typeof(x[1] - x[1])) for _1 in 1:2, _2 in 1:2])
         @test MA.isequal_canonical(x .- A, [
             -1+x[1,1]  -3+x[1,2];
             -2+x[2,1]  -4+x[2,2]])
+    end
+    _broadcast_test(x, A)
+end
 
+function _broadcast_multiplication_test(x, A)
+    B = sparse(A)
+    y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), collect(vec(x)))
+
+    # `SparseMatrixCSC .+ Array` give `SparseMatrixCSC` so we cast it with `Matrix`
+    # before comparing.
+    _eq(x, y) = MA.isequal_canonical(Matrix(x), Matrix(y))
+
+    @test _eq(A .* x, B .* x)
+    @test _eq(A .* x, A .* y)
+    @test _eq(A .* y, B .* y)
+    @test _eq(x .* A, x .* B)
+    @test _eq(x .* A, y .* A)
+    @test _eq(y .* A, y .* B)
+end
+
+function broadcast_multiplication_test(x)
+    if !(x isa AbstractMatrix)
+        return
+    end
+    A = reshape(1:length(x), size(x)...)
+    if size(x) == (2, 2)
         @test MA.isequal_canonical(A .* x, [
             1*x[1,1]  3*x[1,2];
             2*x[2,1]  4*x[2,2]])
@@ -284,15 +311,20 @@ function broadcast_test(x)
         #z = JuMP._densify_with_jump_eltype((x[1,1],) .* B)
         #@test MA.isequal_canonical((x[1,1],) .* A, z)
     end
-    _broadcast_test(x, A)
+    _broadcast_multiplication_test(x, A)
 end
+
 
 function _broadcast_division_test(x, A)
     B = sparse(A)
     y = SparseMatrixCSC(size(x)..., copy(B.colptr), copy(B.rowval), collect(vec(x)))
 
-    @test MA.isequal_canonical(x ./ A, x ./ B)
-    @test MA.isequal_canonical(x ./ A, y ./ A)
+    # `SparseMatrixCSC .+ Array` give `SparseMatrixCSC` so we cast it with `Matrix`
+    # before comparing.
+    _eq(x, y) = MA.isequal_canonical(Matrix(x), Matrix(y))
+
+    @test _eq(x ./ A, x ./ B)
+    @test _eq(x ./ A, y ./ A)
 end
 function broadcast_division_test(x)
     if !(x isa AbstractMatrix)
@@ -350,8 +382,10 @@ const array_tests = Dict(
     "matrix_vector" => matrix_vector_test,
     "dot" => dot_test,
     "sum" => sum_test,
+    "sum_multiplication" => sum_multiplication_test,
     "transpose" => transpose_test,
     "broadcast" => broadcast_test,
+    "broadcast_multiplication" => broadcast_multiplication_test,
     "broadcast_division" => broadcast_division_test,
     "unary" => unary_test,
     "symmetric_unary" => symmetric_unary_test,
