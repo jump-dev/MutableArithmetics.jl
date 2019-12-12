@@ -25,7 +25,9 @@ function _add_test(x, y)
 end
 function add_test(x, y)
     _add_test(x, y)
-    _add_test(y, x)
+    if x !== y
+        _add_test(y, x)
+    end
 end
 
 function unary_test(x)

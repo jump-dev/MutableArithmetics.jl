@@ -69,7 +69,7 @@ the equality of the representation is equivalent to the equality of the objects
 begin represented.
 """
 isequal_canonical(a, b) = a == b
-function isequal_canonical(a::AT, b::AT) where AT <: Union{Array, LinearAlgebra.Symmetric}
+function isequal_canonical(a::AT, b::AT) where AT <: Union{Array, LinearAlgebra.Symmetric, LinearAlgebra.UpperTriangular, LinearAlgebra.LowerTriangular}
     return all(zip(a, b)) do elements
         return isequal_canonical(elements...)
     end
@@ -79,6 +79,12 @@ function isequal_canonical(x::LinearAlgebra.Adjoint, y::LinearAlgebra.Adjoint)
 end
 function isequal_canonical(x::LinearAlgebra.Transpose, y::LinearAlgebra.Transpose)
     return isequal_canonical(parent(x), parent(y))
+end
+function isequal_canonical(x::LinearAlgebra.Diagonal, y::LinearAlgebra.Diagonal)
+    return isequal_canonical(parent(x), parent(y))
+end
+function isequal_canonical(x::LinearAlgebra.Tridiagonal, y::LinearAlgebra.Tridiagonal)
+    return isequal_canonical(x.dl, y.dl) && isequal_canonical(x.d, y.d) && isequal_canonical(x.du, y.du)
 end
 
 include("rewrite.jl")

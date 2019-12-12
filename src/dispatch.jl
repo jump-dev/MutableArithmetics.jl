@@ -233,3 +233,15 @@ end
 function Base.:-(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     return LinearAlgebra.Hermitian(-parent(A), LinearAlgebra.sym_uplo(A.uplo))
 end
+
+# These three have specific methods that just redirect to `Matrix{T}` which
+# does not work, e.g. if `zero(T)` has a different type than `T`.
+function Base.Matrix(x::LinearAlgebra.Tridiagonal{T}) where T<:AbstractMutable
+    return Matrix{promote_type(promote_operation(zero, T), T)}(x)
+end
+function Base.Matrix(x::LinearAlgebra.UpperTriangular{T}) where T<:AbstractMutable
+    return Matrix{promote_type(promote_operation(zero, T), T)}(x)
+end
+function Base.Matrix(x::LinearAlgebra.LowerTriangular{T}) where T<:AbstractMutable
+    return Matrix{promote_type(promote_operation(zero, T), T)}(x)
+end

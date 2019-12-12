@@ -370,6 +370,62 @@ function symmetric_matrix_uniform_scaling_test(x)
     end
 end
 
+function triangular_test(x)
+    if !(x isa AbstractMatrix && size(x, 1) == size(x, 2))
+        return
+    end
+    n = LinearAlgebra.checksquare(x)
+    ut = LinearAlgebra.UpperTriangular(x)
+    add_test(ut, ut)
+    y = Matrix(ut)
+    for i in 1:n
+        for j in 1:(i - 1)
+            @test iszero(y[i, j])
+            @test MA.iszero!(y[i, j])
+        end
+    end
+    lt = LinearAlgebra.LowerTriangular(x)
+    add_test(lt, lt)
+    z = Matrix(lt)
+    for j in 1:n
+        for i in 1:(j - 1)
+            @test iszero(z[i, j])
+            @test MA.iszero!(z[i, j])
+        end
+    end
+end
+
+function diagonal_test(x)
+    if !(x isa AbstractVector && MA._one_indexed(x))
+        return
+    end
+    d = LinearAlgebra.Diagonal(x)
+    add_test(d, d)
+    y = Matrix(d)
+    t = LinearAlgebra.Tridiagonal(x[2:end], x, x[2:end])
+    add_test(t, t)
+    z = Matrix(t)
+    for i in eachindex(x)
+        @test MA.isequal_canonical(y[i, i], convert(eltype(y), x[i]))
+        @test MA.isequal_canonical(z[i, i], convert(eltype(z), x[i]))
+    end
+    n = length(x)
+    for j in 1:n
+        for i in 1:(j - 1)
+            @test iszero(y[i, j])
+            @test MA.iszero!(y[i, j])
+            @test iszero(y[j, i])
+            @test MA.iszero!(y[j, i])
+            if abs(i - j) > 1
+                @test iszero(z[i, j])
+                @test MA.iszero!(z[i, j])
+                @test iszero(z[j, i])
+                @test MA.iszero!(z[j, i])
+            end
+        end
+    end
+end
+
 const array_tests = Dict(
     "matrix_vector_division" => matrix_vector_division_test,
     "non_array" => non_array_test,
@@ -385,7 +441,9 @@ const array_tests = Dict(
     "symmetric_unary" => symmetric_unary_test,
     "symmetric_add" => symmetric_add_test,
     "matrix_uniform_scaling" => matrix_uniform_scaling_test,
-    "symmetric_matrix_uniform_scaling" => symmetric_matrix_uniform_scaling_test
+    "symmetric_matrix_uniform_scaling" => symmetric_matrix_uniform_scaling_test,
+    "triangular" => triangular_test,
+    "diagonal" => diagonal_test
 )
 
 @test_suite array
