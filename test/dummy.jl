@@ -28,7 +28,10 @@ _data(x) = x
 _data(x::DummyBigInt) = x.data
 MA.scaling(x::DummyBigInt) = x
 
-MA.mutable_operate_to!(x::DummyBigInt, op::Function, args...) = DummyBigInt(MA.mutable_operate_to!(x.data, op, _data.(args)...))
+MA.mutable_operate_to!(x::DummyBigInt, op::Function, args::Union{MA.Scaling, DummyBigInt}...) = DummyBigInt(MA.mutable_operate_to!(x.data, op, _data.(args)...))
+# Called for instance if `args` is `(v', v)` for a vector `v`.
+MA.mutable_operate_to!(output::DummyBigInt, op::typeof(MA.add_mul), x::Union{MA.Scaling, DummyBigInt}, y::Union{MA.Scaling, DummyBigInt}, z::Union{MA.Scaling, DummyBigInt}, args::Union{MA.Scaling, DummyBigInt}...) = MA.mutable_operate_to!(output, +, x, *(y, z, args...))
+MA.mutable_operate_to!(output::DummyBigInt, op::typeof(MA.add_mul), x, y, z, args...) = MA.mutable_operate_to!(output, +, x, *(y, z, args...))
 function MA.mutable_operate!(op::Function, x::DummyBigInt, args::Vararg{Any, N}) where N
     MA.mutable_operate_to!(x, op, x, args...)
 end

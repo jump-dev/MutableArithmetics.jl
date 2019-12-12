@@ -97,6 +97,13 @@ function promote_array_mul(::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractVector{
     return Vector{promote_operation(add_mul, S, S, T)}
 end
 
+const TransposeOrAdjoint{T, MT} = Union{LinearAlgebra.Transpose{T, MT}, LinearAlgebra.Adjoint{T, MT}}
+_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.transpose(x)
+_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint) = LinearAlgebra.adjoint(x)
+function promote_array_mul(::Type{<:TransposeOrAdjoint{S, <:AbstractVector}}, ::Type{<:AbstractVector{T}}) where {S, T}
+    return promote_operation(add_mul, S, S, T)
+end
+
 ################################################################################
 # We roll our own matmul here (instead of using Julia's generic fallbacks)
 # because doing so allows us to accumulate the expressions for the inner loops

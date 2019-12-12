@@ -55,8 +55,12 @@ scaling_to_bigint(J::LinearAlgebra.UniformScaling) = scaling_to_bigint(J.λ)
 function mutable_operate_to!(output::BigInt, op::Union{typeof(+), typeof(*)}, args::Vararg{Scaling, N}) where N
     return mutable_operate_to!(output, op, scaling_to_bigint.(args)...)
 end
-function mutable_operate_to!(output::BigInt, op::typeof(add_mul), x, y, z, args::Vararg{Scaling, N}) where N
+function mutable_operate_to!(output::BigInt, op::typeof(add_mul), x::Scaling, y::Scaling, z::Scaling, args::Vararg{Scaling, N}) where N
     return mutable_operate_to!(
         output, op, scaling_to_bigint(x), scaling_to_bigint(y),
         scaling_to_bigint(z), scaling_to_bigint.(args)...)
+end
+# Called for instance if `args` is `(v', v)` for a vector `v`.
+function mutable_operate_to!(output::BigInt, op::typeof(add_mul), x, y, z, args::Vararg{Any, N}) where N
+    return mutable_operate_to!(output, +, x, *(y, z, args...))
 end

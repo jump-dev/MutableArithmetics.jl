@@ -240,7 +240,7 @@ function _write_add_mul(vectorized, current_sum, left_factors, inner_factors, ri
         f = :(MutableArithmetics.operate!)
     end
     return _start_summing(current_sum, current_sum -> begin
-        call_expr = Expr(:call, f, :(MutableArithmetics.add_mul), current_sum, left_factors..., inner_factors..., right_factors...)
+        call_expr = Expr(:call, f, :(MutableArithmetics.add_mul), current_sum, left_factors..., inner_factors..., reverse(right_factors)...)
         return :($new_var = $call_expr)
     end)
 end
@@ -250,15 +250,15 @@ end
 
 Return `new_var, code` such that `code` is equivalent to
 ```julia
-new_var = prod(left_factors) * inner_factor * prod(right_factors)
+new_var = prod(left_factors) * inner_factor * prod(reverse(right_factors))
 ```
 if `current_sum` is `nothing`,
 ```julia
-new_var = current_sum + prod(left_factors) * inner_factor * prod(right_factors)
+new_var = current_sum + prod(left_factors) * inner_factor * prod(reverse(right_factors))
 ```
 if `current_sum` is a `Symbol` and `vectorized` is `false` and
 ```julia
-new_var = current_sum .+ prod(left_factors) * inner_factor * prod(right_factors)
+new_var = current_sum .+ prod(left_factors) * inner_factor * prod(reverse(right_factors))
 ```
 otherwise.
 """
@@ -297,7 +297,7 @@ function _rewrite(vectorized::Bool, inner_factor, current_sum::Union{Symbol, Not
                     vectorized,
                     inner_factor.args[which_idx], current_sum,
                     vcat(left_factors, [esc(inner_factor.args[i]) for i in 2:(which_idx - 1)]),
-                    vcat(right_factors, [esc(inner_factor.args[i]) for i in (which_idx + 1):length(inner_factor.args)]),
+                    vcat(right_factors, [esc(inner_factor.args[i]) for i in length(inner_factor.args):-1:(which_idx + 1)]),
                     new_var)
             else
                 blk = Expr(:block)

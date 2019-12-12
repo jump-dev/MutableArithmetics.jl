@@ -8,6 +8,12 @@ struct CustomArray{T, N} <: AbstractArray{T, N} end
 
 import LinearAlgebra
 
+@testset "promote_operation" begin
+    x = [1]
+    @test MA.promote_operation(*, typeof(x'), typeof(x)) == Int
+    @test MA.promote_operation(*, typeof(transpose(x)), typeof(x)) == Int
+end
+
 @testset "Scaling convert" begin
     @test MA.scaling_convert(LinearAlgebra.UniformScaling{Int}, LinearAlgebra.I) isa LinearAlgebra.UniformScaling
     @test MA.scaling_convert(Int, LinearAlgebra.I) === 1

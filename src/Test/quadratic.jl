@@ -148,6 +148,13 @@ function quadratic_add_test(w, x, y, z)
         @test_rewrite 8 * x * z + aff2
         q2 = @inferred 8 * x * z + aff2
         add_test(q, q2)
+
+        vx = [x]
+        vy = [z]
+        v1 = [1]
+        @test_rewrite (1 + vx'vy) * 1
+        @test_rewrite (1 + vx'v1) * x
+        @test_rewrite (1 + v1'vy) * y
    end
 
     @test MA.isequal_canonical(w, w_copy)

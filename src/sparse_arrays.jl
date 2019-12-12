@@ -32,10 +32,6 @@ end
 similar_array_type(::Type{SparseArrays.SparseVector{Tv, Ti}}, ::Type{T}) where {T, Tv, Ti} = SparseArrays.SparseVector{T, Ti}
 similar_array_type(::Type{SparseMat{Tv, Ti}}, ::Type{T}) where {T, Tv, Ti} = SparseMat{T, Ti}
 
-const TransposeOrAdjoint{T, MT} = Union{LinearAlgebra.Transpose{T, MT}, LinearAlgebra.Adjoint{T, MT}}
-_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.transpose(x)
-_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint) = LinearAlgebra.adjoint(x)
-
 # `SparseArrays/src/linalg.jl` sometimes create a sparse matrix to contain the result.
 # For instance with `Matrix * Adjoint{SparseMatrixCSC}` and then uses `generic_matmatmul!`
 # which looks quite inefficient as it does not exploit the sparsity of the result matrix and the rhs.
