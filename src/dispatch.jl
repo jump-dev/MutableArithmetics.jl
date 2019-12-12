@@ -245,3 +245,24 @@ end
 function Base.Matrix(x::LinearAlgebra.LowerTriangular{T}) where T<:AbstractMutable
     return Matrix{promote_type(promote_operation(zero, T), T)}(x)
 end
+
+# Needed for Julia v1.1 only. If `parent(A)` is for instance `Diagonal`, the
+# `eltype` of `B` might be different form the `eltype` of `A`.
+function Matrix(A::LinearAlgebra.Symmetric{<:AbstractMutable})
+    B = LinearAlgebra.copytri!(convert(Matrix, copy(A.data)), A.uplo)
+    for i = 1:size(A, 1)
+        # `B[i, i]` is used instead of `A[i, i]` on Julia v1.1 hence the need
+        # to overwrite it for `AbstractMutable`.
+        B[i,i] = LinearAlgebra.symmetric(A[i,i], LinearAlgebra.sym_uplo(A.uplo))::LinearAlgebra.symmetric_type(eltype(A.data))
+    end
+    return B
+end
+function Matrix(A::LinearAlgebra.Hermitian{<:AbstractMutable})
+    B = LinearAlgebra.copytri!(convert(Matrix, copy(A.data)), A.uplo, true)
+    for i = 1:size(A, 1)
+        # `B[i, i]` is used instead of `A[i, i]` on Julia v1.1 hence the need
+        # to overwrite it for `AbstractMutable`.
+        B[i,i] = LinearAlgebra.hermitian(A[i,i], LinearAlgebra.sym_uplo(A.uplo))::LinearAlgebra.hermitian_type(eltype(A.data))
+    end
+    return B
+end
