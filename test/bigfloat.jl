@@ -1,9 +1,9 @@
-MA.Test.int_test(BigInt)
+MA.Test.int_test(BigFloat)
 
 @testset "Allocation" begin
-    a = BigInt(2)
-    b = BigInt(3)
-    c = BigInt(4)
+    a = BigFloat(2)
+    b = BigFloat(3)
+    c = BigFloat(4)
     alloc_test(() -> MA.add!(a, b), 0)
     alloc_test(() -> MA.add_to!(c, a, b), 0)
     alloc_test(() -> MA.mul!(a, b), 0)

@@ -40,6 +40,7 @@ using OffsetArrays
         (Int, true),
         (Float64, true),
         (BigInt, true),
+        (BigFloat, true),
         (DummyBigInt, false)
     ]
     @testset "Error" begin

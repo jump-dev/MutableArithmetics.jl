@@ -42,6 +42,7 @@ operations.
 
 The following types implement the MutableArithmetics API:
 * The API is implemented for `Base.BigInt` in `src/bigint.jl`.
+* The API is implemented for `Base.BigFloat` in `src/bigfloat.jl`.
 * The API is implemented for `Base.Array` in `src/linear_algebra.jl`.
 * The interface for multivariate polynomials [MultivariatePolynomials](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl)
   as well as its two implementations [DynamicPolynomials](https://github.com/JuliaAlgebra/DynamicPolynomials.jl)
