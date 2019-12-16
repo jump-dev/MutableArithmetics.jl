@@ -82,8 +82,7 @@ function _mul!(output, A, B, α)
     return mutable_operate!(add_mul, output, A, B, scaling(α))
 end
 function _mul!(output, A, B)
-    mutable_operate!(zero, output)
-    return mutable_operate!(add_mul, output, A, B)
+    return mutable_operate_to!(output, *, A, B)
 end
 
 function LinearAlgebra.mul!(ret::AbstractMatrix{<:AbstractMutable},
@@ -266,3 +265,13 @@ function Matrix(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     end
     return B
 end
+
+# Called in `getindex` of `LinearAlgebra.LowerTriangular` and `LinearAlgebra.UpperTriangular`.
+Base.zero(x::AbstractMutable) = zero(typeof(x))
+
+# To determine whether the funtion is zero preserving, `LinearAlgebra` calls
+# `zero` on the `eltype` of the broadcasted object and then check `_iszero`.
+# `_iszero(x)` redirects to `iszero(x)` for numbers and to `x == 0` otherwise.
+# `x == 0` returns false for types that implement `iszero` but not `==` such as
+# `DummyBigInt` and MOI functions.
+LinearAlgebra._iszero(x::AbstractMutable) = iszero(x)

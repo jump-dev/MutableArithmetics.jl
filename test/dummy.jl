@@ -42,9 +42,13 @@ end
 
 MA.promote_operation(::typeof(*), ::Type{DummyBigInt}, ::Type{DummyBigInt}) = DummyBigInt
 Base.convert(::Type{DummyBigInt}, x::Int) = DummyBigInt(x)
-Base.:(==)(x::DummyBigInt, y::DummyBigInt) = x.data == y.data
-Base.zero(::Union{DummyBigInt, Type{DummyBigInt}}) = DummyBigInt(zero(BigInt))
-Base.one(::Union{DummyBigInt, Type{DummyBigInt}}) = DummyBigInt(one(BigInt))
+MA.isequal_canonical(x::DummyBigInt, y::DummyBigInt) = x.data == y.data
+Base.iszero(x::DummyBigInt) = iszero(x.data)
+# We don't define == to tests that implementation of MA can pass the tests without defining ==.
+# This is the case for MOI functions for instance.
+# For th same reason, we only define `zero` and `one` for `Type{DummyBigInt}`, not for `DummyBigInt`.
+Base.zero(::Type{DummyBigInt}) = DummyBigInt(zero(BigInt))
+Base.one(::Type{DummyBigInt}) = DummyBigInt(one(BigInt))
 Base.:+(x::DummyBigInt) = DummyBigInt(+x.data)
 Base.:+(x::DummyBigInt, y::DummyBigInt) = DummyBigInt(x.data + y.data)
 Base.:+(x::DummyBigInt, y::Union{Integer, UniformScaling{<:Integer}}) = DummyBigInt(x.data + y)

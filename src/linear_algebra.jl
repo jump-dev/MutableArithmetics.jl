@@ -139,15 +139,7 @@ end
 > WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 =#
 
-function _mut_check(C, A, B)
-    if mutability(eltype(C), add_mul, eltype(C), eltype(A), eltype(B)) isa NotMutable
-        error("mutable_operate!(add_mul, ::$(typeof(C)), ::$(typeof(A)), ::$(typeof(B))) not implemented as $(eltype(C)) cannot be mutated to the result.")
-    end
-end
-
 function _dim_check(C::AbstractVector, A::AbstractMatrix, B::AbstractVector)
-    _mut_check(C, A, B)
-
     mB = length(B)
     mA, nA = size(A)
     if mB != nA
@@ -159,8 +151,6 @@ function _dim_check(C::AbstractVector, A::AbstractMatrix, B::AbstractVector)
 end
 
 function _dim_check(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
-    _mut_check(C, A, B)
-
     mB, nB = size(B)
     mA, nA = size(A)
     if mB != nA
@@ -176,15 +166,15 @@ function _add_mul_array(C::Vector, A::AbstractMatrix, B::AbstractVector)
     # We need a buffer to hold the intermediate multiplication.
     mul_buffer = buffer_for(add_mul, eltype(C), eltype(A), eltype(B))
 
-    #@inbounds begin
+    @inbounds begin
         for k = eachindex(B)
             aoffs = (k-1) * Astride
             b = B[k]
             for i = Base.OneTo(size(A, 1))
-                mutable_buffered_operate!(mul_buffer, add_mul, C[i], A[aoffs + i], b)
+                C[i] = buffered_operate!(mul_buffer, add_mul, C[i], A[aoffs + i], b)
             end
         end
-    #end # @inbounds
+    end # @inbounds
 
     return C
 end
@@ -193,15 +183,15 @@ end
 function _add_mul_array(C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
     mul_buffer = buffer_for(add_mul, eltype(C), eltype(A), eltype(B))
 
-    #@inbounds begin
+    @inbounds begin
         for i = 1:size(A, 1), j = 1:size(B, 2)
-            Ctmp = C[i, j]
-            mutable_operate!(zero, Ctmp)
+            Ctmp = zero!(C[i, j])
             for k = 1:size(A, 2)
-                mutable_buffered_operate!(mul_buffer, add_mul, Ctmp, A[i, k], B[k, j])
+                Ctmp = buffered_operate!(mul_buffer, add_mul, Ctmp, A[i, k], B[k, j])
             end
+            C[i, j] = Ctmp
         end
-    #end # @inbounds
+    end # @inbounds
 
     return C
 end
@@ -214,19 +204,11 @@ end
 function mutable_operate!(::typeof(zero), C::Union{Vector, Matrix})
     # C may contain undefined values so we cannot call `zero!`
     for i in eachindex(C)
-        #@inbounds C[i] = zero(eltype(C))
-        C[i] = zero(eltype(C))
+        @inbounds C[i] = zero(eltype(C))
     end
 end
 
-function mutable_operate_to!(C::Union{Vector, Matrix}, ::typeof(*), A::AbstractMatrix, B::AbstractVecOrMat)
-    # If `mutability(S, muladd!, T, U)` is `NotMutable`, we might as well redirect to `LinearAlgebra.mul!(C, A, B)`
-    # in which case we can do `muladd_buf_impl!(mul_buffer, A[aoffs + i], b, C[i])` here instead of
-    # `A[aoffs + i] = muladd_buf!(mul_buffer, A[aoffs + i], b, C[i])`
-    if mutability(eltype(C), add_mul, eltype(C), eltype(A), eltype(B)) isa NotMutable
-        return LinearAlgebra.mul!(C, A, B)
-    end
-
+function mutable_operate_to!(C::AbstractArray, ::typeof(*), A::AbstractArray, B::AbstractArray)
     mutable_operate!(zero, C)
     return mutable_operate!(add_mul, C, A, B)
 end

@@ -39,8 +39,7 @@ similar_array_type(::Type{SparseMat{Tv, Ti}}, ::Type{T}) where {T, Tv, Ti} = Spa
 function mutable_operate!(::typeof(add_mul), output::SparseMat{T},
                           A::AbstractMatrix, B::AbstractMatrix) where T
     C = Matrix{T}(undef, size(output)...)
-    mutable_operate!(zero, C)
-    mutable_operate!(add_mul, C, A, B)
+    mutable_operate_to!(C, *, A, B)
     copyto!(output, C)
     return output
 end
@@ -56,11 +55,11 @@ function mutable_operate!(::typeof(add_mul), ret::VecOrMat{T},
     for k ∈ 1:size(ret, 2)
         for col ∈ 1:A.n
             cur = ret[col, k]
-            # TODO replace by nzrange
-            for j ∈ A.colptr[col]:(A.colptr[col + 1] - 1)
+            for j ∈ SparseArrays.nzrange(A, col)
                 A_val = _mirror_transpose_or_adjoint(A_nonzeros[j], adjA)
-                mutable_operate!(add_mul, cur, A_val, B[A_rowvals[j], k], α...)
+                cur = operate!(add_mul, cur, A_val, B[A_rowvals[j], k], α...)
             end
+            ret[col, k] = cur
         end
     end
     return ret
@@ -75,7 +74,7 @@ function mutable_operate!(::typeof(add_mul), ret::VecOrMat{T},
         for k ∈ 1:size(ret, 2)
             αxj = *(B[col,k], α...)
             for j ∈ SparseArrays.nzrange(A, col)
-                mutable_operate!(add_mul, ret[A_rowvals[j], k], A_nonzeros[j], αxj)
+                ret[A_rowvals[j], k] = operate!(add_mul, ret[A_rowvals[j], k], A_nonzeros[j], αxj)
             end
         end
     end
@@ -91,8 +90,9 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
         for col ∈ 1:size(B, 2)
             cur = ret[multivec_row, col]
             for k ∈ SparseArrays.nzrange(B, col)
-                mutable_operate!(add_mul, cur, A[multivec_row, rowval[k]], B_nonzeros[k], α...)
+                cur = operate!(add_mul, cur, A[multivec_row, rowval[k]], B_nonzeros[k], α...)
             end
+            ret[multivec_row, col] = cur
         end
     end
     return ret
@@ -117,7 +117,7 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
         B_val = _mirror_transpose_or_adjoint(B_nonzeros[k], adjB)
         αB_val = *(B_val, α...)
         for A_row in 1:size(A, 1)
-            mutable_operate!(add_mul, ret[A_row, B_row], A[A_row, B_col], αB_val)
+            ret[A_row, B_row] = operate!(add_mul, ret[A_row, B_row], A[A_row, B_col], αB_val)
         end
     end
     return ret
@@ -136,30 +136,3 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
     # TODO adapt implementation of `SparseArray.spmatmul`
     mutable_operate!(add_mul, ret, Matrix{promote_operation(zero, eltype(A))}(A), B, α...)
 end
-
-# TODO
-#function _densify_with_jump_eltype(x::SparseMat{V}) where {V <: AbstractVariableRef}
-#    return convert(Matrix{GenericAffExpr{Float64, V}}, x)
-#end
-#_densify_with_jump_eltype(x::AbstractMatrix) = convert(Matrix, x)
-#
-## TODO: Implement sparse * sparse code as in base/sparse/linalg.jl (spmatmul).
-#function _mul!(ret::AbstractMatrix{<:AbstractMutable},
-#               A::SparseMat,
-#               B::SparseMat)
-#    return mul!(ret, A, _densify_with_jump_eltype(B))
-#end
-#
-## TODO: Implement sparse * sparse code as in base/sparse/linalg.jl (spmatmul).
-#function _mul!(ret::AbstractMatrix{<:AbstractMutable},
-#               A::TransposeOrAdjoint{<:Any, <:SparseMat},
-#               B::SparseMat)
-#    return mul!(ret, A, _densify_with_jump_eltype(B))
-#end
-#
-## TODO: Implement sparse * sparse code as in base/sparse/linalg.jl (spmatmul).
-#function _mul!(ret::AbstractMatrix{<:AbstractMutable},
-#               A::SparseMat,
-#               B::TransposeOrAdjoint{<:Any, <:SparseMat})
-#    return mul!(ret, _densify_with_jump_eltype(A), B)
-#end
