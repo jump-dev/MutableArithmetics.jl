@@ -19,9 +19,10 @@ include("dummy.jl")
 function error_test(x, y, z)
     err = ErrorException("Expected `sum` outside generator expression; got `prod`.")
     @test_macro_throws err MA.@rewrite(prod(i for i in 1:2))
-    err = ErrorException("Unexpected assignment in expression `y[j=1]`.")
+    # $(:(y[j=1])) does not print the same on Julia v1.3 or Julia 1.4
+    err = ErrorException("Unexpected assignment in expression `$(:(y[j=1]))`.")
     @test_macro_throws err MA.@rewrite y[j = 1]
-    err = ErrorException("Unexpected assignment in expression `x[i=1]`.")
+    err = ErrorException("Unexpected assignment in expression `$(:(x[i=1]))`.")
     @test_macro_throws err MA.@rewrite y + x[i = 1] + z
     err = ErrorException("The curly syntax (sum{},prod{},norm2{}) is no longer supported. Expression: `sum{(i for i = 1:2)}`.")
     @test_macro_throws err MA.@rewrite sum{i for i in 1:2}
