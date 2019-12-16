@@ -44,6 +44,7 @@ MA.promote_operation(::typeof(*), ::Type{DummyBigInt}, ::Type{DummyBigInt}) = Du
 Base.convert(::Type{DummyBigInt}, x::Int) = DummyBigInt(x)
 MA.isequal_canonical(x::DummyBigInt, y::DummyBigInt) = x.data == y.data
 Base.iszero(x::DummyBigInt) = iszero(x.data)
+Base.isone(x::DummyBigInt) = isone(x.data)
 # We don't define == to tests that implementation of MA can pass the tests without defining ==.
 # This is the case for MOI functions for instance.
 # For th same reason, we only define `zero` and `one` for `Type{DummyBigInt}`, not for `DummyBigInt`.

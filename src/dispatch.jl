@@ -233,6 +233,16 @@ function Base.:-(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     return LinearAlgebra.Hermitian(-parent(A), LinearAlgebra.sym_uplo(A.uplo))
 end
 
+# Needed for Julia v1.0, otherwise, `broadcast(*, α, A)` gives a `Array` and
+# not a `Symmetric`.
+function Base.:*(α::Number, A::LinearAlgebra.Symmetric{<:AbstractMutable})
+    return LinearAlgebra.Symmetric(α * parent(A), LinearAlgebra.sym_uplo(A.uplo))
+end
+function Base.:*(α::Number, A::LinearAlgebra.Hermitian{<:AbstractMutable})
+    return LinearAlgebra.Hermitian(α * parent(A), LinearAlgebra.sym_uplo(A.uplo))
+end
+
+
 # These three have specific methods that just redirect to `Matrix{T}` which
 # does not work, e.g. if `zero(T)` has a different type than `T`.
 function Base.Matrix(x::LinearAlgebra.Tridiagonal{T}) where T<:AbstractMutable
