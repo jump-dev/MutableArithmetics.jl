@@ -52,6 +52,8 @@ scaling_convert(T::Type, x::LinearAlgebra.UniformScaling) = convert(T, x.λ)
 scaling_convert(T::Type, x) = convert(T, x)
 include("bigint.jl")
 include("bigfloat.jl")
+
+include("reduce.jl")
 include("linear_algebra.jl")
 include("sparse_arrays.jl")
 

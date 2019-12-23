@@ -26,6 +26,14 @@ Return the product of `a`, `b`, ..., possibly modifying `a`.
 """
 mul!(args::Vararg{Any, N}) where {N} = operate!(*, args...)
 
+"""
+    mul(a, b, ...)
+
+Shortcut for `operate(*, a, b, ...)`, see [`operate`](@ref).
+"""
+mul(args::Vararg{Any, N}) where {N} = operate(*, args...)
+
+
 # `Vararg` gives extra allocations on Julia v1.3, see https://travis-ci.com/JuliaOpt/MutableArithmetics.jl/jobs/260666164#L215-L238
 function promote_operation(::typeof(add_mul), T::Type, x::Type, y::Type)
     return promote_operation(+, T, promote_operation(*, x, y))

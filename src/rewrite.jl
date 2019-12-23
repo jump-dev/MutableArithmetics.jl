@@ -26,11 +26,14 @@ macro rewrite(expr)
 end
 
 struct Zero end
-# We need to copy `x` as it will be used as might be given by the user and be
-# given as first argument of `operate!`.
-Base.:(+)(zero::Zero, x) = copy_if_mutable(x)
-# `add_mul(zero, ...)` redirects to `muladd(..., zero)` which calls `... + zero`.
-Base.:(+)(x, zero::Zero) = copy_if_mutable(x)
+## We need to copy `x` as it will be used as might be given by the user and be
+## given as first argument of `operate!`.
+#Base.:(+)(zero::Zero, x) = copy_if_mutable(x)
+## `add_mul(zero, ...)` redirects to `muladd(..., zero)` which calls `... + zero`.
+#Base.:(+)(x, zero::Zero) = copy_if_mutable(x)
+function operate(::typeof(add_mul), ::Zero, args::Vararg{Any, N}) where {N}
+    return operate(*, args...)
+end
 broadcast!(::Union{typeof(add_mul), typeof(+)}, ::Zero, x) = copy_if_mutable(x)
 broadcast!(::typeof(add_mul), ::Zero, x, y) = x * y
 

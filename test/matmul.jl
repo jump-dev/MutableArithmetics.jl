@@ -8,6 +8,32 @@ struct CustomArray{T, N} <: AbstractArray{T, N} end
 
 import LinearAlgebra
 
+function dot_test(x, y)
+    @test MA.operate(LinearAlgebra.dot, x, y) == LinearAlgebra.dot(x, y)
+    @test MA.operate(LinearAlgebra.dot, y, x) == LinearAlgebra.dot(y, x)
+    @test MA.operate(*, x', y) == x' * y
+    @test MA.operate(*, y', x) == y' * x
+    @test MA.operate(*, LinearAlgebra.transpose(x), y) == LinearAlgebra.transpose(x) * y
+    @test MA.operate(*, LinearAlgebra.transpose(y), x) == LinearAlgebra.transpose(y) * x
+end
+
+@testset "dot" begin
+    x = [1im]
+    y = [1]
+    A = reshape(x, 1, 1)
+    B = reshape(y, 1, 1)
+    dot_test(x, x)
+    dot_test(y, y)
+    dot_test(A, A)
+    dot_test(B, B)
+    dot_test(x, y)
+    dot_test(x, A)
+    dot_test(x, B)
+    dot_test(y, A)
+    dot_test(y, B)
+    dot_test(A, B)
+end
+
 @testset "promote_operation" begin
     x = [1]
     @test MA.promote_operation(*, typeof(x'), typeof(x)) == Int
@@ -32,6 +58,17 @@ end
         B = zeros(2, 2)
         err = DimensionMismatch("Cannot sum matrices of size `(1, 1)` and size `(2, 2)`, the size of the two matrices must be equal.")
         @test_throws err MA.@rewrite A + B
+        x = ones(1)
+        y = ones(2)
+        err = DimensionMismatch("first array has length 1 which does not match the length of the second, 2.")
+        @test_throws err MA.operate(*, x', y)
+        @test_throws err MA.operate(*, LinearAlgebra.transpose(x), y)
+        err = DimensionMismatch("matrix A has dimensions (2,2), vector B has length 1")
+        @test_throws err MA.operate(*, x', B)
+        a = zeros(0)
+        @test iszero(@inferred MA.operate(LinearAlgebra.dot, a, a))
+        @test iszero(@inferred MA.operate(*, a', a))
+        @test iszero(@inferred MA.operate(*, LinearAlgebra.transpose(a), a))
     end
 end
 
