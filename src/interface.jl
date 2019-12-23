@@ -36,6 +36,72 @@ function promote_operation(op::Union{typeof(+), typeof(-), typeof(add_mul)}, α:
     error("Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.")
 end
 
+"""
+    operate(op::Function, args...)
+
+Return an object equal to the result of `op(args...)` that can be mutated
+through the MultableArithmetics API without affecting the arguments.
+
+By default:
+* `operate(+, x)` and `operate(+, x)` redirect to `copy_if_mutable(x)` so a
+  mutable type `T` can return the same instance from unary operators
+  `+(x::T) = x` and `*(x::T) = x`.
+* `operate(+, args...)` (resp. `operate(-, args...)` and `operate(*, args...)`)
+  redirect to `+(args...)` (resp. `-(args...)` and `*(args...)`) if `length(args)`
+  is at least 2 (or the operation is `-`).
+
+Note that when `op` is a `Base` function whose implementation can be improved
+for mutable arguments, `operate(op, args...)` may have an implementation in
+this package relying on the MutableArithmetics API instead of redirecting to
+`op(args...)`. This is the case for instance:
+
+* for `Base.sum`,
+* for `LinearAlgebra.dot` and
+* for matrix-matrix product and matrix-vector product.
+
+Therefore, for mutable arguments, there may be a performance advantage to call
+`operate(op, args...)` instead of `op(args...)`.
+
+## Example
+
+If for a mutable type `T`, the following is defined:
+```julia
+function Base.:*(a::Bool, x::T)
+    return a ? x : zero(T)
+end
+```
+then `operate(*, a, x)` will return the instance `x` whose modification will
+affect the argument of `operate`. Therefore, the following method need to
+be implemented
+```julia
+function MA.operate(::typeof(*), a::Bool, x::T)
+    return a ? MA.mutable_copy(x) : zero(T)
+end
+```
+"""
+function operate end
+
+# /!\ We assume these two return an object that can be modified through the MA
+#     API without altering `x` and `y`. If it is not the case, implement a
+#     custom `operate` method.
+operate(::typeof(-), x) = -x
+operate(op::Union{typeof(+), typeof(-), typeof(*)}, x, y) where {N} = op(x, y)
+
+# We only give the type to `zero` and `one` to be sure that modifying the
+# returned object cannot alter `x`.
+operate(::typeof(zero), x) = zero(typeof(x))
+operate(::typeof(one), x) = one(typeof(x))
+
+operate(::Union{typeof(+), typeof(*)}, x) = copy_if_mutable(x)
+function operate(op::Union{typeof(+), typeof(*)}, x, y, z, args::Vararg{Any, N}) where N
+    return operate(op, x, operate(op, y, z, args...))
+end
+
+operate(::typeof(add_mul), x, y) = operate(+, x, y)
+function operate(::typeof(add_mul), x, y, z, args::Vararg{Any, N}) where N
+    return operate(+, x, operate(*, y, z, args...))
+end
+
 # Define Traits
 
 """
@@ -196,7 +262,7 @@ function operate_to!(output, op::Function, args::Vararg{Any, N}) where N
 end
 
 function operate_to_fallback!(::NotMutable, output, op::Function, args::Vararg{Any, N}) where N
-    return op(args...)
+    return operate(op, args...)
 end
 function operate_to_fallback!(::IsMutable, output, op::Function, args::Vararg{Any, N}) where N
     return mutable_operate_to!(output, op, args...)
@@ -212,7 +278,7 @@ function operate!(op::Function, args::Vararg{Any, N}) where N
 end
 
 function operate_fallback!(::NotMutable, op::Function, args::Vararg{Any, N}) where N
-    return op(args...)
+    return operate(op, args...)
 end
 function operate_fallback!(::IsMutable, op::Function, args::Vararg{Any, N}) where N
     return mutable_operate!(op, args...)
@@ -229,7 +295,7 @@ function buffered_operate_to!(buffer, output, op::Function, args::Vararg{Any, N}
 end
 
 function buffered_operate_to_fallback!(::NotMutable, buffer, output, op::Function, args::Vararg{Any, N}) where N
-    return op(args...)
+    return operate(op, args...)
 end
 function buffered_operate_to_fallback!(::IsMutable, buffer, output, op::Function, args::Vararg{Any, N}) where N
     return mutable_buffered_operate_to!(buffer, output, op, args...)
@@ -246,7 +312,7 @@ function buffered_operate!(buffer, op::Function, args::Vararg{Any, N}) where N
 end
 
 function buffered_operate_fallback!(::NotMutable, buffer, op::Function, args::Vararg{Any, N}) where N
-    return op(args...)
+    return operate(op, args...)
 end
 function buffered_operate_fallback!(::IsMutable, buffer, op::Function, args::Vararg{Any, N}) where N
     return mutable_buffered_operate!(buffer, op, args...)

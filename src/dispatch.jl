@@ -7,34 +7,12 @@
 abstract type AbstractMutable end
 
 function Base.sum(a::AbstractArray{<:AbstractMutable})
-    return mapreduce(identity, add!, a, init = zero(promote_operation(+, eltype(a), eltype(a))))
+    return operate(sum, a)
 end
 
-LinearAlgebra.dot(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray) = _dot(lhs, rhs)
-LinearAlgebra.dot(lhs::AbstractArray, rhs::AbstractArray{<:AbstractMutable}) = _dot(lhs, rhs)
-LinearAlgebra.dot(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray{<:AbstractMutable}) = _dot(lhs, rhs)
-
-function _dot(x::AbstractArray, y::AbstractArray)
-    lx = length(x)
-    if lx != length(y)
-        throw(DimensionMismatch("first array has length $(lx) which does not match the length of the second, $(length(y))."))
-    end
-    if iszero(lx)
-        return LinearAlgebra.dot(zero(eltype(x)), zero(eltype(y)))
-    end
-
-    # We need a buffer to hold the intermediate multiplication.
-
-    SumType = promote_operation(add_mul, eltype(x), eltype(x), eltype(y))
-    mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
-    s = zero(SumType)
-
-    for (Ix, Iy) in zip(eachindex(x), eachindex(y))
-        s = @inbounds buffered_operate!(mul_buffer, add_mul, s, x[Ix], y[Iy])
-    end
-
-    return s
-end
+LinearAlgebra.dot(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray) = operate(LinearAlgebra.dot, lhs, rhs)
+LinearAlgebra.dot(lhs::AbstractArray, rhs::AbstractArray{<:AbstractMutable}) = operate(LinearAlgebra.dot, lhs, rhs)
+LinearAlgebra.dot(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray{<:AbstractMutable}) = operate(LinearAlgebra.dot, lhs, rhs)
 
 # Special-case because the the base version wants to do fill!(::Array{AbstractVariableRef}, zero(GenericAffExpr{Float64,eltype(x)}))
 _one_indexed(A) = all(x -> isa(x, Base.OneTo), axes(A))

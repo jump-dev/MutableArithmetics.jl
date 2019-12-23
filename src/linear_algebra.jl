@@ -97,13 +97,6 @@ function promote_array_mul(::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractVector{
     return Vector{promote_operation(add_mul, S, S, T)}
 end
 
-const TransposeOrAdjoint{T, MT} = Union{LinearAlgebra.Transpose{T, MT}, LinearAlgebra.Adjoint{T, MT}}
-_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.transpose(x)
-_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint) = LinearAlgebra.adjoint(x)
-function promote_array_mul(::Type{<:TransposeOrAdjoint{S, <:AbstractVector}}, ::Type{<:AbstractVector{T}}) where {S, T}
-    return promote_operation(add_mul, S, S, T)
-end
-
 ################################################################################
 # We roll our own matmul here (instead of using Julia's generic fallbacks)
 # because doing so allows us to accumulate the expressions for the inner loops
@@ -213,18 +206,18 @@ function mutable_operate_to!(C::AbstractArray, ::typeof(*), A::AbstractArray, B:
     return mutable_operate!(add_mul, C, A, B)
 end
 
-# `mul` does what `LinearAlgebra/src/matmul.jl` does for abstract
-# matrices and vector, i.e., use `matprod` to estimate the resulting element
-# type, allocate the resulting array but it redirects to `mul_to!` instead of
+# Does what `LinearAlgebra/src/matmul.jl` does for abstract
+# matrices and vector, estimate the resulting element type,
+# allocate the resulting array but it redirects to `mul_to!` instead of
 # `LinearAlgebra.mul!`.
-function mul(A::AbstractMatrix{S}, B::AbstractVector{T}) where {T, S}
+function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractVector{T}) where {T, S}
     U = promote_operation(add_mul, S, S, T)
     # `similar` gives SparseMatrixCSC if `B` is SparseMatrixCSC
     #C = similar(B, U, axes(A, 1))
     C = Vector{U}(undef, size(A, 1))
     return mutable_operate_to!(C, *, A, B)
 end
-function mul(A::AbstractMatrix{S}, B::AbstractMatrix{T}) where {T, S}
+function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractMatrix{T}) where {T, S}
     U = promote_operation(add_mul, S, S, T)
     # `similar` gives SparseMatrixCSC if `B` is SparseMatrixCSC
     #C = similar(B, U, axes(A, 1), axes(B, 2))
@@ -236,3 +229,62 @@ end
 # Broadcast applies the transpose
 #mutable_copy(A::LinearAlgebra.Transpose) = LinearAlgebra.Transpose(mutable_copy(parent(A)))
 #mutable_copy(A::LinearAlgebra.Adjoint) = LinearAlgebra.Adjoint(mutable_copy(parent(A)))
+
+const TransposeOrAdjoint{T, MT} = Union{LinearAlgebra.Transpose{T, MT}, LinearAlgebra.Adjoint{T, MT}}
+_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.transpose(x)
+_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint) = LinearAlgebra.adjoint(x)
+# dot product
+function promote_array_mul(::Type{<:TransposeOrAdjoint{S, <:AbstractVector}}, ::Type{<:AbstractVector{T}}) where {S, T}
+    return promote_operation(add_mul, S, S, T)
+end
+function operate(::typeof(*), x::LinearAlgebra.Adjoint{<:Any, <:AbstractVector}, y::AbstractVector)
+    return operate(LinearAlgebra.dot, parent(x), y)
+end
+function operate(::typeof(*), x::TransposeOrAdjoint{<:Any, <:AbstractVector}, y::AbstractMatrix)
+    return _mirror_transpose_or_adjoint(
+        operate(*, _mirror_transpose_or_adjoint(y, x), parent(x)), x)
+end
+
+function operate(::typeof(*), x::LinearAlgebra.Transpose{<:Any, <:AbstractVector}, y::AbstractVector)
+    lx = length(x)
+    if lx != length(y)
+        throw(DimensionMismatch("first array has length $(lx) which does not match the length of the second, $(length(y))."))
+    end
+    if iszero(lx)
+        return promote_operation(add_mul, eltype(x), eltype(y))
+    end
+
+    # We need a buffer to hold the intermediate multiplication.
+
+    SumType = promote_operation(add_mul, eltype(x), eltype(x), eltype(y))
+    mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
+    s = zero(SumType)
+
+    for (Ix, Iy) in zip(eachindex(x), eachindex(y))
+        s = @inbounds buffered_operate!(mul_buffer, add_mul, s, x[Ix], y[Iy])
+    end
+
+    return s
+end
+
+function operate(::typeof(LinearAlgebra.dot), x::AbstractArray, y::AbstractArray)
+    lx = length(x)
+    if lx != length(y)
+        throw(DimensionMismatch("first array has length $(lx) which does not match the length of the second, $(length(y))."))
+    end
+    if iszero(lx)
+        return LinearAlgebra.dot(zero(eltype(x)), zero(eltype(y)))
+    end
+
+    # We need a buffer to hold the intermediate multiplication.
+
+    SumType = promote_operation(add_mul, eltype(x), eltype(x), eltype(y))
+    mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
+    s = zero(SumType)
+
+    for (Ix, Iy) in zip(eachindex(x), eachindex(y))
+        s = @inbounds buffered_operate!(mul_buffer, add_mul, s, LinearAlgebra.adjoint(x[Ix]), y[Iy])
+    end
+
+    return s
+end
