@@ -251,7 +251,7 @@ function operate(::typeof(*), x::LinearAlgebra.Transpose{<:Any, <:AbstractVector
         throw(DimensionMismatch("first array has length $(lx) which does not match the length of the second, $(length(y))."))
     end
     if iszero(lx)
-        return promote_operation(add_mul, eltype(x), eltype(y))
+        return zero(promote_operation(add_mul, eltype(x), eltype(y)))
     end
 
     # We need a buffer to hold the intermediate multiplication.

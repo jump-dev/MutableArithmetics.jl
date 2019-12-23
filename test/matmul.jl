@@ -58,6 +58,17 @@ end
         B = zeros(2, 2)
         err = DimensionMismatch("Cannot sum matrices of size `(1, 1)` and size `(2, 2)`, the size of the two matrices must be equal.")
         @test_throws err MA.@rewrite A + B
+        x = ones(1)
+        y = ones(2)
+        err = DimensionMismatch("first array has length 1 which does not match the length of the second, 2.")
+        @test_throws err MA.operate(*, x', y)
+        @test_throws err MA.operate(*, LinearAlgebra.transpose(x), y)
+        err = DimensionMismatch("matrix A has dimensions (2,2), vector B has length 1")
+        @test_throws err MA.operate(*, x', B)
+        a = zeros(0)
+        @test iszero(@inferred MA.operate(LinearAlgebra.dot, a, a))
+        @test iszero(@inferred MA.operate(*, a', a))
+        @test iszero(@inferred MA.operate(*, LinearAlgebra.transpose(a), a))
     end
 end
 
