@@ -20,7 +20,20 @@ Return `a + *(args...)`. Note that `add_mul(a, b, c) = muladd(b, c, a)`.
 function add_mul end
 add_mul(a, b) = a + b
 add_mul(a, b, c) = muladd(b, c, a)
-add_mul(a, b, c::Vararg{Any, N}) where {N} = add_mul(a, b *(c...))
+add_mul(a, b, c, d, args::Vararg{Any, N}) where {N} = add_mul(a, b, *(c, d, args...))
+
+"""
+    sub_mul(a, args...)
+
+Return `a + *(args...)`. Note that `sub_mul(a, b, c) = muladd(b, c, a)`.
+"""
+function sub_mul end
+sub_mul(a, b) = a - b
+sub_mul(a, b, c, args::Vararg{Any, N}) where {N} = a - *(b, c, args...)
+
+const AddSubMul = Union{typeof(add_mul), typeof(sub_mul)}
+add_sub_op(::typeof(add_mul)) = +
+add_sub_op(::typeof(sub_mul)) = -
 
 """
     iszero!(x)

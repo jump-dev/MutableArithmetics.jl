@@ -14,8 +14,30 @@ function int_add_test(::Type{T}) where T
 
         a = t(165)
         b = t(255)
-        @test MA.isequal_canonical(MA.add!(a, b), t(420))
-        @test MA.isequal_canonical(a, t(420))
+        expected = t(420)
+        @test MA.isequal_canonical(MA.add!(a, b), expected)
+        @test MA.isequal_canonical(a, expected)
+    end
+end
+function int_sub_test(::Type{T}) where T
+    @testset "sub_to! / sub!" begin
+        @test MA.mutability(T, -, T, T) isa MA.IsMutable
+
+        t(n) = convert(T, n)
+        a = t(5)
+        b = t(28)
+        c = t(41)
+        expected = t(-13)
+        @test MA.isequal_canonical(MA.sub_to!(a, b, c), expected)
+        @test MA.isequal_canonical(a, expected)
+        @test MA.isequal_canonical(MA.sub!(b, c), expected)
+        @test MA.isequal_canonical(b, expected)
+
+        a = t(165)
+        b = t(255)
+        expected = t(-90)
+        @test MA.isequal_canonical(MA.sub!(a, b), expected)
+        @test MA.isequal_canonical(a, expected)
     end
 end
 function int_mul_test(::Type{T}) where T
@@ -74,6 +96,47 @@ function int_add_mul_test(::Type{T}) where T
         @test MA.isequal_canonical(d, t(420))
         @test MA.isequal_canonical(MA.add_mul_buf!(buf, a, b, c), t(420))
         @test MA.isequal_canonical(a, t(420))
+    end
+end
+function int_sub_mul_test(::Type{T}) where T
+    @testset "sub_mul_to! / sub_mul! / sub_mul_buf_to! / sub_mul_buf!" begin
+        @test MA.mutability(T, MA.sub_mul, T, T) isa MA.IsMutable
+        @test MA.mutability(T, MA.sub_mul, T, T, T) isa MA.IsMutable
+        @test MA.mutability(T, MA.sub_mul, T, T, T, T) isa MA.IsMutable
+
+        t(n) = convert(T, n)
+        a = t(5)
+        b = t(9)
+        c = t(3)
+        d = t(20)
+        buf = t(24)
+
+        expected = t(-51)
+        @test MA.isequal_canonical(MA.sub_mul_to!(a, b, c, d), expected)
+        @test MA.isequal_canonical(a, expected)
+        a = t(5)
+        @test MA.isequal_canonical(MA.sub_mul!(b, c, d), expected)
+        @test MA.isequal_canonical(b, expected)
+        b = t(9)
+
+        @test MA.isequal_canonical(MA.sub_mul_buf_to!(buf, a, b, c, d), expected)
+        @test MA.isequal_canonical(a, expected)
+        @test MA.isequal_canonical(MA.sub_mul_buf!(buf, b, c, d), expected)
+        @test MA.isequal_canonical(b, expected)
+
+        a = t(148)
+        b = t(16)
+        c = t(17)
+        d = t(42)
+        buf = t(56)
+        expected = t(-124)
+        @test MA.isequal_canonical(MA.sub_mul!(a, b, c), expected)
+        @test MA.isequal_canonical(a, expected)
+        a = t(148)
+        @test MA.isequal_canonical(MA.sub_mul_buf_to!(buf, d, a, b, c), expected)
+        @test MA.isequal_canonical(d, expected)
+        @test MA.isequal_canonical(MA.sub_mul_buf!(buf, a, b, c), expected)
+        @test MA.isequal_canonical(a, expected)
     end
 end
 
