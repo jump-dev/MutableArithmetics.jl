@@ -85,22 +85,14 @@ function operate end
 #     API without altering `x` and `y`. If it is not the case, implement a
 #     custom `operate` method.
 operate(::typeof(-), x) = -x
-operate(op::Union{typeof(+), typeof(-), typeof(*)}, x, y) where {N} = op(x, y)
+operate(op::Union{typeof(+), typeof(-), typeof(*), typeof(add_mul)}, x, y, args::Vararg{Any, N}) where {N} = op(x, y, args...)
+
+operate(::Union{typeof(+), typeof(*)}, x) = copy_if_mutable(x)
 
 # We only give the type to `zero` and `one` to be sure that modifying the
 # returned object cannot alter `x`.
 operate(::typeof(zero), x) = zero(typeof(x))
 operate(::typeof(one), x) = one(typeof(x))
-
-operate(::Union{typeof(+), typeof(*)}, x) = copy_if_mutable(x)
-function operate(op::Union{typeof(+), typeof(*)}, x, y, z, args::Vararg{Any, N}) where N
-    return operate(op, x, operate(op, y, z, args...))
-end
-
-operate(::typeof(add_mul), x, y) = operate(+, x, y)
-function operate(::typeof(add_mul), x, y, z, args::Vararg{Any, N}) where N
-    return operate(+, x, operate(*, y, z, args...))
-end
 
 # Define Traits
 
