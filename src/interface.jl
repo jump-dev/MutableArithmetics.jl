@@ -81,11 +81,13 @@ end
 """
 function operate end
 
-# /!\ We assume these two return an object that can be modified through the MA
+# /!\ We assume these three return an object that can be modified through the MA
 #     API without altering `x` and `y`. If it is not the case, implement a
 #     custom `operate` method.
 operate(::typeof(-), x) = -x
 operate(op::Union{typeof(+), typeof(-), typeof(*), AddSubMul}, x, y, args::Vararg{Any, N}) where {N} = op(x, y, args...)
+operate(::typeof(convert), ::Type{T}, x) where {T} = convert(T, x)
+operate(::typeof(convert), ::Type{T}, x::T) where {T} = copy_if_mutable(x)
 
 operate(::Union{typeof(+), typeof(*)}, x) = copy_if_mutable(x)
 

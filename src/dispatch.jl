@@ -211,6 +211,13 @@ function Base.:-(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     return LinearAlgebra.Hermitian(-parent(A), LinearAlgebra.sym_uplo(A.uplo))
 end
 
+function Base.:*(α::AbstractMutable, A::Array)
+    return α .* A
+end
+function Base.:*(A::Array, α::AbstractMutable)
+    return A .* α
+end
+
 # Needed for Julia v1.0, otherwise, `broadcast(*, α, A)` gives a `Array` and
 # not a `Symmetric`.
 function Base.:*(α::Number, A::LinearAlgebra.Symmetric{<:AbstractMutable})

@@ -36,6 +36,15 @@ function cube_test(x)
     @test_rewrite x * x * (x + 1)
 end
 
+function mul_scalar_array_test(x)
+    for A in [[1, 2, 3], [1 2; 3 4]]
+        @test_rewrite x * A
+        @test_rewrite A * x
+        @test MA.isequal_canonical(x * A, x .* A)
+        @test MA.isequal_canonical(A * x, A .* x)
+    end
+end
+
 # See JuMP issue #656
 function scalar_in_any_test(x)
     ints = [i for i in 1:2]
@@ -56,7 +65,14 @@ function scalar_uniform_scaling_test(x)
     @test_rewrite (x + 1) * I
 end
 
+function convert_test(x)
+    y = MA.operate(convert, typeof(x), x)
+    MA.mutable_operate!(+, y, 1)
+    @test MA.isequal_canonical(y, x + 1)
+end
+
 const scalar_tests = Dict(
+    "mul_scalar_array" => mul_scalar_array_test,
     "cube" => cube_test,
     "iszero" => iszero_test,
     "scalar_in_any" => scalar_in_any_test,
