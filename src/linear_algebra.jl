@@ -24,12 +24,9 @@ function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Matrix, B::LinearA
     end
     return A
 end
-function mutable_operate!(::typeof(add_mul), A::Matrix, B::Scaling, C::Scaling, D::Vararg{Scaling, N}) where N
-    return mutable_operate!(+, A, *(B, C, D...))
+function mutable_operate!(op::AddSubMul, A::Matrix, B::Scaling, C::Scaling, D::Vararg{Scaling, N}) where N
+    return mutable_operate!(add_sub_op(op), A, *(B, C, D...))
 end
-
-function sub_mul end
-operate!(::typeof(sub_mul), x, args::Vararg{Any, N}) where {N} = operate!(add_mul, x, -1, args...)
 
 mul_rhs(::typeof(+)) = add_mul
 mul_rhs(::typeof(-)) = sub_mul
@@ -54,22 +51,22 @@ function mutable_operate!(op::Union{typeof(+), typeof(-)}, A::Array{S, N}, B::Ab
     _check_dims(A, B)
     return _mutable_operate!(op, A, B, tuple(), tuple())
 end
-function mutable_operate!(::typeof(add_mul), A::Array{S, N}, B::AbstractArray{T, N}, α::Vararg{Scaling, M}) where {S, T, N, M}
+function mutable_operate!(op::AddSubMul, A::Array{S, N}, B::AbstractArray{T, N}, α::Vararg{Scaling, M}) where {S, T, N, M}
     _check_dims(A, B)
-    return _mutable_operate!(+, A, B, tuple(), α)
+    return _mutable_operate!(add_sub_op(op), A, B, tuple(), α)
 end
-function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α::Scaling, B::AbstractArray{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+function mutable_operate!(op::AddSubMul, A::Array{S, N}, α::Scaling, B::AbstractArray{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
     _check_dims(A, B)
-    return _mutable_operate!(+, A, B, (α,), β)
+    return _mutable_operate!(add_sub_op(op), A, B, (α,), β)
 end
-function mutable_operate!(::typeof(add_mul), A::Array{S, N}, α1::Scaling, α2::Scaling, B::AbstractArray{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
+function mutable_operate!(op::AddSubMul, A::Array{S, N}, α1::Scaling, α2::Scaling, B::AbstractArray{T, N}, β::Vararg{Scaling, M}) where {S, T, N, M}
     _check_dims(A, B)
-    return _mutable_operate!(+, A, B, (α1, α2), β)
+    return _mutable_operate!(add_sub_op(op), A, B, (α1, α2), β)
 end
 
 # Fallback, we may be able to be more efficient in more cases by adding more specialized methods
-function mutable_operate!(::typeof(add_mul), A::Array, x, y, args::Vararg{Any, N}) where N
-    return mutable_operate!(add_mul, A, x, *(y, args...))
+function mutable_operate!(op::AddSubMul, A::Array, x, y, args::Vararg{Any, N}) where N
+    return mutable_operate!(op, A, x, *(y, args...))
 end
 
 # Product
@@ -87,14 +84,19 @@ function promote_operation(op::typeof(*), A::Type{<:AbstractArray{S}}, B::Type{<
     return promote_array_mul(A, B)
 end
 
+function promote_sum_mul(T::Type, S::Type)
+    U = promote_operation(*, T, S)
+    return promote_operation(+, U, U)
+end
+
 function promote_array_mul(::Type{Matrix{S}}, ::Type{Vector{T}}) where {S, T}
-    return Vector{promote_operation(add_mul, S, S, T)}
+    return Vector{promote_sum_mul(S, T)}
 end
 function promote_array_mul(::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractMatrix{T}}) where {S, T}
-    return Matrix{promote_operation(add_mul, S, S, T)}
+    return Matrix{promote_sum_mul(S, T)}
 end
 function promote_array_mul(::Type{<:AbstractMatrix{S}}, ::Type{<:AbstractVector{T}}) where {S, T}
-    return Vector{promote_operation(add_mul, S, S, T)}
+    return Vector{promote_sum_mul(S, T)}
 end
 
 ################################################################################
@@ -211,14 +213,14 @@ end
 # allocate the resulting array but it redirects to `mul_to!` instead of
 # `LinearAlgebra.mul!`.
 function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractVector{T}) where {T, S}
-    U = promote_operation(add_mul, S, S, T)
+    U = promote_sum_mul(S, T)
     # `similar` gives SparseMatrixCSC if `B` is SparseMatrixCSC
     #C = similar(B, U, axes(A, 1))
     C = Vector{U}(undef, size(A, 1))
     return mutable_operate_to!(C, *, A, B)
 end
 function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractMatrix{T}) where {T, S}
-    U = promote_operation(add_mul, S, S, T)
+    U = promote_sum_mul(S, T)
     # `similar` gives SparseMatrixCSC if `B` is SparseMatrixCSC
     #C = similar(B, U, axes(A, 1), axes(B, 2))
     C = Matrix{U}(undef, size(A, 1), size(B, 2))
@@ -235,7 +237,7 @@ _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.trans
 _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint) = LinearAlgebra.adjoint(x)
 # dot product
 function promote_array_mul(::Type{<:TransposeOrAdjoint{S, <:AbstractVector}}, ::Type{<:AbstractVector{T}}) where {S, T}
-    return promote_operation(add_mul, S, S, T)
+    return promote_sum_mul(S, T)
 end
 function operate(::typeof(*), x::LinearAlgebra.Adjoint{<:Any, <:AbstractVector}, y::AbstractVector)
     return operate(LinearAlgebra.dot, parent(x), y)
@@ -250,13 +252,15 @@ function operate(::typeof(*), x::LinearAlgebra.Transpose{<:Any, <:AbstractVector
     if lx != length(y)
         throw(DimensionMismatch("first array has length $(lx) which does not match the length of the second, $(length(y))."))
     end
+
+    SumType = promote_sum_mul(eltype(x), eltype(y))
+
     if iszero(lx)
-        return zero(promote_operation(add_mul, eltype(x), eltype(y)))
+        return zero(SumType)
     end
 
     # We need a buffer to hold the intermediate multiplication.
 
-    SumType = promote_operation(add_mul, eltype(x), eltype(x), eltype(y))
     mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
     s = zero(SumType)
 
@@ -272,13 +276,14 @@ function operate(::typeof(LinearAlgebra.dot), x::AbstractArray, y::AbstractArray
     if lx != length(y)
         throw(DimensionMismatch("first array has length $(lx) which does not match the length of the second, $(length(y))."))
     end
+
     if iszero(lx)
         return LinearAlgebra.dot(zero(eltype(x)), zero(eltype(y)))
     end
 
     # We need a buffer to hold the intermediate multiplication.
 
-    SumType = promote_operation(add_mul, eltype(x), eltype(x), eltype(y))
+    SumType = promote_sum_mul(eltype(x), eltype(y))
     mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
     s = zero(SumType)
 

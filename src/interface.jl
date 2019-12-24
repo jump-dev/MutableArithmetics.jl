@@ -29,10 +29,10 @@ function promote_operation(::typeof(*), ::Type{S}, ::Type{T}, ::Type{U}, args::V
 end
 
 # Helpful error for common mistake
-function promote_operation(op::Union{typeof(+), typeof(-), typeof(add_mul)}, A::Type{<:Array}, α::Type{<:Number})
+function promote_operation(op::Union{typeof(+), typeof(-), AddSubMul}, A::Type{<:Array}, α::Type{<:Number})
     error("Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.")
 end
-function promote_operation(op::Union{typeof(+), typeof(-), typeof(add_mul)}, α::Type{<:Number}, A::Type{<:Array})
+function promote_operation(op::Union{typeof(+), typeof(-), AddSubMul}, α::Type{<:Number}, A::Type{<:Array})
     error("Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.")
 end
 
@@ -85,7 +85,7 @@ function operate end
 #     API without altering `x` and `y`. If it is not the case, implement a
 #     custom `operate` method.
 operate(::typeof(-), x) = -x
-operate(op::Union{typeof(+), typeof(-), typeof(*), typeof(add_mul)}, x, y, args::Vararg{Any, N}) where {N} = op(x, y, args...)
+operate(op::Union{typeof(+), typeof(-), typeof(*), AddSubMul}, x, y, args::Vararg{Any, N}) where {N} = op(x, y, args...)
 
 operate(::Union{typeof(+), typeof(*)}, x) = copy_if_mutable(x)
 
@@ -169,8 +169,8 @@ function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...
     throw(ArgumentError("Cannot call `mutable_operate_to!(::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(output))` cannot be modifed to equal the result of the operation. Use `operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
 end
 
-function mutable_operate_to_fallback(::IsMutable, output, op::typeof(add_mul), x, y)
-    return mutable_operate_to!(output, +, x, y)
+function mutable_operate_to_fallback(::IsMutable, output, op::AddSubMul, x, y)
+    return mutable_operate_to!(output, add_sub_op(op), x, y)
 end
 function mutable_operate_to_fallback(::IsMutable, output, op::Function, args...)
     error("`mutable_operate_to!(::$(typeof(output)), $op, ::", join(typeof.(args), ", ::"),
@@ -201,8 +201,8 @@ function mutable_operate_fallback(::NotMutable, op::Function, args...)
     throw(ArgumentError("Cannot call `mutable_operate!($op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `operate!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified."))
 end
 
-function mutable_operate_fallback(::IsMutable, op::typeof(add_mul), x, y)
-    return mutable_operate!(+, x, y)
+function mutable_operate_fallback(::IsMutable, op::AddSubMul, x, y)
+    return mutable_operate!(add_sub_op(op), x, y)
 end
 function mutable_operate_fallback(::IsMutable, op::Function, args...)
     error("`mutable_operate!($op, ::", join(typeof.(args), ", ::"),
