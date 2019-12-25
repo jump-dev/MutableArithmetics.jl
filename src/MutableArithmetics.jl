@@ -57,12 +57,12 @@ include("broadcast.jl")
 import LinearAlgebra
 const Scaling = Union{Number, LinearAlgebra.UniformScaling}
 scaling(x::Scaling) = x
-function scaling_convert(::Type{LinearAlgebra.UniformScaling{T}}, x::LinearAlgebra.UniformScaling) where T
+function operate(::typeof(convert), ::Type{LinearAlgebra.UniformScaling{T}}, x::LinearAlgebra.UniformScaling) where T
     # `convert(::Type{<:UniformScaling}, ::UniformScaling)` is not defined in LinearAlgebra.
-    return LinearAlgebra.UniformScaling(convert(T, x.λ))
+    return LinearAlgebra.UniformScaling(operate(convert, T, x.λ))
 end
-scaling_convert(T::Type, x::LinearAlgebra.UniformScaling) = convert(T, x.λ)
-scaling_convert(T::Type, x) = convert(T, x)
+operate(::typeof(convert), T::Type, x::LinearAlgebra.UniformScaling) = operate(convert, T, x.λ)
+
 include("bigint.jl")
 include("bigfloat.jl")
 
