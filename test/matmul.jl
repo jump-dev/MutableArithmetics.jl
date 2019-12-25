@@ -40,7 +40,10 @@ end
     @test MA.promote_operation(*, typeof(transpose(x)), typeof(x)) == Int
 end
 
-@testset "operate convert" begin
+@testset "convert" begin
+    @test MA.scaling_convert(LinearAlgebra.UniformScaling{Int}, LinearAlgebra.I) isa LinearAlgebra.UniformScaling
+    @test MA.scaling_convert(Int, LinearAlgebra.I) === 1
+    @test MA.scaling_convert(Int, 1) === 1
     @test MA.operate(convert, LinearAlgebra.UniformScaling{Int}, LinearAlgebra.I) isa LinearAlgebra.UniformScaling
     @test MA.operate(convert, Int, LinearAlgebra.I) === 1
     @test MA.operate(convert, Int, 1) === 1
