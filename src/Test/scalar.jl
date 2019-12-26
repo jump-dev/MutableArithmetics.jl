@@ -40,8 +40,6 @@ function mul_scalar_array_test(x)
     for A in [[1, 2, 3], [1 2; 3 4]]
         @test_rewrite x * A
         @test_rewrite A * x
-        @test MA.isequal_canonical(x * A, x .* A)
-        @test MA.isequal_canonical(A * x, A .* x)
     end
 end
 
