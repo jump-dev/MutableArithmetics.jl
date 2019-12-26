@@ -211,10 +211,10 @@ function Base.:-(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     return LinearAlgebra.Hermitian(-parent(A), LinearAlgebra.sym_uplo(A.uplo))
 end
 
-function Base.:*(α::AbstractMutable, A::Array)
+function Base.:*(α::AbstractMutable, A::AbstractArray)
     return α .* A
 end
-function Base.:*(A::Array, α::AbstractMutable)
+function Base.:*(A::AbstractArray, α::AbstractMutable)
     return A .* α
 end
 
