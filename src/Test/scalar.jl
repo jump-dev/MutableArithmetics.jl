@@ -19,6 +19,19 @@ function iszero_test(x)
     @test MA.isequal_canonical(x_copy, x)
 end
 
+function empty_sum_test(x)
+    @test MA.isequal_canonical(MA.@rewrite(x + sum(1 for i in 1:0) * sum(x for i in 1:0)), x)
+    @test MA.isequal_canonical(MA.@rewrite(x + sum(x for i in 1:0) * sum(1 for i in 1:0)), x)
+    @test MA.isequal_canonical(MA.@rewrite(x + sum(1 for i in 1:0) * 1^2), x)
+    @test MA.isequal_canonical(MA.@rewrite(x + 1^2 * sum(1 for i in 1:0)), x)
+    # `1^2` is considered as a complex expression by `@rewrite`.
+    @test MA.isequal_canonical(MA.@rewrite(x + 1^2 * sum(1 for i in 1:0) * sum(x for i in 1:0)), x)
+    @test MA.isequal_canonical(MA.@rewrite(x + sum(1 for i in 1:0) * 1^2 * sum(x for i in 1:0)), x)
+    @test MA.isequal_canonical(MA.@rewrite(x + 1^2 * sum(1 for i in 1:0) * sum(x for i in 1:0) * 1^2), x)
+    @test MA.isequal_canonical(MA.@rewrite(x .+ sum(1 for i in 1:0) * sum(x for i in 1:0)), x)
+    @test MA.isequal_canonical(MA.@rewrite(x .+ 1^2 * sum(1 for i in 1:0) * sum(x for i in 1:0) * 1^2), x)
+end
+
 function cube_test(x)
     @test_rewrite x^3
     @test_rewrite (x + 1)^3
@@ -71,6 +84,7 @@ end
 
 const scalar_tests = Dict(
     "mul_scalar_array" => mul_scalar_array_test,
+    "empty_sum" => empty_sum_test,
     "cube" => cube_test,
     "iszero" => iszero_test,
     "scalar_in_any" => scalar_in_any_test,

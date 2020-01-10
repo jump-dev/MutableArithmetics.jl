@@ -45,6 +45,36 @@ end
 broadcast!(::Union{typeof(add_mul), typeof(+)}, ::Zero, x) = copy_if_mutable(x)
 broadcast!(::typeof(add_mul), ::Zero, x, y) = x * y
 
+# Needed in `@rewrite(1 .+ sum(1 for i in 1:0) * 1^2)`
+Base.:*(z::Zero, ::Any)  = z
+Base.:*(::Any,  z::Zero) = z
+Base.:*(z::Zero, ::Zero) = z
+Base.:+(::Zero, x::Any)  = x
+Base.:+(x::Any,  ::Zero) = x
+Base.:+(z::Zero, ::Zero) = z
+
+# Needed by `@rewrite(BigInt(1) .+ sum(1 for i in 1:0) * 1^2)`
+# since we don't require mutable type to support Zero in
+# `mutable_operate!`.
+_any_zero() = false
+_any_zero(::Any, args::Vararg{Any, N}) where {N} = _any_zero(args...)
+_any_zero(::Zero, ::Vararg{Any, N}) where {N} = true
+function operate!(op::Union{typeof(add_mul), typeof(sub_mul)},
+                  x, args::Vararg{Any, N}) where N
+    if _any_zero(args...)
+        return x
+    else
+        return operate_fallback!(mutability(x, op, x, args...), op, x, args...)
+    end
+end
+
+# Needed for `@rewrite(BigInt(1) .+ sum(1 for i in 1:0) * 1^2)`
+Base.broadcastable(z::Zero) = Ref(z)
+Base.ndims(::Type{Zero}) = 0
+Base.length(::Zero) = 1
+Base.iterate(z::Zero) = (z, nothing)
+Base.iterate(::Zero, ::Nothing) = nothing
+
 using Base.Meta
 
 # See `JuMP._try_parse_idx_set`
