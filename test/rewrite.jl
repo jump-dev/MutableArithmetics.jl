@@ -2,6 +2,17 @@ using LinearAlgebra, SparseArrays, Test
 import MutableArithmetics
 const MA = MutableArithmetics
 
+@testset "Zero" begin
+    z = MA.Zero()
+    #@test zero(MA.Zero) isa MA.Zero
+    @test z + z isa MA.Zero
+    @test z + 1 == 1
+    @test 1 + z == 1
+    @test z * z isa MA.Zero
+    @test z * 1 isa MA.Zero
+    @test 1 * z isa MA.Zero
+end
+
 # Test that the macro call `m` throws an error exception during pre-compilation
 macro test_macro_throws(error, m)
     # See https://discourse.julialang.org/t/test-throws-with-macros-after-pr-23533/5878
