@@ -2,6 +2,10 @@ import SparseArrays
 
 const SparseMat = SparseArrays.SparseMatrixCSC
 
+function undef_array(::Type{SparseMat{Tv, Ti}}, rows::Base.OneTo, cols::Base.OneTo) where {Tv, Ti}
+    return SparseArrays.spzeros(Tv, Ti, length(rows), length(cols))
+end
+
 function mutable_operate!(::typeof(zero), A::SparseMat)
     for i in eachindex(A.colptr)
         A.colptr[i] = one(A.colptr[i])
@@ -97,13 +101,7 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
     end
     return ret
 end
-function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
-                          A::SparseMat, B::SparseMat,
-                          α::Vararg{Union{T, Scaling}, N}) where {T, N}
-    # Resolve ambiguity (detected on Julia v1.3) with two methods above.
-    # TODO adapt implementation of `SparseArray.spmatmul`
-    mutable_operate!(add_mul, ret, Matrix{promote_operation(zero, eltype(A))}(A), B, α...)
-end
+
 function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
                           A::AbstractMatrix,
                           adjB::TransposeOrAdjoint{<:Any, <:SparseMat},
@@ -122,17 +120,101 @@ function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
     end
     return ret
 end
-function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
+
+# `SparseMat`-`SparseMat` matrix multiplication.
+# Inspired from `SparseArrays.spmatmul` which is
+# Gustavsen's matrix multiplication algorithm revisited so that row indices
+# are sorted.
+
+function promote_array_mul(
+    ::Type{<:Union{SparseMat{S,Ti},
+                   TransposeOrAdjoint{S,SparseMat{S,Ti}}}},
+    ::Type{<:Union{SparseMat{T,Ti},
+                   TransposeOrAdjoint{T,SparseMat{T,Ti}}}}) where {S, T, Ti}
+    return SparseMat{promote_sum_mul(S, T),Ti}
+end
+
+function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
+                          A::SparseMat, B::SparseMat,
+                          α::Vararg{Union{T, Scaling}, N}) where {T, N}
+    _dim_check(ret, A, B)
+    rowvalA = SparseArrays.rowvals(A); nzvalA = SparseArrays.nonzeros(A)
+    rowvalB = SparseArrays.rowvals(B); nzvalB = SparseArrays.nonzeros(B)
+    mA, nA = size(A)
+    nB = size(B, 2)
+    nnz_ret = length(ret.rowval)
+    @assert length(ret.nzval) == nnz_ret
+
+    @inbounds begin
+        ip = 1
+        xb = fill(false, mA)
+        for i in 1:nB
+            if ip + mA - 1 > nnz_ret
+                nnz_ret += max(mA, nnz_ret >> 2)
+                resize!(ret.rowval, nnz_ret)
+                resize!(ret.nzval, nnz_ret)
+            end
+            ret.colptr[i] = ip0 = ip
+            k0 = ip - 1
+            for jp in SparseArrays.nzrange(B, i)
+                nzB = nzvalB[jp]
+                j = rowvalB[jp]
+                for kp in SparseArrays.nzrange(A, j)
+                    k = rowvalA[kp]
+                    if xb[k]
+                        ret.nzval[k+k0] = operate!(add_mul, ret.nzval[k+k0], nzvalA[kp], nzB)
+                    else
+                        ret.nzval[k+k0] = operate(*, nzvalA[kp], nzB)
+                        xb[k] = true
+                        ret.rowval[ip] = k
+                        ip += 1
+                    end
+                end
+            end
+            if ip > ip0
+                if SparseArrays.prefer_sort(ip-k0, mA)
+                    # in-place sort of indices. Effort: O(nnz*ln(nnz)).
+                    sort!(ret.rowval, ip0, ip-1, QuickSort, Base.Order.Forward)
+                    for vp = ip0:ip-1
+                        k = ret.rowval[vp]
+                        xb[k] = false
+                        ret.nzval[vp] = ret.nzval[k+k0]
+                    end
+                else
+                    # scan result vector (effort O(mA))
+                    for k = 1:mA
+                        if xb[k]
+                            xb[k] = false
+                            ret.rowval[ip0] = k
+                            ret.nzval[ip0] = ret.nzval[k+k0]
+                            ip0 += 1
+                        end
+                    end
+                end
+            end
+        end
+        ret.colptr[nB+1] = ip
+    end
+
+    # This modification of Gustavson algorithm has sorted row indices
+    resize!(ret.rowval, ip - 1)
+    resize!(ret.nzval, ip - 1)
+
+    return ret
+end
+function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
                           A::SparseMat, B::TransposeOrAdjoint{<:Any, <:SparseMat},
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
-    # Resolve ambiguity (detected on Julia v1.3) with two methods above.
-    # TODO adapt implementation of `SparseArray.spmatmul`
-    mutable_operate!(add_mul, ret, Matrix{promote_operation(zero, eltype(A))}(A), B, α...)
+    mutable_operate!(add_mul, ret, A, copy(B), α...)
 end
-function mutable_operate!(::typeof(add_mul), ret::Matrix{T},
+function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
                           A::TransposeOrAdjoint{<:Any, <:SparseMat}, B::SparseMat,
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
-    # Resolve ambiguity (detected on Julia v1.3) with two methods above.
-    # TODO adapt implementation of `SparseArray.spmatmul`
-    mutable_operate!(add_mul, ret, Matrix{promote_operation(zero, eltype(A))}(A), B, α...)
+    mutable_operate!(add_mul, ret, copy(A), B, α...)
+end
+function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
+                          A::TransposeOrAdjoint{<:Any, <:SparseMat},
+                          B::TransposeOrAdjoint{<:Any, <:SparseMat},
+                          α::Vararg{Union{T, Scaling}, N}) where {T, N}
+    mutable_operate!(add_mul, ret, copy(A), B, α...)
 end
