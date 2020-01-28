@@ -172,7 +172,7 @@ function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
                 end
             end
             if ip > ip0
-                if SparseArrays.prefer_sort(ip-k0, mA)
+                if prefer_sort(ip-k0, mA)
                     # in-place sort of indices. Effort: O(nnz*ln(nnz)).
                     sort!(ret.rowval, ip0, ip-1, QuickSort, Base.Order.Forward)
                     for vp = ip0:ip-1
@@ -202,6 +202,8 @@ function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
 
     return ret
 end
+# Taken from `SparseArrays.prefer_sort` added in Julia v1.1.
+prefer_sort(nz::Integer, m::Integer) = m > 6 && 3 * ilog2(nz) * nz < m
 function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
                           A::SparseMat, B::TransposeOrAdjoint{<:Any, <:SparseMat},
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
