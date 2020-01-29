@@ -208,22 +208,20 @@ function mutable_operate_to!(C::AbstractArray, ::typeof(*), A::AbstractArray, B:
     return mutable_operate!(add_mul, C, A, B)
 end
 
+function undef_array(::Type{Array{T, N}}, axes::Vararg{Base.OneTo, N}) where {T, N}
+    return Array{T, N}(undef, length.(axes))
+end
+
 # Does what `LinearAlgebra/src/matmul.jl` does for abstract
 # matrices and vector, estimate the resulting element type,
 # allocate the resulting array but it redirects to `mul_to!` instead of
 # `LinearAlgebra.mul!`.
 function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractVector{T}) where {T, S}
-    U = promote_sum_mul(S, T)
-    # `similar` gives SparseMatrixCSC if `B` is SparseMatrixCSC
-    #C = similar(B, U, axes(A, 1))
-    C = Vector{U}(undef, size(A, 1))
+    C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1))
     return mutable_operate_to!(C, *, A, B)
 end
 function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractMatrix{T}) where {T, S}
-    U = promote_sum_mul(S, T)
-    # `similar` gives SparseMatrixCSC if `B` is SparseMatrixCSC
-    #C = similar(B, U, axes(A, 1), axes(B, 2))
-    C = Matrix{U}(undef, size(A, 1), size(B, 2))
+    C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1), axes(B, 2))
     return mutable_operate_to!(C, *, A, B)
 end
 
