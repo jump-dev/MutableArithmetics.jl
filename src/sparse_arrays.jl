@@ -203,7 +203,7 @@ function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
     return ret
 end
 # Taken from `SparseArrays.prefer_sort` added in Julia v1.1.
-prefer_sort(nz::Integer, m::Integer) = m > 6 && 3 * ilog2(nz) * nz < m
+prefer_sort(nz::Integer, m::Integer) = m > 6 && 3 * SparseArrays.ilog2(nz) * nz < m
 function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
                           A::SparseMat, B::TransposeOrAdjoint{<:Any, <:SparseMat},
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
