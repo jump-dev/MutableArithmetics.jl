@@ -220,3 +220,12 @@ function mutable_operate!(::typeof(add_mul), ret::SparseMat{T},
                           α::Vararg{Union{T, Scaling}, N}) where {T, N}
     mutable_operate!(add_mul, ret, copy(A), B, α...)
 end
+
+# This `BroadcastStyle` is used when there is a mix of sparse arrays and dense arrays.
+# The result is a sparse array.
+function broadcasted_type(::SparseArrays.HigherOrderFns.PromoteToSparse, ::Base.HasShape{1}, ::Type{Eltype}) where Eltype
+    return SparseArrays.SparseVector{Eltype, Int}
+end
+function broadcasted_type(::SparseArrays.HigherOrderFns.PromoteToSparse, ::Base.HasShape{2}, ::Type{Eltype}) where Eltype
+    return SparseMat{Eltype, Int}
+end

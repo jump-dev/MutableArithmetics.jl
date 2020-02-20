@@ -15,6 +15,21 @@ function sparse_linear_test(X11, X23, Xd)
           0    0 4X23
           0    0    0]
 
+    function _test_broadcast(A, B)
+        @test_rewrite(A .* B)
+        @test_rewrite(B .* A)
+        @test_rewrite(A .+ B)
+        @test_rewrite(B .+ A)
+        @test_rewrite(A .- B)
+        @test_rewrite(B .- A)
+    end
+
+    _test_broadcast(Xd, X)
+    _test_broadcast(Xd, Y)
+    _test_broadcast(Yd, X)
+    _test_broadcast(Yd, Y)
+    _test_broadcast(X, Y)
+
     add_test(Xd, Yd)
     add_test(Xd, Y)
     add_test(Xd, Xd)

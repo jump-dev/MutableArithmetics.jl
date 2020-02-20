@@ -1,7 +1,7 @@
-function broadcasted_type(::Broadcast.DefaultArrayStyle{N}, ::Type{Eltype}) where {N, Eltype}
+function broadcasted_type(::Broadcast.DefaultArrayStyle{N}, ::Base.HasShape{N}, ::Type{Eltype}) where {N, Eltype}
     return Array{Eltype, N}
 end
-function broadcasted_type(::Broadcast.DefaultArrayStyle{N}, ::Type{Bool}) where N
+function broadcasted_type(::Broadcast.DefaultArrayStyle{N}, ::Base.HasShape{N}, ::Type{Bool}) where N
     return BitArray{N}
 end
 
@@ -11,12 +11,18 @@ combine_styles(c::Type) = Broadcast.result_style(Broadcast.BroadcastStyle(c))
 combine_styles(c1::Type, c2::Type) = Broadcast.result_style(combine_styles(c1), combine_styles(c2))
 @inline combine_styles(c1::Type, c2::Type, cs::Vararg{Type, N}) where N = Broadcast.result_style(combine_styles(c1), combine_styles(c2, cs...))
 
+combine_shapes(s) = s
+combine_2_shapes(s1::Base.HasShape{N}, s2::Base.HasShape{M}) where {N, M} = Base.HasShape{max(N, M)}()
+combine_shapes(s1, s2, args::Vararg{Any, N}) where {N} = combine_shapes(combine_2_shapes(s1, s2), args...)
+_shape(T) = Base.HasShape{ndims(T)}()
+combine_sizes(args::Vararg{Any, N}) where {N} = combine_shapes(_shape.(args)...)
+
 function promote_broadcast(op::Function, args::Vararg{Any, N}) where N
     # FIXME we could use `promote_operation` instead as
     # `combine_eltypes` uses `return_type` hence it may return a non-concrete type
     # and we do not handle that case.
     T = Base.Broadcast.combine_eltypes(op, args)
-    return broadcasted_type(combine_styles(args...), T)
+    return broadcasted_type(combine_styles(args...), combine_sizes(args...), T)
 end
 
 """
