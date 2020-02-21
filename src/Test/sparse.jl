@@ -16,8 +16,6 @@ function sparse_linear_test(X11, X23, Xd)
           0    0    0]
 
     function _test_broadcast(A, B)
-        @test_rewrite(A .* B)
-        @test_rewrite(B .* A)
         @test_rewrite(A .+ B)
         @test_rewrite(B .+ A)
         @test_rewrite(A .- B)
