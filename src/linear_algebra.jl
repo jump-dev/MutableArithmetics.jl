@@ -233,9 +233,16 @@ end
 const TransposeOrAdjoint{T, MT} = Union{LinearAlgebra.Transpose{T, MT}, LinearAlgebra.Adjoint{T, MT}}
 _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.transpose(x)
 _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint) = LinearAlgebra.adjoint(x)
+_mirror_transpose_or_adjoint(A::Type{<:AbstractArray{T}}, ::Type{<:LinearAlgebra.Transpose}) where {T} = LinearAlgebra.Transpose{T, A}
+_mirror_transpose_or_adjoint(A::Type{<:AbstractArray{T}}, ::Type{<:LinearAlgebra.Adjoint}) where {T} = LinearAlgebra.Adjoint{T, A}
+similar_array_type(TA::Type{<:TransposeOrAdjoint{T, A}}, ::Type{S}) where {S, T, A} = _mirror_transpose_or_adjoint(similar_array_type(A, S), TA)
 # dot product
 function promote_array_mul(::Type{<:TransposeOrAdjoint{S, <:AbstractVector}}, ::Type{<:AbstractVector{T}}) where {S, T}
     return promote_sum_mul(S, T)
+end
+function promote_array_mul(A::Type{<:TransposeOrAdjoint{S, V}}, M::Type{<:AbstractMatrix{T}}) where {S, T, V <: AbstractVector}
+    B = promote_array_mul(_mirror_transpose_or_adjoint(M, A), V)
+    return _mirror_transpose_or_adjoint(B, A)
 end
 function operate(::typeof(*), x::LinearAlgebra.Adjoint{<:Any, <:AbstractVector}, y::AbstractVector)
     return operate(LinearAlgebra.dot, parent(x), y)
