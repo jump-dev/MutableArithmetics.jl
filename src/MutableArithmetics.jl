@@ -107,6 +107,9 @@ end
 function isequal_canonical(x::LinearAlgebra.Tridiagonal, y::LinearAlgebra.Tridiagonal)
     return isequal_canonical(x.dl, y.dl) && isequal_canonical(x.d, y.d) && isequal_canonical(x.du, y.du)
 end
+function isequal_canonical(x::SparseMat, y::SparseMat)
+    return x.m == y.m && x.n == y.n && isequal_canonical(x.colptr, y.colptr) && isequal_canonical(x.rowval, y.rowval) && isequal_canonical(x.nzval, y.nzval)
+end
 
 include("rewrite.jl")
 include("dispatch.jl")
