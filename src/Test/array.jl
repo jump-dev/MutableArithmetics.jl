@@ -8,21 +8,35 @@ function matrix_vector_division_test(x)
 end
 
 function _xAx_test(x::AbstractVector, A::AbstractMatrix)
-    @test_rewrite(x' * A)
-    # Complex expression
-    @test_rewrite(x' * ones(Int, size(A)...))
-    @test_rewrite(x' * A * x)
-    # Complex expression
-    @test_rewrite(x' * ones(Int, size(A)...) * x)
-    @test_rewrite reshape(x, (1, length(x))) * A * x .- 1
-    @test_rewrite x' * A * x .- 1
-    @test_rewrite x' * A * x - 1
+    for t in [transpose, adjoint]
+        @test_rewrite(t(x) * A)
+        # Complex expression
+        @test_rewrite(t(x) * ones(Int, size(A)...))
+        @test_rewrite(t(x) * A * x)
+        # Complex expression
+        @test_rewrite(t(x) * ones(Int, size(A)...) * x)
+        @test_rewrite reshape(x, (1, length(x))) * A * x .- 1
+        @test_rewrite t(x) * A * x .- 1
+        @test_rewrite t(x) * A * x - 1
+        @test_rewrite t(x) * x + t(x) * A * x
+        @test_rewrite t(x) * x - t(x) * A * x
+        @test MA.promote_operation(*, typeof(t(x)), typeof(A), typeof(x)) == typeof(t(x) * A * x)
+        @test MA.promote_operation(*, typeof(t(x)), typeof(x)) == typeof(t(x) * x)
+        @test_rewrite t(x) * x + 2 * t(x) * A * x
+        @test_rewrite t(x) * x - 2 * t(x) * A * x
+        @test_rewrite t(x) * A * x + 2 * t(x) * x
+        @test_rewrite t(x) * A * x - 2 * t(x) * x
+        @test MA.promote_operation(*, Int, typeof(t(x)), typeof(A), typeof(x)) == typeof(2 * t(x) * A * x)
+        @test MA.promote_operation(*, Int, typeof(t(x)), typeof(x)) == typeof(2 * t(x) * x)
+    end
 end
 function _xABx_test(x::AbstractVector, A::AbstractMatrix, B::AbstractMatrix)
-    @test_rewrite (x'A)' + 2B * x
-    @test_rewrite (x'A)' + 2B * x .- 1
-    @test_rewrite (x'A)' + 2B * x .- [length(x):-1:1;]
-    @test_rewrite (x'A)' + 2B * x - [length(x):-1:1;]
+    for t in [transpose, adjoint]
+        @test_rewrite t(t(x) * A) + 2B * x
+        @test_rewrite t(t(x) * A) + 2B * x .- 1
+        @test_rewrite t(t(x) * A) + 2B * x .- [length(x):-1:1;]
+        @test_rewrite t(t(x) * A) + 2B * x - [length(x):-1:1;]
+    end
 end
 
 function _matrix_vector_test(x::AbstractVector, A::AbstractMatrix)
