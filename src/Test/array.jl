@@ -68,6 +68,17 @@ function matrix_vector_test(x)
     A = [2 1 0
          1 2 1
          0 1 2]
+
+    @test_rewrite x .+ A * x
+    @test_rewrite A * x .+ A * x
+    @test_rewrite x .- A * x
+    @test_rewrite A * x .- A * x
+    @test_rewrite A .+ (A + A)^2
+    @test_rewrite A .- (A + A)^2
+    @test_rewrite A * x .+ (A + A)^2 * x
+    @test_rewrite A * x .- (A + A)^2 * x
+    @test_rewrite A * x .- (A + A)^2 * x
+
     @test MA.isequal_canonical(-x, [-x[1], -x[2], -x[3]])
     xAx = 2x[1]*x[1] + 2x[1]*x[2] + 2x[2]*x[2] + 2x[2]*x[3] + 2x[3]*x[3]
     @test MA.isequal_canonical(x' * A * x, xAx)
