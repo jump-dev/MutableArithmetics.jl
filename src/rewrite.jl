@@ -305,7 +305,7 @@ function _rewrite(vectorized::Bool, minus::Bool, inner_factor, current_sum::Unio
     if isexpr(inner_factor, :call)
         # We need to verfify that `left_factors` and `right_factors` are empty for broadcast, see `_is_decomposable_with_factors`.
         # We also need to verify that `current_sum` is `nothing` otherwise we are unsure that the elements in the containers have been copied, e.g., in
-        # `I + (x .+ 1)`, the offdiagonal entries of `I + x` as the same as `x` so we cannot do `broadcast!(add_mul, I + x, 1)`.
+        # `I + (x .+ 1)`, the offdiagonal entries of `I + x` are the same as `x` so we cannot do `broadcast!(add_mul, I + x, 1)`.
         if inner_factor.args[1] == :+ || inner_factor.args[1] == :- ||
             (current_sum === nothing && isempty(left_factors) && isempty(right_factors) && (inner_factor.args[1] == :(.+) || inner_factor.args[1] == :(.-)))
             block = Expr(:block)
@@ -322,7 +322,9 @@ function _rewrite(vectorized::Bool, minus::Bool, inner_factor, current_sum::Unio
                 minus = !minus
             end
             return rewrite_sum(vectorized, minus, inner_factor.args[start:end], next_sum, left_factors, right_factors, new_var, block)
-        elseif inner_factor.args[1] == :* # FIXME && !vectorized ?
+        elseif inner_factor.args[1] == :* && !vectorized
+            # We need `&& !vectorized` otherwise `x .+ A * b` would be rewritten `broadcast!(add_mul, x, A, b)`.
+
             # we might need to recurse on multiple arguments, e.g.,
             # (x+y)*(x+y)
             # special case, only recurse on one argument and don't create temporary objects
@@ -354,7 +356,8 @@ function _rewrite(vectorized::Bool, minus::Bool, inner_factor, current_sum::Unio
                 ))
                 return new_var, blk
             end
-        elseif inner_factor.args[1] == :^ && _is_complex_expr(inner_factor.args[2]) # FIXME && !vectorized ?
+        elseif inner_factor.args[1] == :^ && _is_complex_expr(inner_factor.args[2]) && !vectorized
+            # We need `&& !vectorized` otherwise `A .+ (A + A)^2` would be rewritten `broadcast!(add_mul, x, AA, AA)` where `AA` is `A + A`.
             MulType = :(MA.promote_operation(*, typeof($(inner_factor.args[2])), typeof($(inner_factor.args[2]))))
             if inner_factor.args[3] == 2
                 new_var_, parsed = rewrite(inner_factor.args[2])
@@ -376,7 +379,7 @@ function _rewrite(vectorized::Bool, minus::Bool, inner_factor, current_sum::Unio
                 )
                 return new_var, Expr(:block, parsed, power_expr)
             end
-        elseif inner_factor.args[1] == :/ # FIXME && !vectorized ?
+        elseif inner_factor.args[1] == :/ && !vectorized
             @assert length(inner_factor.args) == 3
             numerator = inner_factor.args[2]
             denom = inner_factor.args[3]
