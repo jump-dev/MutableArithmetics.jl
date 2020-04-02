@@ -31,6 +31,14 @@ function empty_sum_test(x)
     # Fails because the sum is not rewritten because `*` is not rewritten when `vectorized` is `true`.
     #@test MA.isequal_canonical(MA.@rewrite(x .+ sum(1 for i in 1:0) * sum(x for i in 1:0)), x)
     #@test MA.isequal_canonical(MA.@rewrite(x .+ 1^2 * sum(1 for i in 1:0) * sum(x for i in 1:0) * 1^2), x)
+    @test MA.isequal_canonical(MA.@rewrite(x .+ sum(1 for i in 1:0)), x)
+    @test MA.isequal_canonical(MA.@rewrite(x .+ sum(1 for i in 1:0)) * 1^2, x)
+    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i in 1:0)) .+ x, x)
+    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i in 1:0)) * 1^2 .+ x, x)
+    @test MA.isequal_canonical(MA.@rewrite(x .- sum(1 for i in 1:0)), x)
+    @test MA.isequal_canonical(MA.@rewrite(x .- sum(1 for i in 1:0)) * 1^2, x)
+    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i in 1:0)) .- x, -x)
+    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i in 1:0)) * 1^2 .- x, -x)
 end
 
 function cube_test(x)
