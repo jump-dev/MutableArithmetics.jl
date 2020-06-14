@@ -57,7 +57,7 @@ function mutable_broadcasted(broadcasted::Broadcast.Broadcasted{S}) where S
 end
 
 # If A is `Symmetric`, we cannot do that as we might modify the same entry twice.
-# See https://github.com/JuliaOpt/JuMP.jl/issues/2102
+# See https://github.com/jump-dev/JuMP.jl/issues/2102
 function mutable_broadcast!(op::Function, A::Array, args::Vararg{Any, N}) where N
     bc = Broadcast.broadcasted(op, A, args...)
     instantiated = Broadcast.instantiate(bc)

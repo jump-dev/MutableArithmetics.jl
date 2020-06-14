@@ -48,7 +48,7 @@ Shortcut for `operate(*, a, b, ...)`, see [`operate`](@ref).
 mul(args::Vararg{Any, N}) where {N} = operate(*, args...)
 
 
-# `Vararg` gives extra allocations on Julia v1.3, see https://travis-ci.com/JuliaOpt/MutableArithmetics.jl/jobs/260666164#L215-L238
+# `Vararg` gives extra allocations on Julia v1.3, see https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
 function promote_operation(op::AddSubMul, T::Type, x::Type, y::Type)
     return promote_operation(add_sub_op(op), T, promote_operation(*, x, y))
 end
