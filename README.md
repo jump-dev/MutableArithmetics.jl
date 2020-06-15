@@ -2,9 +2,9 @@
 
 [![Stable][docs-stable-img]][docs-stable-url]
 [![Dev][docs-latest-img]][docs-latest-url]
-[![Build Status](https://travis-ci.com/JuliaOpt/MutableArithmetics.jl.svg?branch=master)](https://travis-ci.com/JuliaOpt/MutableArithmetics.jl)
-[![Codecov](https://codecov.io/gh/JuliaOpt/MutableArithmetics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaOpt/MutableArithmetics.jl)
-[![Coveralls](https://coveralls.io/repos/github/JuliaOpt/MutableArithmetics.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaOpt/MutableArithmetics.jl?branch=master)
+[![Build Status](https://travis-ci.com/jump-dev/MutableArithmetics.jl.svg?branch=master)](https://travis-ci.com/jump-dev/MutableArithmetics.jl)
+[![Codecov](https://codecov.io/gh/jump-dev/MutableArithmetics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jump-dev/MutableArithmetics.jl)
+[![Coveralls](https://coveralls.io/repos/github/jump-dev/MutableArithmetics.jl/badge.svg?branch=master)](https://coveralls.io/github/jump-dev/MutableArithmetics.jl?branch=master)
 
 **MutableArithmetics** (MA for short) is a [Julia](http://julialang.org) package which allows:
 *   for mutable types to implement mutable arithmetics;
@@ -48,9 +48,9 @@ The following types implement the MutableArithmetics API:
   as well as its two implementations [DynamicPolynomials](https://github.com/JuliaAlgebra/DynamicPolynomials.jl)
   and [TypedPolynomials](https://github.com/JuliaAlgebra/TypedPolynomials.jl).
 * The scalar and quadratic functions used to define an Optimization Program in
-  [MathOptInterface](https://github.com/JuliaOpt/MathOptInterface.jl).
+  [MathOptInterface](https://github.com/jump-dev/MathOptInterface.jl).
 * The scalar and quadratic expressions used to model optimization in
-  [JuMP](https://github.com/JuliaOpt/JuMP.jl).
+  [JuMP](https://github.com/jump-dev/JuMP.jl).
 
 The algorithms from the following libraries use the MutableArithmetics API
 to exploit the mutability of the type when possible:
@@ -158,5 +158,5 @@ BenchmarkTools.Trial:
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-stable-url]: https://juliaopt.github.io/MutableArithmetics.jl/stable
-[docs-latest-url]: https://juliaopt.github.io/MutableArithmetics.jl/latest
+[docs-stable-url]: https://jump.dev/MutableArithmetics.jl/stable
+[docs-latest-url]: https://jump.dev/MutableArithmetics.jl/latest

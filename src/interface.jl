@@ -16,7 +16,7 @@ function promote_operation(op::Function, x::Type{<:AbstractArray}, y::Type{<:Abs
     error("`promote_operation($op, $x, $y)` not implemented yet, please report this.")
 end
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
-# https://travis-ci.org/JuliaOpt/JuMP.jl/jobs/617606373
+# https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
 function promote_operation(op::Function, x::Type, y::Type)
     return typeof(op(zero(x), zero(y)))
 end
