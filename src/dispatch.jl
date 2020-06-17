@@ -261,12 +261,17 @@ function Matrix(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     return B
 end
 
-# Called in `getindex` of `LinearAlgebra.LowerTriangular` and `LinearAlgebra.UpperTriangular`.
+# Called in `getindex` of `LinearAlgebra.LowerTriangular` and `LinearAlgebra.UpperTriangular`
+# as the elements may be `Array` for which `zero` is only defined for instances but not for the type.
+# For `AbstractMutable` we assume that `zero` for the instance is the same than for the type by default.
 Base.zero(x::AbstractMutable) = zero(typeof(x))
 
-# To determine whether the funtion is zero preserving, `LinearAlgebra` calls
-# `zero` on the `eltype` of the broadcasted object and then check `_iszero`.
-# `_iszero(x)` redirects to `iszero(x)` for numbers and to `x == 0` otherwise.
-# `x == 0` returns false for types that implement `iszero` but not `==` such as
-# `DummyBigInt` and MOI functions.
-LinearAlgebra._iszero(x::AbstractMutable) = iszero(x)
+# This was fixed in https://github.com/JuliaLang/julia/pull/36194
+if VERSION < v"1.6.0-DEV.216"
+    # To determine whether the funtion is zero preserving, `LinearAlgebra` calls
+    # `zero` on the `eltype` of the broadcasted object and then check `_iszero`.
+    # `_iszero(x)` redirects to `iszero(x)` for numbers and to `x == 0` otherwise.
+    # `x == 0` returns false for types that implement `iszero` but not `==` such as
+    # `DummyBigInt` and MOI functions.
+    LinearAlgebra._iszero(x::AbstractMutable) = iszero(x)
+end
