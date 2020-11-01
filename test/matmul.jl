@@ -147,3 +147,11 @@ end
         alloc_test(() -> MA.mutable_operate!(MA.add_mul, C, A, B), 48)
     end
 end
+
+@testset "matrix multiplication" begin
+    X = ones(BigInt, 1, 1)
+    M = ones(1, 1);
+    C = X * M
+    D = MA.operate!(MA.add_mul, C, X, M)
+    @test D == X * M + X * M
+end

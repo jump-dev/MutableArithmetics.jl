@@ -180,7 +180,7 @@ function _add_mul_array(C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
 
     @inbounds begin
         for i = 1:size(A, 1), j = 1:size(B, 2)
-            Ctmp = zero!(C[i, j])
+            Ctmp = C[i, j]
             for k = 1:size(A, 2)
                 Ctmp = buffered_operate!(mul_buffer, add_mul, Ctmp, A[i, k], B[k, j])
             end
