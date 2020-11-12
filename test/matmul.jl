@@ -51,7 +51,7 @@ end
 
 @testset "Errors" begin
     @testset "`promote_op` error" begin
-        AT = CustomArray{Int, 3}
+        AT = CustomArray{Int64, 3}
         err = ErrorException("`promote_operation(+, CustomArray{Int64,3}, CustomArray{Int64,3})` not implemented yet, please report this.")
         @test_throws err MA.promote_operation(+, AT, AT)
     end
