@@ -382,9 +382,9 @@ function _rewrite(
             # A multiplication expression *(args...). We need `!vectorized`
             # otherwise `x .+ A * b` would be rewritten
             # `broadcast!(add_mul, x, A, b)`.
-            We might need to recurse on multiple arguments, e.g., (x+y)*(x+y).
-            As a special case, only recurse on one argument and don't create
-            temporary objects
+            # We might need to recurse on multiple arguments, e.g., (x+y)*(x+y).
+            # As a special case, only recurse on one argument and don't create
+            # temporary objects
             if (
                 isone(mapreduce(_is_complex_expr, +, inner_factor.args)) &&
                 isone(mapreduce(_is_decomposable_with_factors, +, inner_factor.args))
