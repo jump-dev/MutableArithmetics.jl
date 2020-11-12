@@ -104,10 +104,12 @@ end
 
         # 40 bytes to create the buffer
         # 8 bytes in the double for loop. FIXME: figure out why
-        alloc_test(() -> MA.add_mul!(y, A, x), 48)
-        alloc_test(() -> MA.operate_fallback!(MA.IsMutable(), MA.add_mul, y, A, x), 48)
-        alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), 48)
-        alloc_test(() -> MA.mutable_operate!(MA.add_mul, y, A, x), 48)
+        # Half size on 32-bit.
+        n = Sys.WORD_SIZE == 64 ? 48 : 24
+        alloc_test(() -> MA.add_mul!(y, A, x), n)
+        alloc_test(() -> MA.operate_fallback!(MA.IsMutable(), MA.add_mul, y, A, x), n)
+        alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), n)
+        alloc_test(() -> MA.mutable_operate!(MA.add_mul, y, A, x), n)
     end
     @testset "matrix-matrix product" begin
         A = [1 2 3; 4 5 6; 6 8 9]
@@ -140,11 +142,13 @@ end
             alloc_test(() -> MA.mutability(C, MA.add_mul, C, A, B), 0)
         end
 
-        # 40 bytes to create the buffer
+        # 40 bytes to create the buffer on 64-bit.
         # 8 bytes in the double for loop. FIXME: figure out why
-        alloc_test(() -> MA.add_mul!(C, A, B), 48)
-        alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), 48)
-        alloc_test(() -> MA.mutable_operate!(MA.add_mul, C, A, B), 48)
+        # Half size on 32-bit.
+        n = Sys.WORD_SIZE == 64 ? 48 : 24
+        alloc_test(() -> MA.add_mul!(C, A, B), n)
+        alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), n)
+        alloc_test(() -> MA.mutable_operate!(MA.add_mul, C, A, B), n)
     end
 end
 
