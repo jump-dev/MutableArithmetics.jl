@@ -382,30 +382,36 @@ function _rewrite(
             # A multiplication expression *(args...). We need `!vectorized`
             # otherwise `x .+ A * b` would be rewritten
             # `broadcast!(add_mul, x, A, b)`.
-
-            # TODO(odow): remove the special case. I don't know if it's worth
-            # it.
-            # We might need to recurse on multiple arguments, e.g., (x+y)*(x+y).
-            # As a special case, only recurse on one argument and don't create
-            # temporary objects
-            # if (
-            #     isone(mapreduce(_is_complex_expr, +, inner_factor.args)) &&
-            #     isone(mapreduce(_is_decomposable_with_factors, +, inner_factor.args))
-            # )
-            #     # `findfirst` return the index in `2:...` so we need to add `1`.
-            #     which_idx = 1 + findfirst(2:length(inner_factor.args)) do i
-            #         _is_decomposable_with_factors(inner_factor.args[i])
-            #     end
-            #     return _rewrite(
-            #         vectorized,
-            #         minus,
-            #         inner_factor.args[which_idx],
-            #         current_sum,
-            #         vcat(left_factors, [esc(inner_factor.args[i]) for i in 2:(which_idx - 1)]),
-            #         vcat(right_factors, [esc(inner_factor.args[i]) for i in length(inner_factor.args):-1:(which_idx + 1)]),
-            #         new_var,
-            #     )
-            # else
+            We might need to recurse on multiple arguments, e.g., (x+y)*(x+y).
+            As a special case, only recurse on one argument and don't create
+            temporary objects
+            if (
+                isone(mapreduce(_is_complex_expr, +, inner_factor.args)) &&
+                isone(mapreduce(_is_decomposable_with_factors, +, inner_factor.args))
+            )
+                # `findfirst` return the index in `2:...` so we need to add `1`.
+                which_idx = 1 + findfirst(2:length(inner_factor.args)) do i
+                    _is_decomposable_with_factors(inner_factor.args[i])
+                end
+                return _rewrite(
+                    vectorized,
+                    minus,
+                    inner_factor.args[which_idx],
+                    current_sum,
+                    vcat(
+                        left_factors,
+                        [esc(inner_factor.args[i]) for i in 2:(which_idx - 1)]
+                    ),
+                    vcat(
+                        right_factors,
+                        [
+                            esc(inner_factor.args[i])
+                            for i in length(inner_factor.args):-1:(which_idx + 1)
+                        ],
+                    ),
+                    new_var,
+                )
+            else
                 code = Expr(:block)
                 for i in 2:length(inner_factor.args)
                     arg = inner_factor.args[i]
@@ -430,7 +436,7 @@ function _rewrite(
                     ),
                 )
                 return new_var, code
-            # end
+            end
         elseif (
             inner_factor.args[1] == :^ &&
             _is_complex_expr(inner_factor.args[2]) &&
