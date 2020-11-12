@@ -2,9 +2,8 @@
 
 [![Stable][docs-stable-img]][docs-stable-url]
 [![Dev][docs-latest-img]][docs-latest-url]
-[![Build Status](https://travis-ci.com/jump-dev/MutableArithmetics.jl.svg?branch=master)](https://travis-ci.com/jump-dev/MutableArithmetics.jl)
+[![Build Status](https://github.com/jump-dev/MutableArithmetics.jl/workflows/CI/badge.svg?branch=master)](https://github.com/jump-dev/MutableArithmetics.jl/actions?query=workflow%3ACI)
 [![Codecov](https://codecov.io/gh/jump-dev/MutableArithmetics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jump-dev/MutableArithmetics.jl)
-[![Coveralls](https://coveralls.io/repos/github/jump-dev/MutableArithmetics.jl/badge.svg?branch=master)](https://coveralls.io/github/jump-dev/MutableArithmetics.jl?branch=master)
 
 **MutableArithmetics** (MA for short) is a [Julia](http://julialang.org) package which allows:
 *   for mutable types to implement mutable arithmetics;
