@@ -9,9 +9,9 @@ const MA = MutableArithmetics
     @test MA.promote_operation(-, Int, Int) == Int
     @test MA.promote_operation(*, Int, Int) == Int
     @test MA.promote_operation(MA.add_mul, Int, Int, Int) == Int
-    err = ErrorException("Operation `+` between `Array{$Int,1}` and `$Int` is not allowed. You should use broadcast.")
+    err = ErrorException("Operation `+` between `$(Array{Int,1})` and `$Int` is not allowed. You should use broadcast.")
     @test_throws err MA.promote_operation(+, Vector{Int}, Int)
-    err = ErrorException("Operation `+` between `$Int` and `Array{$Int,1}` is not allowed. You should use broadcast.")
+    err = ErrorException("Operation `+` between `$Int` and `$(Array{Int,1})` is not allowed. You should use broadcast.")
     @test_throws err MA.promote_operation(+, Int, Vector{Int})
 end
 @testset "add_to! / add!" begin
