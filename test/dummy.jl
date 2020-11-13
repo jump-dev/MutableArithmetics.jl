@@ -9,6 +9,8 @@ DummyBigInt(J::UniformScaling) = DummyBigInt(J.λ)
 Base.ndims(::Type{DummyBigInt}) = 0
 Base.broadcastable(x::DummyBigInt) = Ref(x)
 
+Base.ndims(::DummyBigInt) = 0  # Needed in LinearAlgebra.
+
 Base.promote_rule(::Type{DummyBigInt}, ::Type{<:Union{Integer, UniformScaling{<:Integer}}}) = DummyBigInt
 # `copy` on BigInt returns the same instance anyway
 Base.copy(x::DummyBigInt) = x
