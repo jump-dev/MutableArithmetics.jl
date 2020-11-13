@@ -7,6 +7,7 @@ DummyBigInt(J::UniformScaling) = DummyBigInt(J.λ)
 
 # Broadcast
 Base.ndims(::Type{DummyBigInt}) = 0
+Base.ndims(::DummyBigInt) = 0
 Base.broadcastable(x::DummyBigInt) = Ref(x)
 
 Base.promote_rule(::Type{DummyBigInt}, ::Type{<:Union{Integer, UniformScaling{<:Integer}}}) = DummyBigInt

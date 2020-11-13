@@ -196,7 +196,7 @@ function _is_decomposable_with_factors(ex)
     # incorrect.
     return _is_complex_expr(ex) && (
         isempty(ex.args) ||
-        (ex.args[1] != :(.+) && ex.args[1] != :(.-))
+        (ex.args[1] != Symbol(".+") && ex.args[1] != Symbol(".-"))
     )
 end
 
@@ -331,7 +331,7 @@ function _rewrite(
                 current_sum === nothing &&
                 isempty(left_factors) &&
                 isempty(right_factors) &&
-                (inner_factor.args[1] == :(.+) || inner_factor.args[1] == :(.-))
+                (inner_factor.args[1] == Symbol(".+") || inner_factor.args[1] == Symbol(".-"))
             )
         )
             # There are three cases here:
@@ -360,13 +360,13 @@ function _rewrite(
                 push!(code.args, new_code)
                 start = 3
             end
-            if inner_factor.args[1] == :- || inner_factor.args[1] == :(.-)
+            if inner_factor.args[1] == :- || inner_factor.args[1] == Symbol(".-")
                 minus = !minus
             end
             vectorized = (
                 vectorized ||
-                inner_factor.args[1] == :(.+) ||
-                inner_factor.args[1] == :(.-)
+                inner_factor.args[1] == Symbol(".+") ||
+                inner_factor.args[1] == Symbol(".-")
             )
             return rewrite_sum(
                 vectorized,
