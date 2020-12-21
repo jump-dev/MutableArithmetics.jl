@@ -82,3 +82,8 @@ end
     a = 5
     @test MA.one!(a) == 1
 end
+
+@testset "Zero / Int" begin
+    @test MA.Zero() / 1 == MA.Zero()
+    @test_throws DivideError MA.Zero() / 0
+end
