@@ -55,6 +55,13 @@ Base.:+(z::Zero, ::Zero) = z
 Base.:-(::Zero, x::Any)  = -x
 Base.:-(x::Any,  ::Zero) = x
 Base.:-(z::Zero, ::Zero) = z
+function Base.:/(z::Zero, x::Any)
+    if iszero(x)
+        throw(DivideError())
+    else
+        return z
+    end
+end
 
 # Needed by `@rewrite(BigInt(1) .+ sum(1 for i in 1:0) * 1^2)`
 # since we don't require mutable type to support Zero in
