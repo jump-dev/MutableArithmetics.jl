@@ -6,6 +6,8 @@ include("utilities.jl")
 
 include("interface.jl")
 
+include("range.jl")
+
 @testset "Int" begin
     include("int.jl")
 end
