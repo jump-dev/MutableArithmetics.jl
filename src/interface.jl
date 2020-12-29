@@ -15,10 +15,13 @@ function promote_operation(op::Function, x::Type{<:AbstractArray}, y::Type{<:Abs
     # We replace it by a more helpful error here.
     error("`promote_operation($op, $x, $y)` not implemented yet, please report this.")
 end
+function promote_operation(::typeof(/), ::Type{S}, ::Type{T}) where {S, T}
+    return typeof(zero(S) / oneunit(T))
+end
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
-function promote_operation(op::Function, x::Type, y::Type)
-    return typeof(op(zero(x), zero(y)))
+function promote_operation(op::Function, ::Type{S}, ::Type{T}) where {S, T}
+    return typeof(op(zero(S), zero(T)))
 end
 function promote_operation(op::Function, args::Vararg{Type, N}) where N
     return typeof(op(zero.(args)...))
