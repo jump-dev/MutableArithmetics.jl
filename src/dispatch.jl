@@ -266,12 +266,11 @@ end
 # For `AbstractMutable` we assume that `zero` for the instance is the same than for the type by default.
 Base.zero(x::AbstractMutable) = zero(typeof(x))
 
-# This was fixed in https://github.com/JuliaLang/julia/pull/36194
-if VERSION < v"1.6.0-DEV.216"
-    # To determine whether the funtion is zero preserving, `LinearAlgebra` calls
-    # `zero` on the `eltype` of the broadcasted object and then check `_iszero`.
-    # `_iszero(x)` redirects to `iszero(x)` for numbers and to `x == 0` otherwise.
-    # `x == 0` returns false for types that implement `iszero` but not `==` such as
-    # `DummyBigInt` and MOI functions.
-    LinearAlgebra._iszero(x::AbstractMutable) = iszero(x)
-end
+# This was fixed in https://github.com/JuliaLang/julia/pull/36194 but then reverted.
+# Fixed again in https://github.com/JuliaLang/julia/pull/38789/ but not merged yet.
+# To determine whether the funtion is zero preserving, `LinearAlgebra` calls
+# `zero` on the `eltype` of the broadcasted object and then check `_iszero`.
+# `_iszero(x)` redirects to `iszero(x)` for numbers and to `x == 0` otherwise.
+# `x == 0` returns false for types that implement `iszero` but not `==` such as
+# `DummyBigInt` and MOI functions.
+LinearAlgebra._iszero(x::AbstractMutable) = iszero(x)
