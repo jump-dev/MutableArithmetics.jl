@@ -28,8 +28,6 @@ end
 include("dummy.jl")
 
 function error_test(x, y, z)
-    err = ErrorException("Expected `sum` outside generator expression; got `prod`.")
-    @test_macro_throws err MA.@rewrite(prod(i for i = 1:2))
     # $(:(y[j=1])) does not print the same on Julia v1.3 or Julia 1.4
     err = ErrorException("Unexpected assignment in expression `$(:(y[j=1]))`.")
     @test_macro_throws err MA.@rewrite y[j = 1]
