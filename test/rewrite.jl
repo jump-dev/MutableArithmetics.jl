@@ -93,3 +93,8 @@ using OffsetArrays
         MA.Test.non_array_test(x, OffsetArray(x, -length(x)))
     end
 end
+
+@testset "generator with not sum" begin
+    @test MA.@rewrite(minimum(j^2 for j in 2:3)) == 4
+    @test MA.@rewrite(maximum(j^2 for j in 2:3)) == 9
+end

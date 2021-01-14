@@ -604,7 +604,8 @@ function _rewrite(
             length(inner_factor.args) >= 2 && (
                 isexpr(inner_factor.args[2], :generator) ||
                 isexpr(inner_factor.args[2], :flatten)
-            )
+            ) &&
+            _is_sum(inner_factor.args[1])
         )
             # A generator statement.
             code = _parse_generator(
