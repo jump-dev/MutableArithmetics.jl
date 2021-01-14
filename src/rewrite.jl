@@ -31,7 +31,7 @@ struct Zero end
 #Base.:(+)(zero::Zero, x) = copy_if_mutable(x)
 ## `add_mul(zero, ...)` redirects to `muladd(..., zero)` which calls `... + zero`.
 #Base.:(+)(x, zero::Zero) = copy_if_mutable(x)
-function operate(::typeof(add_mul), ::Zero, args::Vararg{Any, N}) where {N}
+function operate(::typeof(add_mul), ::Zero, args::Vararg{Any,N}) where {N}
     return operate(*, args...)
 end
 function operate(::typeof(sub_mul), ::Zero, x)
@@ -39,21 +39,21 @@ function operate(::typeof(sub_mul), ::Zero, x)
     # useless copy.
     return operate(-, x)
 end
-function operate(::typeof(sub_mul), ::Zero, x, y, args::Vararg{Any, N}) where {N}
+function operate(::typeof(sub_mul), ::Zero, x, y, args::Vararg{Any,N}) where {N}
     return operate(-, operate(*, x, y, args...))
 end
-broadcast!(::Union{typeof(add_mul), typeof(+)}, ::Zero, x) = copy_if_mutable(x)
+broadcast!(::Union{typeof(add_mul),typeof(+)}, ::Zero, x) = copy_if_mutable(x)
 broadcast!(::typeof(add_mul), ::Zero, x, y) = x * y
 
 # Needed in `@rewrite(1 .+ sum(1 for i in 1:0) * 1^2)`
-Base.:*(z::Zero, ::Any)  = z
-Base.:*(::Any,  z::Zero) = z
+Base.:*(z::Zero, ::Any) = z
+Base.:*(::Any, z::Zero) = z
 Base.:*(z::Zero, ::Zero) = z
-Base.:+(::Zero, x::Any)  = x
-Base.:+(x::Any,  ::Zero) = x
+Base.:+(::Zero, x::Any) = x
+Base.:+(x::Any, ::Zero) = x
 Base.:+(z::Zero, ::Zero) = z
-Base.:-(::Zero, x::Any)  = -x
-Base.:-(x::Any,  ::Zero) = x
+Base.:-(::Zero, x::Any) = -x
+Base.:-(x::Any, ::Zero) = x
 Base.:-(z::Zero, ::Zero) = z
 function Base.:/(z::Zero, x::Any)
     if iszero(x)
@@ -67,10 +67,13 @@ end
 # since we don't require mutable type to support Zero in
 # `mutable_operate!`.
 _any_zero() = false
-_any_zero(::Any, args::Vararg{Any, N}) where {N} = _any_zero(args...)
-_any_zero(::Zero, ::Vararg{Any, N}) where {N} = true
-function operate!(op::Union{typeof(add_mul), typeof(sub_mul)},
-                  x, args::Vararg{Any, N}) where N
+_any_zero(::Any, args::Vararg{Any,N}) where {N} = _any_zero(args...)
+_any_zero(::Zero, ::Vararg{Any,N}) where {N} = true
+function operate!(
+    op::Union{typeof(add_mul),typeof(sub_mul)},
+    x,
+    args::Vararg{Any,N},
+) where {N}
     if _any_zero(args...)
         return x
     else
@@ -152,16 +155,18 @@ function rewrite_generator(ex, inner)
 
     idxvars = []
     if isexpr(ex.args[2], :filter) # if condition
-        loop = Expr(:for, esc(itrsets(ex.args[2].args[2:end])),
-                    Expr(:if, esc(ex.args[2].args[1]),
-                          rewrite_generator(ex.args[1], inner)))
+        loop = Expr(
+            :for,
+            esc(itrsets(ex.args[2].args[2:end])),
+            Expr(:if, esc(ex.args[2].args[1]), rewrite_generator(ex.args[1], inner)),
+        )
         for idxset in ex.args[2].args[2:end]
             idxvar, s = _parse_idx_set(idxset)
             push!(idxvars, idxvar)
         end
     else
-        loop = Expr(:for, esc(itrsets(ex.args[2:end])),
-                         rewrite_generator(ex.args[1], inner))
+        loop =
+            Expr(:for, esc(itrsets(ex.args[2:end])), rewrite_generator(ex.args[1], inner))
         for idxset in ex.args[2:end]
             idxvar, s = _parse_idx_set(idxset)
             push!(idxvars, idxvar)
@@ -173,26 +178,65 @@ end
 # See `JuMP._is_sum`
 _is_sum(s::Symbol) = (s == :sum) || (s == :∑) || (s == :Σ)
 
-function _parse_generator(vectorized::Bool, minus::Bool, inner_factor::Expr, current_sum::Union{Nothing, Symbol}, left_factors, right_factors, new_var=gensym())
+function _parse_generator(
+    vectorized::Bool,
+    minus::Bool,
+    inner_factor::Expr,
+    current_sum::Union{Nothing,Symbol},
+    left_factors,
+    right_factors,
+    new_var = gensym(),
+)
     @assert isexpr(inner_factor, :call)
     @assert length(inner_factor.args) > 1
-    @assert isexpr(inner_factor.args[2], :generator) || isexpr(inner_factor.args[2], :flatten)
+    @assert isexpr(inner_factor.args[2], :generator) ||
+            isexpr(inner_factor.args[2], :flatten)
     header = inner_factor.args[1]
     if _is_sum(header)
-        _parse_generator_sum(vectorized, minus, inner_factor.args[2], current_sum, left_factors, right_factors, new_var)
+        _parse_generator_sum(
+            vectorized,
+            minus,
+            inner_factor.args[2],
+            current_sum,
+            left_factors,
+            right_factors,
+            new_var,
+        )
     else
         error("Expected `sum` outside generator expression; got `$header`.")
     end
 end
 
-function _parse_generator_sum(vectorized::Bool, minus::Bool, inner_factor::Expr, current_sum::Union{Nothing, Symbol}, left_factors, right_factors, new_var)
+function _parse_generator_sum(
+    vectorized::Bool,
+    minus::Bool,
+    inner_factor::Expr,
+    current_sum::Union{Nothing,Symbol},
+    left_factors,
+    right_factors,
+    new_var,
+)
     # We used to preallocate the expression at the lowest level of the loop.
     # When rewriting this some benchmarks revealed that it actually doesn't
     # seem to help anymore, so might as well keep the code simple.
-    return _start_summing(current_sum, current_sum -> begin
-        code = rewrite_generator(inner_factor, t -> _rewrite(vectorized, minus, t, current_sum, left_factors, right_factors, current_sum)[2])
-        return Expr(:block, code, :($new_var = $current_sum))
-    end)
+    return _start_summing(
+        current_sum,
+        current_sum -> begin
+            code = rewrite_generator(
+                inner_factor,
+                t -> _rewrite(
+                    vectorized,
+                    minus,
+                    t,
+                    current_sum,
+                    left_factors,
+                    right_factors,
+                    current_sum,
+                )[2],
+            )
+            return Expr(:block, code, :($new_var = $current_sum))
+        end,
+    )
 end
 
 _is_complex_expr(ex) = isa(ex, Expr) && !isexpr(ex, :ref)
@@ -201,10 +245,8 @@ function _is_decomposable_with_factors(ex)
     # `right_factors` are not empty. Otherwise, for instance
     # `I * (x .+ 1)` would be rewritten into `(I * x) .+ (I * 1)` which is
     # incorrect.
-    return _is_complex_expr(ex) && (
-        isempty(ex.args) ||
-        (ex.args[1] != :.+ && ex.args[1] != :.-)
-    )
+    return _is_complex_expr(ex) &&
+           (isempty(ex.args) || (ex.args[1] != :.+ && ex.args[1] != :.-))
 end
 
 """
@@ -263,13 +305,23 @@ function _has_assignment_in_ref(ex::Expr)
 end
 _has_assignment_in_ref(other) = false
 
-function rewrite_sum(vectorized::Bool, minus::Bool, terms, current_sum::Union{Nothing, Symbol}, left_factors::Vector, right_factors::Vector, output::Symbol, block = Expr(:block))
+function rewrite_sum(
+    vectorized::Bool,
+    minus::Bool,
+    terms,
+    current_sum::Union{Nothing,Symbol},
+    left_factors::Vector,
+    right_factors::Vector,
+    output::Symbol,
+    block = Expr(:block),
+)
     var = current_sum
     for term in terms[1:(end-1)]
         var, code = _rewrite(vectorized, minus, term, var, left_factors, right_factors)
         push!(block.args, code)
     end
-    new_output, code = _rewrite(vectorized, minus, terms[end], var, left_factors, right_factors, output)
+    new_output, code =
+        _rewrite(vectorized, minus, terms[end], var, left_factors, right_factors, output)
     @assert new_output == output
     push!(block.args, code)
     return output, block
@@ -277,24 +329,42 @@ end
 
 function _start_summing(current_sum::Nothing, first_term::Function)
     variable = gensym()
-    return Expr(:block, :($variable = MutableArithmetics.Zero()),
-                first_term(variable))
+    return Expr(:block, :($variable = MutableArithmetics.Zero()), first_term(variable))
 end
 function _start_summing(current_sum::Symbol, first_term::Function)
     return first_term(current_sum)
 end
 
-function _write_add_mul(vectorized, minus, current_sum, left_factors, inner_factors, right_factors, new_var::Symbol)
+function _write_add_mul(
+    vectorized,
+    minus,
+    current_sum,
+    left_factors,
+    inner_factors,
+    right_factors,
+    new_var::Symbol,
+)
     if vectorized
         f = :(MutableArithmetics.broadcast!)
     else
         f = :(MutableArithmetics.operate!)
     end
     op = minus ? :(MutableArithmetics.sub_mul) : :(MutableArithmetics.add_mul)
-    return _start_summing(current_sum, current_sum -> begin
-        call_expr = Expr(:call, f, op, current_sum, left_factors..., inner_factors..., reverse(right_factors)...)
-        return :($new_var = $call_expr)
-    end)
+    return _start_summing(
+        current_sum,
+        current_sum -> begin
+            call_expr = Expr(
+                :call,
+                f,
+                op,
+                current_sum,
+                left_factors...,
+                inner_factors...,
+                reverse(right_factors)...,
+            )
+            return :($new_var = $call_expr)
+        end,
+    )
 end
 
 """
@@ -325,7 +395,7 @@ function _rewrite(
     vectorized::Bool,
     minus::Bool,
     inner_factor,
-    current_sum::Union{Symbol, Nothing},
+    current_sum::Union{Symbol,Nothing},
     left_factors::Vector,
     right_factors::Vector,
     new_var::Symbol = gensym(),
@@ -338,10 +408,7 @@ function _rewrite(
                 current_sum === nothing &&
                 isempty(left_factors) &&
                 isempty(right_factors) &&
-                (
-                    inner_factor.args[1] == :.+ ||
-                    inner_factor.args[1] == :.-
-                )
+                (inner_factor.args[1] == :.+ || inner_factor.args[1] == :.-)
             )
         )
             # There are three cases here:
@@ -373,11 +440,8 @@ function _rewrite(
             if inner_factor.args[1] == :- || inner_factor.args[1] == :.-
                 minus = !minus
             end
-            vectorized = (
-                vectorized ||
-                inner_factor.args[1] == :.+ ||
-                inner_factor.args[1] == :.-
-            )
+            vectorized =
+                (vectorized || inner_factor.args[1] == :.+ || inner_factor.args[1] == :.-)
             return rewrite_sum(
                 vectorized,
                 minus,
@@ -408,22 +472,19 @@ function _rewrite(
                     minus,
                     inner_factor.args[which_idx],
                     current_sum,
-                    vcat(
-                        left_factors,
-                        [esc(inner_factor.args[i]) for i in 2:(which_idx - 1)]
-                    ),
+                    vcat(left_factors, [esc(inner_factor.args[i]) for i = 2:(which_idx-1)]),
                     vcat(
                         right_factors,
                         [
-                            esc(inner_factor.args[i])
-                            for i in length(inner_factor.args):-1:(which_idx + 1)
+                            esc(inner_factor.args[i]) for
+                            i = length(inner_factor.args):-1:(which_idx+1)
                         ],
                     ),
                     new_var,
                 )
             else
                 code = Expr(:block)
-                for i in 2:length(inner_factor.args)
+                for i = 2:length(inner_factor.args)
                     arg = inner_factor.args[i]
                     if _is_complex_expr(arg)  # `arg` needs rewriting.
                         new_arg, new_arg_code = rewrite(arg)
@@ -456,13 +517,11 @@ function _rewrite(
             # non-trivial expression that also needs to be re-written. We need
             # `!vectorized` otherwise `A .+ (A + A)^2` would be rewritten as
             # `broadcast!(add_mul, x, AA, AA)` where `AA` is `A + A`.
-            MulType = :(
-                MA.promote_operation(
-                    *,
-                    typeof($(inner_factor.args[2])),
-                    typeof($(inner_factor.args[2]))
-                )
-            )
+            MulType = :(MA.promote_operation(
+                *,
+                typeof($(inner_factor.args[2])),
+                typeof($(inner_factor.args[2])),
+            ))
             if inner_factor.args[3] == 0
                 # If the exponent is 0, rewrite
                 #    new_var = base^0
@@ -542,8 +601,7 @@ function _rewrite(
                 new_var,
             )
         elseif (
-            length(inner_factor.args) >= 2 &&
-            (
+            length(inner_factor.args) >= 2 && (
                 isexpr(inner_factor.args[2], :generator) ||
                 isexpr(inner_factor.args[2], :flatten)
             )
@@ -564,7 +622,7 @@ function _rewrite(
     if isexpr(inner_factor, :curly)
         error(
             "The curly syntax (sum{},prod{},norm2{}) is no longer supported. " *
-            "Expression: `$inner_factor`."
+            "Expression: `$inner_factor`.",
         )
     elseif isa(inner_factor, Expr) && _is_comparison(inner_factor)
         error("Unexpected comparison in expression `$inner_factor`.")

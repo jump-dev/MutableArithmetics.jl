@@ -1,8 +1,10 @@
 function matrix_vector_division_test(x)
     if size(x) == (3, 3)
-        A = [2 1 0
-             1 2 1
-             0 1 2]
+        A = [
+            2 1 0
+            1 2 1
+            0 1 2
+        ]
         @test_rewrite A * x / 2
     end
 end
@@ -20,13 +22,15 @@ function _xAx_test(x::AbstractVector, A::AbstractMatrix)
         @test_rewrite t(x) * A * x - 1
         @test_rewrite t(x) * x + t(x) * A * x
         @test_rewrite t(x) * x - t(x) * A * x
-        @test MA.promote_operation(*, typeof(t(x)), typeof(A), typeof(x)) == typeof(t(x) * A * x)
+        @test MA.promote_operation(*, typeof(t(x)), typeof(A), typeof(x)) ==
+              typeof(t(x) * A * x)
         @test MA.promote_operation(*, typeof(t(x)), typeof(x)) == typeof(t(x) * x)
         @test_rewrite t(x) * x + 2 * t(x) * A * x
         @test_rewrite t(x) * x - 2 * t(x) * A * x
         @test_rewrite t(x) * A * x + 2 * t(x) * x
         @test_rewrite t(x) * A * x - 2 * t(x) * x
-        @test MA.promote_operation(*, Int, typeof(t(x)), typeof(A), typeof(x)) == typeof(2 * t(x) * A * x)
+        @test MA.promote_operation(*, Int, typeof(t(x)), typeof(A), typeof(x)) ==
+              typeof(2 * t(x) * A * x)
         @test MA.promote_operation(*, Int, typeof(t(x)), typeof(x)) == typeof(2 * t(x) * x)
     end
 end
@@ -50,9 +54,9 @@ function _matrix_vector_test(x::AbstractVector, A::AbstractMatrix)
     @test MA.isequal_canonical(x' * A, x' * B)
     @test MA.isequal_canonical(x' * A, MA.@rewrite(x' * B))
     @test MA.isequal_canonical(MA.@rewrite(x' * A), MA.@rewrite(x' * B))
-    @test MA.isequal_canonical(x'A*x, x'*B*x)
-    @test MA.isequal_canonical(x'*A*x, MA.@rewrite(x'*B*x))
-    @test MA.isequal_canonical(MA.@rewrite(x'*A*x), MA.@rewrite(x'*B*x))
+    @test MA.isequal_canonical(x'A * x, x' * B * x)
+    @test MA.isequal_canonical(x' * A * x, MA.@rewrite(x' * B * x))
+    @test MA.isequal_canonical(MA.@rewrite(x' * A * x), MA.@rewrite(x' * B * x))
 
     _xABx_test(x, A, A)
     _xABx_test(x, A, B)
@@ -65,9 +69,11 @@ function matrix_vector_test(x)
     if size(x) != (3,)
         return
     end
-    A = [2 1 0
-         1 2 1
-         0 1 2]
+    A = [
+        2 1 0
+        1 2 1
+        0 1 2
+    ]
 
     @test_rewrite x .+ A * x
     @test_rewrite A * x .+ A * x
@@ -80,81 +86,144 @@ function matrix_vector_test(x)
     @test_rewrite A * x .- (A + A)^2 * x
 
     @test MA.isequal_canonical(-x, [-x[1], -x[2], -x[3]])
-    xAx = 2x[1]*x[1] + 2x[1]*x[2] + 2x[2]*x[2] + 2x[2]*x[3] + 2x[3]*x[3]
+    xAx = 2x[1] * x[1] + 2x[1] * x[2] + 2x[2] * x[2] + 2x[2] * x[3] + 2x[3] * x[3]
     @test MA.isequal_canonical(x' * A * x, xAx)
     y = A * x
     @test MA.isequal_canonical(x' * y, xAx)
-    @test MA.isequal_canonical(y, [
-        2x[1] +  x[2]
-        2x[2] +  x[1] + x[3]
-         x[2] + 2x[3]])
-    @test MA.isequal_canonical(-y, [
-        -2x[1] -  x[2]
-         -x[1] - 2x[2] -  x[3]
-                 -x[2] - 2x[3]])
+    @test MA.isequal_canonical(
+        y,
+        [
+            2x[1] + x[2]
+            2x[2] + x[1] + x[3]
+            x[2] + 2x[3]
+        ],
+    )
+    @test MA.isequal_canonical(
+        -y,
+        [
+            -2x[1] - x[2]
+            -x[1] - 2x[2] - x[3]
+            -x[2] - 2x[3]
+        ],
+    )
     @test MA.isequal_canonical(x' * A, [
-        2x[1] +  x[2];
-         x[1] + 2x[2] +  x[3];
-                 x[2] + 2x[3]]')
+        2x[1] + x[2]
+        x[1] + 2x[2] + x[3]
+        x[2] + 2x[3]
+    ]')
 
-    @test MA.isequal_canonical(y .+ 1, [
-        2x[1] +  x[2]         + 1
-         x[1] + 2x[2] +  x[3] + 1
-                 x[2] + 2x[3] + 1])
-    @test MA.isequal_canonical(y .- 1, [
-        2x[1] +  x[2]         - 1
-         x[1] + 2x[2] +  x[3] - 1
-                 x[2] + 2x[3] - 1])
-    @test MA.isequal_canonical(y .+ 2ones(Int, 3), [
-        2x[1] +  x[2]         + 2
-         x[1] + 2x[2] +  x[3] + 2
-                 x[2] + 2x[3] + 2])
-    @test MA.isequal_canonical(y .- 2ones(Int, 3), [
-        2x[1] +  x[2]         - 2
-         x[1] + 2x[2] +  x[3] - 2
-                 x[2] + 2x[3] - 2])
-    @test MA.isequal_canonical(2ones(Int, 3) .+ y, [
-        2x[1] +  x[2]         + 2
-         x[1] + 2x[2] +  x[3] + 2
-                 x[2] + 2x[3] + 2])
-    @test MA.isequal_canonical(2ones(Int, 3) .- y, [
-        -2x[1] -  x[2]         + 2
-         -x[1] - 2x[2] -  x[3] + 2
-                 -x[2] - 2x[3] + 2])
-    @test MA.isequal_canonical(y .+ x, [
-        3x[1] +  x[2]
-         x[1] + 3x[2] +  x[3]
-                 x[2] + 3x[3]])
-    @test MA.isequal_canonical(x .+ y, [
-        3x[1] +  x[2]
-         x[1] + 3x[2] +  x[3]
-                 x[2] + 3x[3]])
-    @test MA.isequal_canonical(2y .+ 2x, [
-        6x[1] + 2x[2]
-        2x[1] + 6x[2] + 2x[3]
-                2x[2] + 6x[3]])
-    @test MA.isequal_canonical(y .- x, [
-        x[1] + x[2]
-        x[1] + x[2] + x[3]
-               x[2] + x[3]])
-    @test MA.isequal_canonical(x .- y, [
-        -x[1] - x[2]
-        -x[1] - x[2] - x[3]
-        -x[2] - x[3]])
-    @test MA.isequal_canonical(y .+ x[:], [
-        3x[1] +  x[2]
-         x[1] + 3x[2] +  x[3]
-                 x[2] + 3x[3]])
-    @test MA.isequal_canonical(x[:] .+ y, [
-        3x[1] +  x[2]
-         x[1] + 3x[2] +  x[3]
-                 x[2] + 3x[3]])
+    @test MA.isequal_canonical(
+        y .+ 1,
+        [
+            2x[1] + x[2] + 1
+            x[1] + 2x[2] + x[3] + 1
+            x[2] + 2x[3] + 1
+        ],
+    )
+    @test MA.isequal_canonical(
+        y .- 1,
+        [
+            2x[1] + x[2] - 1
+            x[1] + 2x[2] + x[3] - 1
+            x[2] + 2x[3] - 1
+        ],
+    )
+    @test MA.isequal_canonical(
+        y .+ 2ones(Int, 3),
+        [
+            2x[1] + x[2] + 2
+            x[1] + 2x[2] + x[3] + 2
+            x[2] + 2x[3] + 2
+        ],
+    )
+    @test MA.isequal_canonical(
+        y .- 2ones(Int, 3),
+        [
+            2x[1] + x[2] - 2
+            x[1] + 2x[2] + x[3] - 2
+            x[2] + 2x[3] - 2
+        ],
+    )
+    @test MA.isequal_canonical(
+        2ones(Int, 3) .+ y,
+        [
+            2x[1] + x[2] + 2
+            x[1] + 2x[2] + x[3] + 2
+            x[2] + 2x[3] + 2
+        ],
+    )
+    @test MA.isequal_canonical(
+        2ones(Int, 3) .- y,
+        [
+            -2x[1] - x[2] + 2
+            -x[1] - 2x[2] - x[3] + 2
+            -x[2] - 2x[3] + 2
+        ],
+    )
+    @test MA.isequal_canonical(
+        y .+ x,
+        [
+            3x[1] + x[2]
+            x[1] + 3x[2] + x[3]
+            x[2] + 3x[3]
+        ],
+    )
+    @test MA.isequal_canonical(
+        x .+ y,
+        [
+            3x[1] + x[2]
+            x[1] + 3x[2] + x[3]
+            x[2] + 3x[3]
+        ],
+    )
+    @test MA.isequal_canonical(
+        2y .+ 2x,
+        [
+            6x[1] + 2x[2]
+            2x[1] + 6x[2] + 2x[3]
+            2x[2] + 6x[3]
+        ],
+    )
+    @test MA.isequal_canonical(
+        y .- x,
+        [
+            x[1] + x[2]
+            x[1] + x[2] + x[3]
+            x[2] + x[3]
+        ],
+    )
+    @test MA.isequal_canonical(
+        x .- y,
+        [
+            -x[1] - x[2]
+            -x[1] - x[2] - x[3]
+            -x[2] - x[3]
+        ],
+    )
+    @test MA.isequal_canonical(
+        y .+ x[:],
+        [
+            3x[1] + x[2]
+            x[1] + 3x[2] + x[3]
+            x[2] + 3x[3]
+        ],
+    )
+    @test MA.isequal_canonical(
+        x[:] .+ y,
+        [
+            3x[1] + x[2]
+            x[1] + 3x[2] + x[3]
+            x[2] + 3x[3]
+        ],
+    )
 
     _matrix_vector_test(x, A)
 
-    A = [1 2 3
-         0 4 5
-         6 0 7]
+    A = [
+        1 2 3
+        0 4 5
+        6 0 7
+    ]
     _matrix_vector_test(x, A)
 end
 
@@ -162,7 +231,8 @@ _constant(x) = reshape(collect(1:length(x)), size(x)...)
 
 function non_array_test(x, x2)
     # This is needed to compare arrays that have nonstandard indexing
-    elements_equal(A::AbstractArray{T, N}, B::AbstractArray{T, N}) where {T, N} = all(MA.isequal_canonical(a, b) for (a, b) in zip(A, B))
+    elements_equal(A::AbstractArray{T,N}, B::AbstractArray{T,N}) where {T,N} =
+        all(MA.isequal_canonical(a, b) for (a, b) in zip(A, B))
 
     @test elements_equal(+x, +x2)
     @test elements_equal(-x, -x2)
@@ -219,15 +289,17 @@ end
 function sum_test(matrix)
     @test_rewrite sum(matrix)
     if matrix isa AbstractMatrix
-        @test_rewrite sum([2matrix[i, j] for i in 1:size(matrix, 1), j in 1:size(matrix, 2)])
-        @test_rewrite sum(2matrix[i, j] for i in 1:size(matrix, 1), j in 1:size(matrix, 2))
+        @test_rewrite sum([2matrix[i, j] for i = 1:size(matrix, 1), j = 1:size(matrix, 2)])
+        @test_rewrite sum(2matrix[i, j] for i = 1:size(matrix, 1), j = 1:size(matrix, 2))
     end
 end
 
 function sum_multiplication_test(matrix)
     if matrix isa AbstractMatrix
-        @test_rewrite sum([2matrix[i, j]^2 for i in 1:size(matrix, 1), j in 1:size(matrix, 2)])
-        @test_rewrite sum(2matrix[i, j]^2 for i in 1:size(matrix, 1), j in 1:size(matrix, 2))
+        @test_rewrite sum([
+            2matrix[i, j]^2 for i = 1:size(matrix, 1), j = 1:size(matrix, 2)
+        ])
+        @test_rewrite sum(2matrix[i, j]^2 for i = 1:size(matrix, 1), j = 1:size(matrix, 2))
     end
 end
 
@@ -238,7 +310,7 @@ function transpose_test(x)
         @test MA.isequal_canonical(copy(transpose(x)), y)
     end
     if x isa AbstractMatrix
-        y = [x[i, j] for j in 1:size(x, 2), i in 1:size(x, 1)]
+        y = [x[i, j] for j = 1:size(x, 2), i = 1:size(x, 1)]
         @test MA.isequal_canonical(x', y)
         @test MA.isequal_canonical(copy(transpose(x)), y)
     end
@@ -252,7 +324,8 @@ end
 
 _matrix(x::Matrix) = x
 _matrix(x::AbstractMatrix) = Matrix(x)
-_matrix_equal(x::AbstractMatrix, y::AbstractMatrix) = MA.isequal_canonical(_matrix(x), _matrix(y))
+_matrix_equal(x::AbstractMatrix, y::AbstractMatrix) =
+    MA.isequal_canonical(_matrix(x), _matrix(y))
 
 function _broadcast_test(x, A)
     B = sparse(A)
@@ -280,21 +353,40 @@ function broadcast_test(x)
     end
     A = reshape(1:length(x), size(x)...)
     if size(x) == (2, 2)
-        @test MA.isequal_canonical(A .+ x, [
-            1+x[1,1]  3+x[1,2];
-            2+x[2,1]  4+x[2,2]])
-        @test MA.isequal_canonical(x .+ A, [
-            1+x[1,1]  3+x[1,2];
-            2+x[2,1]  4+x[2,2]])
-        @test MA.isequal_canonical(x .+ x, [2x[1,1] 2x[1,2]; 2x[2,1] 2x[2,2]])
+        @test MA.isequal_canonical(
+            A .+ x,
+            [
+                1+x[1, 1] 3+x[1, 2]
+                2+x[2, 1] 4+x[2, 2]
+            ],
+        )
+        @test MA.isequal_canonical(
+            x .+ A,
+            [
+                1+x[1, 1] 3+x[1, 2]
+                2+x[2, 1] 4+x[2, 2]
+            ],
+        )
+        @test MA.isequal_canonical(x .+ x, [2x[1, 1] 2x[1, 2]; 2x[2, 1] 2x[2, 2]])
 
-        @test MA.isequal_canonical(A .- x, [
-            1-x[1,1]  3-x[1,2];
-            2-x[2,1]  4-x[2,2]])
-        @test MA.isequal_canonical(x .- x, [zero(typeof(x[1] - x[1])) for _1 in 1:2, _2 in 1:2])
-        @test MA.isequal_canonical(x .- A, [
-            -1+x[1,1]  -3+x[1,2];
-            -2+x[2,1]  -4+x[2,2]])
+        @test MA.isequal_canonical(
+            A .- x,
+            [
+                1-x[1, 1] 3-x[1, 2]
+                2-x[2, 1] 4-x[2, 2]
+            ],
+        )
+        @test MA.isequal_canonical(
+            x .- x,
+            [zero(typeof(x[1] - x[1])) for _1 = 1:2, _2 = 1:2],
+        )
+        @test MA.isequal_canonical(
+            x .- A,
+            [
+                -1+x[1, 1] -3+x[1, 2]
+                -2+x[2, 1] -4+x[2, 2]
+            ],
+        )
     end
     _broadcast_test(x, A)
 end
@@ -317,13 +409,21 @@ function broadcast_multiplication_test(x)
     end
     A = reshape(1:length(x), size(x)...)
     if size(x) == (2, 2)
-        @test MA.isequal_canonical(A .* x, [
-            1*x[1,1]  3*x[1,2];
-            2*x[2,1]  4*x[2,2]])
-        @test MA.isequal_canonical(x .* A, [
-            1*x[1,1]  3*x[1,2];
-            2*x[2,1]  4*x[2,2]])
-        @test MA.isequal_canonical(x .* x, [x[1,1]^2 x[1,2]^2; x[2,1]^2 x[2,2]^2])
+        @test MA.isequal_canonical(
+            A .* x,
+            [
+                1*x[1, 1] 3*x[1, 2]
+                2*x[2, 1] 4*x[2, 2]
+            ],
+        )
+        @test MA.isequal_canonical(
+            x .* A,
+            [
+                1*x[1, 1] 3*x[1, 2]
+                2*x[2, 1] 4*x[2, 2]
+            ],
+        )
+        @test MA.isequal_canonical(x .* x, [x[1, 1]^2 x[1, 2]^2; x[2, 1]^2 x[2, 2]^2])
 
         # TODO: Refactor to avoid calling the internal JuMP function
         # `_densify_with_jump_eltype`.
@@ -351,9 +451,13 @@ function broadcast_division_test(x)
     end
     A = reshape(1:length(x), size(x)...)
     if size(x) == (2, 2)
-        @test MA.isequal_canonical(x ./ A, [
-            x[1,1] / 1  x[1,2] / 3;
-            x[2,1] / 2  x[2,2] / 4])
+        @test MA.isequal_canonical(
+            x ./ A,
+            [
+                x[1, 1]/1 x[1, 2]/3
+                x[2, 1]/2 x[2, 2]/4
+            ],
+        )
     end
     _broadcast_division_test(x, A)
 end
@@ -403,8 +507,8 @@ function triangular_test(x)
     ut = LinearAlgebra.UpperTriangular(x)
     add_test(ut, ut)
     y = Matrix(ut)
-    for i in 1:n
-        for j in 1:(i - 1)
+    for i = 1:n
+        for j = 1:(i-1)
             @test iszero(y[i, j])
             @test MA.iszero!(y[i, j])
         end
@@ -412,8 +516,8 @@ function triangular_test(x)
     lt = LinearAlgebra.LowerTriangular(x)
     add_test(lt, lt)
     z = Matrix(lt)
-    for j in 1:n
-        for i in 1:(j - 1)
+    for j = 1:n
+        for i = 1:(j-1)
             @test iszero(z[i, j])
             @test MA.iszero!(z[i, j])
         end
@@ -435,8 +539,8 @@ function diagonal_test(x)
         @test MA.isequal_canonical(z[i, i], convert(eltype(z), x[i]))
     end
     n = length(x)
-    for j in 1:n
-        for i in 1:(j - 1)
+    for j = 1:n
+        for i = 1:(j-1)
             @test iszero(y[i, j])
             @test MA.iszero!(y[i, j])
             @test iszero(y[j, i])
@@ -468,7 +572,7 @@ const array_tests = Dict(
     "matrix_uniform_scaling" => matrix_uniform_scaling_test,
     "symmetric_matrix_uniform_scaling" => symmetric_matrix_uniform_scaling_test,
     "triangular" => triangular_test,
-    "diagonal" => diagonal_test
+    "diagonal" => diagonal_test,
 )
 
 @test_suite array

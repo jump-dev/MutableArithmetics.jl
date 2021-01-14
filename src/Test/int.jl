@@ -1,4 +1,4 @@
-function int_add_test(::Type{T}) where T
+function int_add_test(::Type{T}) where {T}
     @testset "add_to! / add!" begin
         @test MA.mutability(T, +, T, T) isa MA.IsMutable
 
@@ -19,7 +19,7 @@ function int_add_test(::Type{T}) where T
         @test MA.isequal_canonical(a, expected)
     end
 end
-function int_sub_test(::Type{T}) where T
+function int_sub_test(::Type{T}) where {T}
     @testset "sub_to! / sub!" begin
         @test MA.mutability(T, -, T, T) isa MA.IsMutable
 
@@ -40,7 +40,7 @@ function int_sub_test(::Type{T}) where T
         @test MA.isequal_canonical(a, expected)
     end
 end
-function int_mul_test(::Type{T}) where T
+function int_mul_test(::Type{T}) where {T}
     @testset "mul_to! / mul!" begin
         @test MA.mutability(T, *, T, T) isa MA.IsMutable
 
@@ -59,7 +59,7 @@ function int_mul_test(::Type{T}) where T
         @test MA.isequal_canonical(a, t(420))
     end
 end
-function int_add_mul_test(::Type{T}) where T
+function int_add_mul_test(::Type{T}) where {T}
     @testset "add_mul_to! / add_mul! / add_mul_buf_to! / add_mul_buf!" begin
         @test MA.mutability(T, MA.add_mul, T, T) isa MA.IsMutable
         @test MA.mutability(T, MA.add_mul, T, T, T) isa MA.IsMutable
@@ -98,7 +98,7 @@ function int_add_mul_test(::Type{T}) where T
         @test MA.isequal_canonical(a, t(420))
     end
 end
-function int_sub_mul_test(::Type{T}) where T
+function int_sub_mul_test(::Type{T}) where {T}
     @testset "sub_mul_to! / sub_mul! / sub_mul_buf_to! / sub_mul_buf!" begin
         @test MA.mutability(T, MA.sub_mul, T, T) isa MA.IsMutable
         @test MA.mutability(T, MA.sub_mul, T, T, T) isa MA.IsMutable
@@ -140,7 +140,7 @@ function int_sub_mul_test(::Type{T}) where T
     end
 end
 
-function int_zero_test(::Type{T}) where T
+function int_zero_test(::Type{T}) where {T}
     @testset "zero!" begin
         @test MA.mutability(T, zero, T) isa MA.IsMutable
 
@@ -152,7 +152,7 @@ function int_zero_test(::Type{T}) where T
     end
 end
 
-function int_one_test(::Type{T}) where T
+function int_one_test(::Type{T}) where {T}
     @testset "one!" begin
         @test MA.mutability(T, one, T) isa MA.IsMutable
 
@@ -169,7 +169,7 @@ const int_tests = Dict(
     "int_mul" => int_mul_test,
     "int_add_mul" => int_add_mul_test,
     "int_zero" => int_zero_test,
-    "int_one" => int_one_test
+    "int_one" => int_one_test,
 )
 
 @test_suite int

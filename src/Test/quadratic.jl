@@ -43,28 +43,28 @@ function quadratic_isequal_canonical_test(w, x, y, z)
 
     q = @inferred b * y * z + aff
     if MA.isequal_canonical(y * z, z * y)
-        @test MA.isequal_canonical(q, @inferred b*z*y + aff)
+        @test MA.isequal_canonical(q, @inferred b * z * y + aff)
     end
-    @test !MA.isequal_canonical(q, @inferred b*y*z + aff2)
+    @test !MA.isequal_canonical(q, @inferred b * y * z + aff2)
     if !MA.isequal_canonical(x, y)
-        @test !MA.isequal_canonical(q, @inferred b*x*z + aff)
+        @test !MA.isequal_canonical(q, @inferred b * x * z + aff)
     end
     if !MA.isequal_canonical(x, z)
-        @test !MA.isequal_canonical(q, @inferred b*y*x + aff)
+        @test !MA.isequal_canonical(q, @inferred b * y * x + aff)
     end
-    @test !MA.isequal_canonical(q, @inferred (b-1)*y*z + aff)
+    @test !MA.isequal_canonical(q, @inferred (b - 1) * y * z + aff)
 
     q2 = @inferred 8 * x * z + aff2
     if MA.isequal_canonical(x * z, z * x)
-        @test MA.isequal_canonical(q2, @inferred 8z*x + aff2)
+        @test MA.isequal_canonical(q2, @inferred 8z * x + aff2)
     end
-    @test !MA.isequal_canonical(q2, @inferred 8x*z + aff)
-    @test !MA.isequal_canonical(q2, @inferred 7x*z + aff2)
+    @test !MA.isequal_canonical(q2, @inferred 8x * z + aff)
+    @test !MA.isequal_canonical(q2, @inferred 7x * z + aff2)
     if !MA.isequal_canonical(y, z)
-        @test !MA.isequal_canonical(q2, @inferred 8x*y + aff2)
+        @test !MA.isequal_canonical(q2, @inferred 8x * y + aff2)
     end
     if !MA.isequal_canonical(x, y)
-        @test !MA.isequal_canonical(q2, @inferred 8y*z + aff2)
+        @test !MA.isequal_canonical(q2, @inferred 8y * z + aff2)
     end
 end
 
@@ -87,7 +87,7 @@ function quadratic_add_test(w, x, y, z)
         add_test(w, 4)
         add_test(w, 3)
         @test_rewrite w * 4
-        @test_rewrite x*y - 1
+        @test_rewrite x * y - 1
         @test_rewrite x^2
         @test_rewrite x^1
         @test_rewrite x^0
@@ -119,11 +119,11 @@ function quadratic_add_test(w, x, y, z)
         add_test(aff, aff2)
         @test_rewrite 7 * x - aff
         @test_rewrite aff^2
-        @test_rewrite (a*x + b)^2
+        @test_rewrite (a * x + b)^2
         @test_rewrite aff^1
-        @test_rewrite (a*x + b)^1
+        @test_rewrite (a * x + b)^1
         @test_rewrite aff^0
-        @test_rewrite (a*x + b)^0
+        @test_rewrite (a * x + b)^0
         # 3-2 AffExpr--Variable
         @test_rewrite aff * z
         @test_rewrite aff - a * x
@@ -158,7 +158,7 @@ function quadratic_add_test(w, x, y, z)
         @test_rewrite (1 + vx'vy) * 1
         @test_rewrite (1 + vx'v1) * x
         @test_rewrite (1 + v1'vy) * y
-   end
+    end
 
     @test MA.isequal_canonical(w, w_copy)
     @test MA.isequal_canonical(x, x_copy)
@@ -170,7 +170,7 @@ const quadratic_tests = Dict(
     "quadratic_division" => quadratic_division_test,
     "quadratic_iszero" => quadratic_iszero_test,
     "quadratic_isequal_canonical" => quadratic_isequal_canonical_test,
-    "quadratic_add_canonical" => quadratic_add_test
+    "quadratic_add_canonical" => quadratic_add_test,
 )
 
 @test_suite quadratic
