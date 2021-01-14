@@ -289,9 +289,7 @@ end
 function sum_test(matrix)
     @test_rewrite sum(matrix)
     if matrix isa AbstractMatrix
-        @test_rewrite sum([
-            2matrix[i, j] for i = 1:size(matrix, 1), j = 1:size(matrix, 2)
-        ])
+        @test_rewrite sum([2matrix[i, j] for i = 1:size(matrix, 1), j = 1:size(matrix, 2)])
         @test_rewrite sum(2matrix[i, j] for i = 1:size(matrix, 1), j = 1:size(matrix, 2))
     end
 end
@@ -301,9 +299,7 @@ function sum_multiplication_test(matrix)
         @test_rewrite sum([
             2matrix[i, j]^2 for i = 1:size(matrix, 1), j = 1:size(matrix, 2)
         ])
-        @test_rewrite sum(
-            2matrix[i, j]^2 for i = 1:size(matrix, 1), j = 1:size(matrix, 2)
-        )
+        @test_rewrite sum(2matrix[i, j]^2 for i = 1:size(matrix, 1), j = 1:size(matrix, 2))
     end
 end
 

@@ -20,14 +20,8 @@ function iszero_test(x)
 end
 
 function empty_sum_test(x)
-    @test MA.isequal_canonical(
-        MA.@rewrite(x + sum(1 for i = 1:0) * sum(x for i = 1:0)),
-        x,
-    )
-    @test MA.isequal_canonical(
-        MA.@rewrite(x + sum(x for i = 1:0) * sum(1 for i = 1:0)),
-        x,
-    )
+    @test MA.isequal_canonical(MA.@rewrite(x + sum(1 for i = 1:0) * sum(x for i = 1:0)), x)
+    @test MA.isequal_canonical(MA.@rewrite(x + sum(x for i = 1:0) * sum(1 for i = 1:0)), x)
     @test MA.isequal_canonical(MA.@rewrite(x + sum(1 for i = 1:0) * 1^2), x)
     @test MA.isequal_canonical(MA.@rewrite(x + 1^2 * sum(1 for i = 1:0)), x)
     # `1^2` is considered as a complex expression by `@rewrite`.

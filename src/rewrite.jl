@@ -472,10 +472,7 @@ function _rewrite(
                     minus,
                     inner_factor.args[which_idx],
                     current_sum,
-                    vcat(
-                        left_factors,
-                        [esc(inner_factor.args[i]) for i = 2:(which_idx-1)],
-                    ),
+                    vcat(left_factors, [esc(inner_factor.args[i]) for i = 2:(which_idx-1)]),
                     vcat(
                         right_factors,
                         [

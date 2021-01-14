@@ -10,6 +10,7 @@ function promote_operation(
 ) where {S,T,N}
     return Array{promote_operation(op, S, T),N}
 end
+
 function promote_operation(
     op::Union{typeof(+),typeof(-)},
     ::Type{LinearAlgebra.UniformScaling{S}},
@@ -17,6 +18,7 @@ function promote_operation(
 ) where {S,T}
     return Matrix{promote_operation(op, S, T)}
 end
+
 function promote_operation(
     op::Union{typeof(+),typeof(-)},
     ::Type{Matrix{T}},
@@ -24,6 +26,7 @@ function promote_operation(
 ) where {S,T}
     return Matrix{promote_operation(op, S, T)}
 end
+
 function promote_operation(
     op::Union{typeof(+),typeof(-)},
     ::Type{Matrix{T}},
@@ -44,6 +47,7 @@ function mutable_operate!(
     end
     return A
 end
+
 function mutable_operate!(
     op::AddSubMul,
     A::Matrix,
@@ -89,6 +93,7 @@ function mutable_operate!(
     _check_dims(A, B)
     return _mutable_operate!(op, A, B, tuple(), tuple())
 end
+
 function mutable_operate!(
     op::AddSubMul,
     A::Array{S,N},
@@ -98,6 +103,7 @@ function mutable_operate!(
     _check_dims(A, B)
     return _mutable_operate!(add_sub_op(op), A, B, tuple(), α)
 end
+
 function mutable_operate!(
     op::AddSubMul,
     A::Array{S,N},
@@ -108,6 +114,7 @@ function mutable_operate!(
     _check_dims(A, B)
     return _mutable_operate!(add_sub_op(op), A, B, (α,), β)
 end
+
 function mutable_operate!(
     op::AddSubMul,
     A::Array{S,N},
@@ -127,9 +134,12 @@ end
 
 # Product
 
-similar_array_type(::Type{LinearAlgebra.Symmetric{T,MT}}, ::Type{S}) where {S,T,MT} =
-    LinearAlgebra.Symmetric{S,similar_array_type(MT, S)}
+function similar_array_type(::Type{LinearAlgebra.Symmetric{T,MT}}, ::Type{S}) where {S,T,MT}
+    return LinearAlgebra.Symmetric{S,similar_array_type(MT, S)}
+end
+
 similar_array_type(::Type{Array{T,N}}, ::Type{S}) where {S,T,N} = Array{S,N}
+
 function promote_operation(
     op::typeof(*),
     A::Type{<:AbstractArray{T}},
@@ -137,6 +147,7 @@ function promote_operation(
 ) where {S,T}
     return similar_array_type(A, promote_operation(op, T, S))
 end
+
 function promote_operation(
     op::typeof(*),
     ::Type{S},
@@ -144,6 +155,7 @@ function promote_operation(
 ) where {S,T}
     return similar_array_type(A, promote_operation(op, S, T))
 end
+
 # `{S}` and `{T}` are used to avoid ambiguity with above methods.
 function promote_operation(
     op::typeof(*),
@@ -161,12 +173,14 @@ end
 function promote_array_mul(::Type{Matrix{S}}, ::Type{Vector{T}}) where {S,T}
     return Vector{promote_sum_mul(S, T)}
 end
+
 function promote_array_mul(
     ::Type{<:AbstractMatrix{S}},
     ::Type{<:AbstractMatrix{T}},
 ) where {S,T}
     return Matrix{promote_sum_mul(S, T)}
 end
+
 function promote_array_mul(
     ::Type{<:AbstractMatrix{S}},
     ::Type{<:AbstractVector{T}},
@@ -241,7 +255,6 @@ function _add_mul_array(C::Vector, A::AbstractMatrix, B::AbstractVector)
     Astride = size(A, 1)
     # We need a buffer to hold the intermediate multiplication.
     mul_buffer = buffer_for(add_mul, eltype(C), eltype(A), eltype(B))
-
     @inbounds begin
         for k in eachindex(B)
             aoffs = (k - 1) * Astride
@@ -251,14 +264,13 @@ function _add_mul_array(C::Vector, A::AbstractMatrix, B::AbstractVector)
             end
         end
     end # @inbounds
-
     return C
 end
 
-# This is incorrect if `C` is `LinearAlgebra.Symmetric` as we modify twice the same diagonal element.
+# This is incorrect if `C` is `LinearAlgebra.Symmetric` as we modify twice the
+# same diagonal element.
 function _add_mul_array(C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
     mul_buffer = buffer_for(add_mul, eltype(C), eltype(A), eltype(B))
-
     @inbounds begin
         for i = 1:size(A, 1), j = 1:size(B, 2)
             Ctmp = C[i, j]
@@ -268,7 +280,6 @@ function _add_mul_array(C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
             C[i, j] = Ctmp
         end
     end # @inbounds
-
     return C
 end
 
@@ -311,6 +322,7 @@ function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractVector{T}) where 
     C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1))
     return mutable_operate_to!(C, *, A, B)
 end
+
 function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractMatrix{T}) where {T,S}
     C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1), axes(B, 2))
     return mutable_operate_to!(C, *, A, B)
@@ -323,18 +335,24 @@ end
 
 const TransposeOrAdjoint{T,MT} =
     Union{LinearAlgebra.Transpose{T,MT},LinearAlgebra.Adjoint{T,MT}}
+
 _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.transpose(x)
+
 _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint) = LinearAlgebra.adjoint(x)
+
 _mirror_transpose_or_adjoint(
     A::Type{<:AbstractArray{T}},
     ::Type{<:LinearAlgebra.Transpose},
 ) where {T} = LinearAlgebra.Transpose{T,A}
+
 _mirror_transpose_or_adjoint(
     A::Type{<:AbstractArray{T}},
     ::Type{<:LinearAlgebra.Adjoint},
 ) where {T} = LinearAlgebra.Adjoint{T,A}
+
 similar_array_type(TA::Type{<:TransposeOrAdjoint{T,A}}, ::Type{S}) where {S,T,A} =
     _mirror_transpose_or_adjoint(similar_array_type(A, S), TA)
+
 # dot product
 function promote_array_mul(
     ::Type{<:TransposeOrAdjoint{S,<:AbstractVector}},
@@ -342,6 +360,7 @@ function promote_array_mul(
 ) where {S,T}
     return promote_sum_mul(S, T)
 end
+
 function promote_array_mul(
     A::Type{<:TransposeOrAdjoint{S,V}},
     M::Type{<:AbstractMatrix{T}},
@@ -349,6 +368,7 @@ function promote_array_mul(
     B = promote_array_mul(_mirror_transpose_or_adjoint(M, A), V)
     return _mirror_transpose_or_adjoint(B, A)
 end
+
 function operate(
     ::typeof(*),
     x::LinearAlgebra.Adjoint{<:Any,<:AbstractVector},
@@ -356,6 +376,7 @@ function operate(
 )
     return operate(LinearAlgebra.dot, parent(x), y)
 end
+
 function operate(
     ::typeof(*),
     x::TransposeOrAdjoint{<:Any,<:AbstractVector},
@@ -380,22 +401,16 @@ function operate(
             ),
         )
     end
-
     SumType = promote_sum_mul(eltype(x), eltype(y))
-
     if iszero(lx)
         return zero(SumType)
     end
-
     # We need a buffer to hold the intermediate multiplication.
-
     mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
     s = zero(SumType)
-
     for (Ix, Iy) in zip(eachindex(x), eachindex(y))
         s = @inbounds buffered_operate!(mul_buffer, add_mul, s, x[Ix], y[Iy])
     end
-
     return s
 end
 
@@ -408,17 +423,13 @@ function operate(::typeof(LinearAlgebra.dot), x::AbstractArray, y::AbstractArray
             ),
         )
     end
-
     if iszero(lx)
         return LinearAlgebra.dot(zero(eltype(x)), zero(eltype(y)))
     end
-
     # We need a buffer to hold the intermediate multiplication.
-
     SumType = promote_sum_mul(eltype(x), eltype(y))
     mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
     s = zero(SumType)
-
     for (Ix, Iy) in zip(eachindex(x), eachindex(y))
         s = @inbounds buffered_operate!(
             mul_buffer,
@@ -428,6 +439,5 @@ function operate(::typeof(LinearAlgebra.dot), x::AbstractArray, y::AbstractArray
             y[Iy],
         )
     end
-
     return s
 end

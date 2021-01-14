@@ -101,12 +101,14 @@ isequal_canonical(a, b) = a == b
 function isequal_canonical(
     a::AT,
     b::AT,
-) where {AT<:Union{
-    Array,
-    LinearAlgebra.Symmetric,
-    LinearAlgebra.UpperTriangular,
-    LinearAlgebra.LowerTriangular,
-}}
+) where {
+    AT<:Union{
+        Array,
+        LinearAlgebra.Symmetric,
+        LinearAlgebra.UpperTriangular,
+        LinearAlgebra.LowerTriangular,
+    },
+}
     return all(zip(a, b)) do elements
         return isequal_canonical(elements...)
     end
