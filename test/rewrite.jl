@@ -28,8 +28,6 @@ end
 include("dummy.jl")
 
 function error_test(x, y, z)
-    err = ErrorException("Expected `sum` outside generator expression; got `prod`.")
-    @test_macro_throws err MA.@rewrite(prod(i for i = 1:2))
     # $(:(y[j=1])) does not print the same on Julia v1.3 or Julia 1.4
     err = ErrorException("Unexpected assignment in expression `$(:(y[j=1]))`.")
     @test_macro_throws err MA.@rewrite y[j = 1]
@@ -92,4 +90,9 @@ using OffsetArrays
         x = T[2, 4, 3]
         MA.Test.non_array_test(x, OffsetArray(x, -length(x)))
     end
+end
+
+@testset "generator with not sum" begin
+    @test MA.@rewrite(minimum(j^2 for j in 2:3)) == 4
+    @test MA.@rewrite(maximum(j^2 for j in 2:3)) == 9
 end
