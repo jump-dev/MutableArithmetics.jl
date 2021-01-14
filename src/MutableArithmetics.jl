@@ -20,7 +20,7 @@ Return `a + *(args...)`. Note that `add_mul(a, b, c) = muladd(b, c, a)`.
 function add_mul end
 add_mul(a, b) = a + b
 add_mul(a, b, c) = muladd(b, c, a)
-add_mul(a, b, c, d, args::Vararg{Any, N}) where {N} = add_mul(a, b, *(c, d, args...))
+add_mul(a, b, c, d, args::Vararg{Any,N}) where {N} = add_mul(a, b, *(c, d, args...))
 
 """
     sub_mul(a, args...)
@@ -29,9 +29,9 @@ Return `a + *(args...)`. Note that `sub_mul(a, b, c) = muladd(b, c, a)`.
 """
 function sub_mul end
 sub_mul(a, b) = a - b
-sub_mul(a, b, c, args::Vararg{Any, N}) where {N} = a - *(b, c, args...)
+sub_mul(a, b, c, args::Vararg{Any,N}) where {N} = a - *(b, c, args...)
 
-const AddSubMul = Union{typeof(add_mul), typeof(sub_mul)}
+const AddSubMul = Union{typeof(add_mul),typeof(sub_mul)}
 add_sub_op(::typeof(add_mul)) = +
 add_sub_op(::typeof(sub_mul)) = -
 
@@ -55,18 +55,26 @@ include("broadcast.jl")
 
 # Implementation of the interface for Base types
 import LinearAlgebra
-const Scaling = Union{Number, LinearAlgebra.UniformScaling}
+const Scaling = Union{Number,LinearAlgebra.UniformScaling}
 scaling(x::Scaling) = x
 scaling_convert(T::Type, x) = convert(T, x)
 # `convert(::Type{<:UniformScaling}, ::UniformScaling)` is not defined in LinearAlgebra.
-function scaling_convert(::Type{LinearAlgebra.UniformScaling{T}}, x::LinearAlgebra.UniformScaling) where T
+function scaling_convert(
+    ::Type{LinearAlgebra.UniformScaling{T}},
+    x::LinearAlgebra.UniformScaling,
+) where {T}
     return LinearAlgebra.UniformScaling(convert(T, x.λ))
 end
-function operate(::typeof(convert), ::Type{LinearAlgebra.UniformScaling{T}}, x::LinearAlgebra.UniformScaling) where T
+function operate(
+    ::typeof(convert),
+    ::Type{LinearAlgebra.UniformScaling{T}},
+    x::LinearAlgebra.UniformScaling,
+) where {T}
     return LinearAlgebra.UniformScaling(operate(convert, T, x.λ))
 end
 scaling_convert(T::Type, x::LinearAlgebra.UniformScaling) = convert(T, x.λ)
-operate(::typeof(convert), T::Type, x::LinearAlgebra.UniformScaling) = operate(convert, T, x.λ)
+operate(::typeof(convert), T::Type, x::LinearAlgebra.UniformScaling) =
+    operate(convert, T, x.λ)
 
 include("bigint.jl")
 include("bigfloat.jl")
@@ -90,7 +98,15 @@ the equality of the representation is equivalent to the equality of the objects
 begin represented.
 """
 isequal_canonical(a, b) = a == b
-function isequal_canonical(a::AT, b::AT) where AT <: Union{Array, LinearAlgebra.Symmetric, LinearAlgebra.UpperTriangular, LinearAlgebra.LowerTriangular}
+function isequal_canonical(
+    a::AT,
+    b::AT,
+) where {AT<:Union{
+    Array,
+    LinearAlgebra.Symmetric,
+    LinearAlgebra.UpperTriangular,
+    LinearAlgebra.LowerTriangular,
+}}
     return all(zip(a, b)) do elements
         return isequal_canonical(elements...)
     end
@@ -105,10 +121,16 @@ function isequal_canonical(x::LinearAlgebra.Diagonal, y::LinearAlgebra.Diagonal)
     return isequal_canonical(parent(x), parent(y))
 end
 function isequal_canonical(x::LinearAlgebra.Tridiagonal, y::LinearAlgebra.Tridiagonal)
-    return isequal_canonical(x.dl, y.dl) && isequal_canonical(x.d, y.d) && isequal_canonical(x.du, y.du)
+    return isequal_canonical(x.dl, y.dl) &&
+           isequal_canonical(x.d, y.d) &&
+           isequal_canonical(x.du, y.du)
 end
 function isequal_canonical(x::SparseMat, y::SparseMat)
-    return x.m == y.m && x.n == y.n && isequal_canonical(x.colptr, y.colptr) && isequal_canonical(x.rowval, y.rowval) && isequal_canonical(x.nzval, y.nzval)
+    return x.m == y.m &&
+           x.n == y.n &&
+           isequal_canonical(x.colptr, y.colptr) &&
+           isequal_canonical(x.rowval, y.rowval) &&
+           isequal_canonical(x.nzval, y.nzval)
 end
 
 include("rewrite.jl")
