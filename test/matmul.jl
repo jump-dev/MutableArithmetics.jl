@@ -197,3 +197,19 @@ end
     D = MA.operate!(MA.add_mul, C, X, M)
     @test D == X * M + X * M
 end
+
+@testset "sub_mul" begin
+    x = BigFloat[1, 1]
+    A = BigFloat[2 2; 2 2]
+    y = BigFloat[3, 3]
+    MA.operate!(MA.sub_mul, x, A, y)
+    @test x == [-11, -11]
+end
+
+@testset "add_mul" begin
+    x = BigFloat[1, 1]
+    A = BigFloat[2 2; 2 2]
+    y = BigFloat[3, 3]
+    MA.operate!(MA.add_mul, x, A, y)
+    @test x == [13, 13]
+end
