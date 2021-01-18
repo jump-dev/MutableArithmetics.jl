@@ -65,10 +65,12 @@ function _mul!(output, A, B, α, β)
     end
     return mutable_operate!(add_mul, output, A, B, scaling(α))
 end
+
 function _mul!(output, A, B, α)
     mutable_operate!(zero, output)
     return mutable_operate!(add_mul, output, A, B, scaling(α))
 end
+
 function _mul!(output, A, B)
     return mutable_operate_to!(output, *, A, B)
 end
@@ -89,53 +91,39 @@ function LinearAlgebra.mul!(
 )
     _mul!(ret, A, B, args...)
 end
-function LinearAlgebra.mul!(
-    ret::AbstractVector{<:AbstractMutable},
-    A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
-    B::AbstractVector,
-    args...,
-)
-    _mul!(ret, A, B, args...)
-end
-function LinearAlgebra.mul!(
-    ret::AbstractVector{<:AbstractMutable},
-    A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    B::AbstractVector,
-    args...,
-)
-    _mul!(ret, A, B, args...)
-end
-function LinearAlgebra.mul!(
-    ret::AbstractMatrix{<:AbstractMutable},
-    A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
-    B::AbstractMatrix,
-    args...,
-)
-    _mul!(ret, A, B, args...)
-end
-function LinearAlgebra.mul!(
-    ret::AbstractMatrix{<:AbstractMutable},
-    A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    B::AbstractMatrix,
-    args...,
-)
-    _mul!(ret, A, B, args...)
-end
-function LinearAlgebra.mul!(
-    ret::AbstractMatrix{<:AbstractMutable},
-    A::AbstractMatrix,
-    B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
-    args...,
-)
-    _mul!(ret, A, B, args...)
-end
-function LinearAlgebra.mul!(
-    ret::AbstractMatrix{<:AbstractMutable},
-    A::AbstractMatrix,
-    B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    args...,
-)
-    _mul!(ret, A, B, args...)
+
+for T in [
+    LinearAlgebra.Transpose,
+    LinearAlgebra.Adjoint,
+]
+    @eval begin
+        function LinearAlgebra.mul!(
+            ret::AbstractVector{<:AbstractMutable},
+            A::$T{<:Any,<:AbstractVecOrMat},
+            B::AbstractVector,
+            args...,
+        )
+            _mul!(ret, A, B, args...)
+        end
+
+        function LinearAlgebra.mul!(
+            ret::AbstractMatrix{<:AbstractMutable},
+            A::$T{<:Any,<:AbstractVecOrMat},
+            B::AbstractMatrix,
+            args...,
+        )
+            _mul!(ret, A, B, args...)
+        end
+
+        function LinearAlgebra.mul!(
+            ret::AbstractMatrix{<:AbstractMutable},
+            A::AbstractMatrix,
+            B::$T{<:Any,<:AbstractVecOrMat},
+            args...,
+        )
+            _mul!(ret, A, B, args...)
+        end
+    end
 end
 
 # SparseArrays promotes the element types of `A` and `B` to the same type
@@ -147,88 +135,29 @@ end
 # A few are overwritten below but many more need to be redirected to `mul` in
 # `linalg.jl`.
 
-Base.:*(A::SparseMat{<:AbstractMutable}, x::StridedVector) = mul(A, x)
-Base.:*(A::SparseMat, x::StridedVector{<:AbstractMutable}) = mul(A, x)
-Base.:*(A::SparseMat{<:AbstractMutable}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
+for A in [
+    SparseMat,
+    StridedMatrix,
+    LinearAlgebra.Adjoint,
+    LinearAlgebra.Transpose,
+    LinearAlgebra.LowerTriangular,
+    LinearAlgebra.UpperTriangular,
 
-# These six methods are needed on Julia v1.2 and earlier
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat}, x::StridedVector) =
-    mul(A, x)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:SparseMat}, x::StridedVector{<:AbstractMutable}) =
-    mul(A, x)
-Base.:*(
-    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat},
-    x::StridedVector{<:AbstractMutable},
-) = mul(A, x)
-Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat}, x::StridedVector) =
-    mul(A, x)
-Base.:*(
-    A::LinearAlgebra.Transpose{<:Any,<:SparseMat},
-    x::StridedVector{<:AbstractMutable},
-) = mul(A, x)
-Base.:*(
-    A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat},
-    x::StridedVector{<:AbstractMutable},
-) = mul(A, x)
-
-Base.:*(A::SparseMat{<:AbstractMutable}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::SparseMat{<:Any}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::SparseMat{<:AbstractMutable}, B::SparseMat{<:Any}) = mul(A, B)
-
-Base.:*(
-    A::SparseMat{<:AbstractMutable},
-    B::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat},
-) = mul(A, B)
-Base.:*(A::SparseMat{<:Any}, B::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat}) =
-    mul(A, B)
-Base.:*(A::SparseMat{<:AbstractMutable}, B::LinearAlgebra.Adjoint{<:Any,<:SparseMat}) =
-    mul(A, B)
-
-Base.:*(
-    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat},
-    B::SparseMat{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:SparseMat}, B::SparseMat{<:AbstractMutable}) =
-    mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat}, B::SparseMat{<:Any}) =
-    mul(A, B)
-Base.:*(
-    A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat},
-    B::SparseMat{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(A::LinearAlgebra.Transpose{<:Any,<:SparseMat}, B::SparseMat{<:AbstractMutable}) =
-    mul(A, B)
-Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat}, B::SparseMat{<:Any}) =
-    mul(A, B)
-
-Base.:*(A::StridedMatrix{<:AbstractMutable}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::StridedMatrix{<:Any}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::StridedMatrix{<:AbstractMutable}, B::SparseMat{<:Any}) = mul(A, B)
-
-Base.:*(A::SparseMat{<:AbstractMutable}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::SparseMat{<:Any}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::SparseMat{<:AbstractMutable}, B::StridedMatrix{<:Any}) = mul(A, B)
-
-Base.:*(
-    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat},
-    B::StridedMatrix{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:SparseMat}, B::StridedMatrix{<:AbstractMutable}) =
-    mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat}, B::StridedMatrix{<:Any}) =
-    mul(A, B)
-Base.:*(
-    A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat},
-    B::StridedMatrix{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(
-    A::LinearAlgebra.Transpose{<:Any,<:SparseMat},
-    B::StridedMatrix{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(
-    A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat},
-    B::StridedMatrix{<:Any},
-) = mul(A, B)
+]
+    for B in [
+        StridedVector,
+        StridedMatrix,
+        SparseMat,
+        LinearAlgebra.Adjoint,
+        LinearAlgebra.Transpose,
+    ]
+        @eval begin
+            Base.:*(a::$A{<:AbstractMutable}, b::$B) = mul(a, b)
+            Base.:*(a::$A, b::$B{<:AbstractMutable}) = mul(a, b)
+            Base.:*(a::$A{<:AbstractMutable}, b::$B{<:AbstractMutable}) = mul(a, b)
+        end
+    end
+end
 
 # Base doesn't define efficient fallbacks for sparse array arithmetic involving
 # non-`<:Number` scalar elements, so we define some of these for `<:AbstractMutable` scalar
@@ -355,13 +284,13 @@ end
 
 # These three have specific methods that just redirect to `Matrix{T}` which
 # does not work, e.g. if `zero(T)` has a different type than `T`.
-function Base.Matrix(x::LinearAlgebra.Tridiagonal{T}) where {T<:AbstractMutable}
-    return Matrix{promote_type(promote_operation(zero, T), T)}(x)
-end
-function Base.Matrix(x::LinearAlgebra.UpperTriangular{T}) where {T<:AbstractMutable}
-    return Matrix{promote_type(promote_operation(zero, T), T)}(x)
-end
-function Base.Matrix(x::LinearAlgebra.LowerTriangular{T}) where {T<:AbstractMutable}
+function Base.Matrix(
+    x::Union{
+        LinearAlgebra.Tridiagonal{T},
+        LinearAlgebra.UpperTriangular{T},
+        LinearAlgebra.LowerTriangular{T},
+    }
+) where {T<:AbstractMutable}
     return Matrix{promote_type(promote_operation(zero, T), T)}(x)
 end
 
