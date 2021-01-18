@@ -66,6 +66,9 @@ end
 
 function matrix_vector_test(x)
     add_test(x, x)
+    add_test(x, reshape(x, length(x), 1))
+    add_test(x, reshape(x, length(x), 1, 1))
+    add_test(x, reshape(x, 1, length(x))')
     if size(x) != (3,)
         return
     end

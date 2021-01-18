@@ -3,12 +3,19 @@ mutable_copy(A::Array) = copy_if_mutable.(A)
 
 # Sum
 
+# By default, we assume the return value is an `Array` as having a different
+# method for all cases `UpperTriangular`, `Adjoint`, ... + other matrices outside
+# `LinearAlgebra` would be cumbersome.
+# A more specific method should be implemented for other cases.
 function promote_operation(
     op::Union{typeof(+),typeof(-)},
-    ::Type{Array{S,N}},
-    ::Type{Array{T,N}},
-) where {S,T,N}
-    return Array{promote_operation(op, S, T),N}
+    ::Type{<:AbstractArray{S,N}},
+    ::Type{<:AbstractArray{T,M}},
+) where {S,T,N,M}
+    # If `N != M`, we need the axes between `min(N,M)+1` and `max(N,M)` to be
+    # `Base.OneTo(1)`. In any cases, the axes from `1` to `min(N,M)` must also
+    # match.
+    return Array{promote_operation(op, S, T),max(N,M)}
 end
 
 function promote_operation(
@@ -23,14 +30,6 @@ function promote_operation(
     op::Union{typeof(+),typeof(-)},
     ::Type{Matrix{T}},
     ::Type{LinearAlgebra.UniformScaling{S}},
-) where {S,T}
-    return Matrix{promote_operation(op, S, T)}
-end
-
-function promote_operation(
-    op::Union{typeof(+),typeof(-)},
-    ::Type{Matrix{T}},
-    ::Type{<:LinearAlgebra.Symmetric{S}},
 ) where {S,T}
     return Matrix{promote_operation(op, S, T)}
 end
@@ -65,7 +64,7 @@ mul_rhs(::typeof(-)) = sub_mul
 function _mutable_operate!(
     op::Union{typeof(+),typeof(-)},
     A::Array{S,N},
-    B::Union{Array{T,N},LinearAlgebra.Symmetric{T}},
+    B::AbstractArray{T,N},
     left_factors::Tuple,
     right_factors::Tuple,
 ) where {S,T,N}
