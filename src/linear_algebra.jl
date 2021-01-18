@@ -129,12 +129,13 @@ end
 
 # Fallback, we may be able to be more efficient in more cases by adding more
 # specialized methods.
+function mutable_operate!(op::AddSubMul, A::Array, x, y)
+    return mutable_operate!(op, A, x * y)
+end
+
 function mutable_operate!(op::AddSubMul, A::Array, x, y, args::Vararg{Any,N}) where {N}
-    if N == 0
-        return mutable_operate!(op, A, operate!(*, x, y))
-    else
-        return mutable_operate!(op, A, x, operate!(*, y, args...))
-    end
+    @assert N > 0
+    return mutable_operate!(op, A, x, *(y, args...))
 end
 
 # Product
