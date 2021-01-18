@@ -54,10 +54,10 @@ end
 @testset "Errors" begin
     @testset "`promote_op` error" begin
         AT = CustomArray{Int,3}
-        err = ErrorException(
-            "`promote_operation(f, $(CustomArray{Int,3}), $(CustomArray{Int,3}))` not implemented yet, please report this.",
-        )
         f(x, y) = nothing
+        err = ErrorException(
+            "`promote_operation($(f), $(CustomArray{Int,3}), $(CustomArray{Int,3}))` not implemented yet, please report this.",
+        )
         @test_throws err MA.promote_operation(f, AT, AT)
     end
 
