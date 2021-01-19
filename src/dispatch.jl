@@ -10,17 +10,11 @@ function Base.sum(a::AbstractArray{<:AbstractMutable})
     return operate(sum, a)
 end
 
-function LinearAlgebra.dot(
-    lhs::AbstractArray{<:AbstractMutable},
-    rhs::AbstractArray,
-)
+function LinearAlgebra.dot(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray)
     return operate(LinearAlgebra.dot, lhs, rhs)
 end
 
-function LinearAlgebra.dot(
-    lhs::AbstractArray,
-    rhs::AbstractArray{<:AbstractMutable},
-)
+function LinearAlgebra.dot(lhs::AbstractArray, rhs::AbstractArray{<:AbstractMutable})
     return operate(LinearAlgebra.dot, lhs, rhs)
 end
 
@@ -92,8 +86,17 @@ end
 
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
-    A::AbstractVecOrMat,
-    B::AbstractVecOrMat,
+    A::AbstractMatrix,
+    B::AbstractVector,
+    args::Vararg{Any,N},
+) where {N}
+    _mul!(ret, A, B, args...)
+end
+
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::AbstractMatrix,
+    B::AbstractMatrix,
     args::Vararg{Any,N},
 ) where {N}
     _mul!(ret, A, B, args...)
@@ -101,7 +104,7 @@ end
 
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
-    A::AbstractVecOrMat,
+    A::AbstractMatrix,
     B::AbstractVector,
     args::Vararg{Any,N},
 ) where {N}
@@ -124,7 +127,7 @@ for T in _LinearAlgebraWrappers
     @eval begin
         function LinearAlgebra.mul!(
             ret::AbstractVector{<:AbstractMutable},
-            A::$T{<:Any, <:AbstractVecOrMat},
+            A::$T{<:Any,<:AbstractVecOrMat},
             B::AbstractVector,
             args::Vararg{Any,N},
         ) where {N}
@@ -132,7 +135,7 @@ for T in _LinearAlgebraWrappers
         end
         function LinearAlgebra.mul!(
             ret::AbstractMatrix{<:AbstractMutable},
-            A::$T{<:Any, <:AbstractVecOrMat},
+            A::$T{<:Any,<:AbstractVecOrMat},
             B::AbstractMatrix,
             args::Vararg{Any,N},
         ) where {N}
@@ -141,7 +144,7 @@ for T in _LinearAlgebraWrappers
         function LinearAlgebra.mul!(
             ret::AbstractMatrix{<:AbstractMutable},
             A::AbstractMatrix,
-            B::$T{<:Any, <:AbstractVecOrMat},
+            B::$T{<:Any,<:AbstractVecOrMat},
             args::Vararg{Any,N},
         ) where {N}
             _mul!(ret, A, B, args...)
@@ -151,8 +154,8 @@ for T in _LinearAlgebraWrappers
         @eval begin
             function LinearAlgebra.mul!(
                 ret::AbstractMatrix{<:AbstractMutable},
-                A::$S{<:Any, <:AbstractVecOrMat},
-                B::$T{<:Any, <:AbstractVecOrMat},
+                A::$S{<:Any,<:AbstractVecOrMat},
+                B::$T{<:Any,<:AbstractVecOrMat},
                 args::Vararg{Any,N},
             ) where {N}
                 _mul!(ret, A, B, args...)
@@ -170,18 +173,14 @@ end
 # A few are overwritten below but many more need to be redirected to `mul` in
 # `linalg.jl`.
 
-const MatrixLike = [
-    T -> SparseMat{<:T},
-    T -> StridedVector{<:T},
-    T -> StridedMatrix{<:T},
-]
-for LA in _LinearAlgebraWrappers
-    push!(MatrixLike, T -> LA{<:T, <:SparseMat})
-end
+const _MatrixLike = map(T -> LA{<:T,<:SparseMat}, _LinearAlgebraWrappers)
+push!(_MatrixLike, T -> SparseMat{<:T})
+push!(_MatrixLike, T -> StridedVector{<:T})
+push!(_MatrixLike, T -> StridedMatrix{<:T})
 
-for f_A in MatrixLike
+for f_A in _MatrixLike
     A, mut_A = f_A(Any), f_A(AbstractMutable)
-    for f_B in MatrixLike
+    for f_B in _MatrixLike
         B, mut_B = f_B(Any), f_B(AbstractMutable)
         @eval begin
             Base.:*(a::$(mut_A), b::$(B)) = mul(a, b)
@@ -195,11 +194,8 @@ end
 # non-`<:Number` scalar elements, so we define some of these for
 # `<:AbstractMutable` scalar elements here.
 
-for (S, T) in [
-    (Number, AbstractMutable),
-    (Scaling, AbstractMutable),
-    (AbstractMutable, Any),
-]
+for (S, T) in
+    [(Number, AbstractMutable), (Scaling, AbstractMutable), (AbstractMutable, Any)]
     @eval begin
         function Base.:*(A::$S, B::SparseMat{<:$T})
             return SparseMat(
@@ -289,7 +285,7 @@ function Base.Matrix(
         LinearAlgebra.Tridiagonal{T},
         LinearAlgebra.UpperTriangular{T},
         LinearAlgebra.LowerTriangular{T},
-    }
+    },
 ) where {T<:AbstractMutable}
     return Matrix{promote_type(promote_operation(zero, T), T)}(x)
 end
