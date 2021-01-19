@@ -173,7 +173,7 @@ end
 # A few are overwritten below but many more need to be redirected to `mul` in
 # `linalg.jl`.
 
-const _MatrixLike = map(T -> LA{<:T,<:SparseMat}, _LinearAlgebraWrappers)
+const _MatrixLike = Any[T -> LA{<:T,<:SparseMat} for LA in _LinearAlgebraWrappers]
 push!(_MatrixLike, T -> SparseMat{<:T})
 push!(_MatrixLike, T -> StridedVector{<:T})
 push!(_MatrixLike, T -> StridedMatrix{<:T})
