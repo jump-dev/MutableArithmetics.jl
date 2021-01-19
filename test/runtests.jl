@@ -18,6 +18,7 @@ end
 @testset "Broadcast" begin
     include("broadcast.jl")
 end
+include("dummy.jl")
 include("matmul.jl")
 include("rewrite.jl")
 include("hygiene.jl")

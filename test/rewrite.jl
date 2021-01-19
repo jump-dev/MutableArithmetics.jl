@@ -25,8 +25,6 @@ macro test_macro_throws(error, m)
     end
 end
 
-include("dummy.jl")
-
 function error_test(x, y, z)
     err = ErrorException("Expected `sum` outside generator expression; got `prod`.")
     @test_macro_throws err MA.@rewrite(prod(i for i = 1:2))

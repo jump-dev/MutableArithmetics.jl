@@ -1,9 +1,14 @@
+using LinearAlgebra
+
 # It does not support operation with floats on purpose to test that
 # MutableArithmetics does not convert to float when it shouldn't.
 struct DummyBigInt <: MA.AbstractMutable
     data::BigInt
 end
 DummyBigInt(J::UniformScaling) = DummyBigInt(J.λ)
+
+Base.:(==)(x::DummyBigInt, y::DummyBigInt) = x.data == y.data
+Base.:(==)(x::DummyBigInt, y::Int) = x.data == y
 
 # Broadcast
 Base.broadcastable(x::DummyBigInt) = Ref(x)
@@ -65,6 +70,8 @@ Base.isone(x::DummyBigInt) = isone(x.data)
 # For th same reason, we only define `zero` and `one` for `Type{DummyBigInt}`, not for `DummyBigInt`.
 Base.zero(::Type{DummyBigInt}) = DummyBigInt(zero(BigInt))
 Base.one(::Type{DummyBigInt}) = DummyBigInt(one(BigInt))
+Base.oneunit(::Type{DummyBigInt}) = one(DummyBigInt)
+Base.oneunit(x::DummyBigInt) = one(DummyBigInt)
 Base.:+(x::DummyBigInt) = DummyBigInt(+x.data)
 Base.:+(x::DummyBigInt, y::DummyBigInt) = DummyBigInt(x.data + y.data)
 Base.:+(x::DummyBigInt, y::Union{Integer,UniformScaling{<:Integer}}) =
@@ -84,3 +91,6 @@ Base.:*(x::Union{Integer,UniformScaling{<:Integer}}, y::DummyBigInt) =
 Base.:*(x::DummyBigInt, y::Union{Integer,UniformScaling{<:Integer}}) =
     DummyBigInt(x.data * y)
 Base.:^(x::DummyBigInt, y::Union{Integer,UniformScaling{<:Integer}}) = DummyBigInt(x.data^y)
+
+LinearAlgebra.hermitian_type(::Type{DummyBigInt}) = DummyBigInt
+LinearAlgebra.hermitian(x::DummyBigInt, ::Symbol) = x

@@ -108,6 +108,59 @@ function LinearAlgebra.mul!(
     _mul!(ret, A, B, args...)
 end
 
+const _LinearAlgebraWrappers = (
+    LinearAlgebra.Adjoint,
+    LinearAlgebra.Transpose,
+    LinearAlgebra.Symmetric,
+    LinearAlgebra.Hermitian,
+    LinearAlgebra.Diagonal,
+    LinearAlgebra.LowerTriangular,
+    LinearAlgebra.UpperTriangular,
+    LinearAlgebra.UnitLowerTriangular,
+    LinearAlgebra.UnitUpperTriangular,
+)
+
+for T in _LinearAlgebraWrappers
+    @eval begin
+        function LinearAlgebra.mul!(
+            ret::AbstractVector{<:AbstractMutable},
+            A::$T{<:Any, <:AbstractVecOrMat},
+            B::AbstractVector,
+            args::Vararg{Any,N},
+        ) where {N}
+            _mul!(ret, A, B, args...)
+        end
+        function LinearAlgebra.mul!(
+            ret::AbstractMatrix{<:AbstractMutable},
+            A::$T{<:Any, <:AbstractVecOrMat},
+            B::AbstractMatrix,
+            args::Vararg{Any,N},
+        ) where {N}
+            _mul!(ret, A, B, args...)
+        end
+        function LinearAlgebra.mul!(
+            ret::AbstractMatrix{<:AbstractMutable},
+            A::AbstractMatrix,
+            B::$T{<:Any, <:AbstractVecOrMat},
+            args::Vararg{Any,N},
+        ) where {N}
+            _mul!(ret, A, B, args...)
+        end
+    end
+    for S in _LinearAlgebraWrappers
+        @eval begin
+            function LinearAlgebra.mul!(
+                ret::AbstractMatrix{<:AbstractMutable},
+                A::$S{<:Any, <:AbstractVecOrMat},
+                B::$T{<:Any, <:AbstractVecOrMat},
+                args::Vararg{Any,N},
+            ) where {N}
+                _mul!(ret, A, B, args...)
+            end
+        end
+    end
+end
+
 # SparseArrays promotes the element types of `A` and `B` to the same type
 # which always produce quadratic expressions for JuMP even if only one of them
 # was affine and the other one constant. Moreover, it does not always go through
@@ -121,15 +174,10 @@ const MatrixLike = [
     T -> SparseMat{<:T},
     T -> StridedVector{<:T},
     T -> StridedMatrix{<:T},
-    T -> LinearAlgebra.Adjoint{<:T, <:SparseMat},
-    T -> LinearAlgebra.Symmetric{<:T, <:SparseMat},
-    T -> LinearAlgebra.Hermitian{<:T, <:SparseMat},
-    T -> LinearAlgebra.Diagonal{<:T, <:SparseMat},
-    T -> LinearAlgebra.UpperTriangular{<:T, <:SparseMat},
-    T -> LinearAlgebra.LowerTriangular{<:T, <:SparseMat},
-    T -> LinearAlgebra.UnitLowerTriangular{<:T, <:SparseMat},
-    T -> LinearAlgebra.UnitUpperTriangular{<:T, <:SparseMat},
 ]
+for LA in _LinearAlgebraWrappers
+    push!(MatrixLike, T -> LA{<:T, <:SparseMat})
+end
 
 for f_A in MatrixLike
     A, mut_A = f_A(Any), f_A(AbstractMutable)

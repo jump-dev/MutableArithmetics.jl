@@ -197,3 +197,35 @@ end
     D = MA.operate!(MA.add_mul, C, X, M)
     @test D == X * M + X * M
 end
+
+@testset "LinearAlgebra" begin
+    ret = DummyBigInt[0 0; 0 0]
+    x = DummyBigInt[1 2; 3 4]
+    y = DummyBigInt[5 6; 7 8]
+    # Some tests are broken because LinearAlgebra assumes a `similar` call
+    # returns initialized memory. This happens with BigInt as well:
+    #     x = big.([1 2; 3 4]); LowerTriangular(x) * Diagonal(x)
+    broken_triangular = (
+        (LinearAlgebra.Diagonal, LinearAlgebra.UnitLowerTriangular),
+        (LinearAlgebra.Diagonal, LinearAlgebra.UnitUpperTriangular),
+        (LinearAlgebra.LowerTriangular, LinearAlgebra.Diagonal),
+        (LinearAlgebra.UpperTriangular, LinearAlgebra.Diagonal),
+        (LinearAlgebra.UnitLowerTriangular, LinearAlgebra.Diagonal),
+        (LinearAlgebra.UnitUpperTriangular, LinearAlgebra.Diagonal),
+
+    )
+    for T in MA._LinearAlgebraWrappers
+        for S in MA._LinearAlgebraWrappers
+            LinearAlgebra.mul!(ret, T(x), y)
+            @test ret == T(x) * y
+            LinearAlgebra.mul!(ret, x, S(y))
+            @test ret == x * S(y)
+            LinearAlgebra.mul!(ret, T(x), S(y))
+            if (T, S) in broken_triangular
+                @test_broken ret == T(x) * S(y)
+            else
+                @test ret == T(x) * S(y)
+            end
+        end
+    end
+end
