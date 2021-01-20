@@ -127,8 +127,14 @@ function mutable_operate!(
     return _mutable_operate!(add_sub_op(op), A, B, (α1, α2), β)
 end
 
-# Fallback, we may be able to be more efficient in more cases by adding more specialized methods
+# Fallback, we may be able to be more efficient in more cases by adding more
+# specialized methods.
+function mutable_operate!(op::AddSubMul, A::Array, x, y)
+    return mutable_operate!(op, A, x * y)
+end
+
 function mutable_operate!(op::AddSubMul, A::Array, x, y, args::Vararg{Any,N}) where {N}
+    @assert N > 0
     return mutable_operate!(op, A, x, *(y, args...))
 end
 
