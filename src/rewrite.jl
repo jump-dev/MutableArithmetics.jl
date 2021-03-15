@@ -3,7 +3,7 @@
 export @rewrite
 
 """
-    @macro(expr)
+    @rewrite(expr)
 
 Return the value of `expr` exploiting the mutability of the temporary
 expressions created for the computation of the result.
