@@ -113,10 +113,12 @@ operate(::typeof(convert), ::Type{T}, x::T) where {T} = copy_if_mutable(x)
 
 operate(::Union{typeof(+),typeof(*)}, x) = copy_if_mutable(x)
 
-# We only give the type to `zero` and `one` to be sure that modifying the
-# returned object cannot alter `x`.
-operate(::typeof(zero), x) = zero(typeof(x))
-operate(::typeof(one), x) = one(typeof(x))
+# We could only give `typeof(x)` to `zero` and `one` to be sure that modifying the
+# returned object cannot alter `x` but for some objects, `one` and `zero` depends
+# on some values of the fields (e.g. square matrices), elements of the cyclic group
+# of order `n` (`n` is one of the field).
+operate(::typeof(zero), x) = zero(x)
+operate(::typeof(one), x) = one(x)
 
 # Define Traits
 
