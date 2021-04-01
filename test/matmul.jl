@@ -131,6 +131,9 @@ end
         alloc_test(() -> MA.operate_fallback!(MA.IsMutable(), MA.add_mul, y, A, x), n)
         alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), n)
         alloc_test(() -> MA.mutable_operate!(MA.add_mul, y, A, x), n)
+        # Apparently, all allocations were on creating the buffer since this is allocation free:
+        buffer = MA.buffer_for(MA.add_mul, typeof(y), typeof(A), typeof(x))
+        alloc_test(() -> MA.mutable_buffered_operate!(buffer, MA.add_mul, y, A, x), 0)
     end
     @testset "matrix-matrix product" begin
         A = [1 2 3; 4 5 6; 6 8 9]
