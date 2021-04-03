@@ -297,18 +297,6 @@ function mutable_buffered_operate!(
     _dim_check(C, A, B)
     _add_mul_array(buffer, C, A, B)
 end
-# Break ambiguity
-function mutable_buffered_operate!(
-    buffer::Nothing,
-    ::typeof(add_mul),
-    C::VecOrMat,
-    A::AbstractMatrix,
-    B::AbstractVecOrMat,
-)
-    _dim_check(C, A, B)
-    _add_mul_array(buffer, C, A, B)
-end
-
 
 function buffer_for(
     ::typeof(add_mul),
