@@ -257,16 +257,15 @@ function _dim_check(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
     end
 end
 
-function _add_mul_array(C::Vector, A::AbstractMatrix, B::AbstractVector)
+function _add_mul_array(buffer, C::Vector, A::AbstractMatrix, B::AbstractVector)
     Astride = size(A, 1)
     # We need a buffer to hold the intermediate multiplication.
-    mul_buffer = buffer_for(add_mul, eltype(C), eltype(A), eltype(B))
     @inbounds begin
         for k in eachindex(B)
             aoffs = (k - 1) * Astride
             b = B[k]
             for i in Base.OneTo(size(A, 1))
-                C[i] = buffered_operate!(mul_buffer, add_mul, C[i], A[aoffs+i], b)
+                C[i] = buffered_operate!(buffer, add_mul, C[i], A[aoffs+i], b)
             end
         end
     end # @inbounds
@@ -275,13 +274,12 @@ end
 
 # This is incorrect if `C` is `LinearAlgebra.Symmetric` as we modify twice the
 # same diagonal element.
-function _add_mul_array(C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
-    mul_buffer = buffer_for(add_mul, eltype(C), eltype(A), eltype(B))
+function _add_mul_array(buffer, C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
     @inbounds begin
         for i = 1:size(A, 1), j = 1:size(B, 2)
             Ctmp = C[i, j]
             for k = 1:size(A, 2)
-                Ctmp = buffered_operate!(mul_buffer, add_mul, Ctmp, A[i, k], B[k, j])
+                Ctmp = buffered_operate!(buffer, add_mul, Ctmp, A[i, k], B[k, j])
             end
             C[i, j] = Ctmp
         end
@@ -289,14 +287,33 @@ function _add_mul_array(C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
     return C
 end
 
-function mutable_operate!(
+function mutable_buffered_operate!(
+    buffer,
     ::typeof(add_mul),
     C::VecOrMat,
     A::AbstractMatrix,
     B::AbstractVecOrMat,
 )
     _dim_check(C, A, B)
-    _add_mul_array(C, A, B)
+    _add_mul_array(buffer, C, A, B)
+end
+
+function buffer_for(
+    ::typeof(add_mul),
+    ::Type{<:VecOrMat{S}},
+    ::Type{<:AbstractMatrix{T}},
+    ::Type{<:AbstractVecOrMat{U}},
+) where {S,T,U}
+    return buffer_for(add_mul, S, T, U)
+end
+function mutable_operate!(
+    ::typeof(add_mul),
+    C::VecOrMat,
+    A::AbstractMatrix,
+    B::AbstractVecOrMat,
+)
+    buffer = buffer_for(add_mul, typeof(C), typeof(A), typeof(B))
+    return mutable_buffered_operate!(buffer, add_mul, C, A, B)
 end
 
 function mutable_operate!(::typeof(zero), C::Union{Vector,Matrix})

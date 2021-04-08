@@ -262,6 +262,46 @@ end
 
 buffer_for(::Function, args::Vararg{Type,N}) where {N} = nothing
 
+function mutable_buffered_operate_to_fallback(::NotMutable, buffer, output, op::Function, args...)
+    throw(
+        ArgumentError(
+            "Cannot call `mutable_buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(output))` cannot be modifed to equal the result of the operation. Use `buffered_operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
+        ),
+    )
+end
+
+function mutable_buffered_operate_to_fallback(::IsMutable, buffer, output, op::Function, args...)
+    error(
+        "`mutable_buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), $op, ::",
+        join(typeof.(args), ", ::"),
+        ")` is not implemented.",
+    )
+end
+
+function mutable_buffered_operate_to_fallback(
+    buffer,
+    output,
+    op::Function,
+    args::Vararg{Any,N},
+) where {N}
+    return mutable_buffered_operate_to_fallback(
+        mutability(output, op, args...),
+        buffer,
+        output,
+        op,
+        args...
+    )
+end
+
+function mutable_buffered_operate_to_fallback(
+    ::Nothing,
+    output,
+    op::Function,
+    args::Vararg{Any,N},
+) where {N}
+    return mutable_operate_to!(output, op, args...)
+end
+
 """
     mutable_buffered_operate_to!(buffer, output, op::Function, args...)
 
@@ -270,12 +310,49 @@ possibly modifying `buffer`. Can only be called if
 `mutability(output, op, args...)` returns `true`.
 """
 function mutable_buffered_operate_to!(
-    ::Nothing,
+    buffer,
     output,
     op::Function,
     args::Vararg{Any,N},
 ) where {N}
-    return mutable_operate_to!(output, op, args...)
+    return mutable_buffered_operate_to_fallback(buffer, output, op, args...)
+end
+
+function mutable_buffered_operate_fallback(::NotMutable, buffer, op::Function, args...)
+    throw(
+        ArgumentError(
+                      "Cannot call `mutable_buffered_operate!(::$(typeof(buffer)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `buffered_operate!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
+        ),
+    )
+end
+
+function mutable_buffered_operate_fallback(::IsMutable, buffer, op::Function, args...)
+    error(
+        "`mutable_buffered_operate!(::$(typeof(buffer)), $op, ::",
+        join(typeof.(args), ", ::"),
+        ")` is not implemented.",
+    )
+end
+
+function mutable_buffered_operate_fallback(
+    buffer,
+    op::Function,
+    args::Vararg{Any,N},
+) where {N}
+    return mutable_buffered_operate_fallback(
+        mutability(args[1], op, args...),
+        buffer,
+        op,
+        args...
+    )
+end
+
+function mutable_buffered_operate_fallback(
+    ::Nothing,
+    op::Function,
+    args::Vararg{Any,N},
+) where {N}
+    return mutable_operate!(op, args...)
 end
 
 """
@@ -286,8 +363,8 @@ possibly modifying `buffer`. Can only be called if
 `mutability(args[1], op, args...)` returns `true`.
 """
 function mutable_buffered_operate! end
-function mutable_buffered_operate!(::Nothing, op::Function, args::Vararg{Any,N}) where {N}
-    return mutable_operate!(op, args...)
+function mutable_buffered_operate!(buffer, op::Function, args::Vararg{Any,N}) where {N}
+    return mutable_buffered_operate_fallback(buffer, op, args...)
 end
 
 """
