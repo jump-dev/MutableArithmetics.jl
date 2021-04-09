@@ -60,25 +60,18 @@ end
 mul_rhs(::typeof(+)) = add_mul
 mul_rhs(::typeof(-)) = sub_mul
 
-# `Scaling` and `Array`
-function _mutable_operate!(
-    op::Union{typeof(+),typeof(-)},
-    A::Array{S,N},
-    B::AbstractArray{T,N},
-    left_factors::Tuple,
-    right_factors::Tuple,
-) where {S,T,N}
-    for i in eachindex(A)
-        A[i] = operate!(mul_rhs(op), A[i], left_factors..., B[i], right_factors...)
-    end
-    return A
-end
-
+# We redirect the mutable `A + B` into `A .+ B`.
+# To be consistent with Julia Base, we first call `promote_shape`
+# which throws an error if the broadcasted dimension are not singleton
+# and we check that the axes of `A` are indeed the axes of the array
+# that would be returned in Julia Base (maybe we could relax this ?).
 function _check_dims(A, B)
-    if size(A) != size(B)
+    if axes(A) != promote_shape(A, B)
         throw(
             DimensionMismatch(
-                "Cannot sum matrices of size `$(size(A))` and size `$(size(B))`, the size of the two matrices must be equal.",
+                "Cannot sum or substract a matrix of axes `$(axes(B))` into" *
+                " matrix of axes `$(axes(A))`, expected axes" *
+                " `$(promote_shape(A, B))`.",
             ),
         )
     end
@@ -86,44 +79,44 @@ end
 
 function mutable_operate!(
     op::Union{typeof(+),typeof(-)},
-    A::Array{S,N},
-    B::AbstractArray{T,N},
-) where {S,T,N}
+    A::Array,
+    B::AbstractArray,
+)
     _check_dims(A, B)
-    return _mutable_operate!(op, A, B, tuple(), tuple())
+    return mutable_broadcast!(op, A, B)
 end
 
 function mutable_operate!(
     op::AddSubMul,
-    A::Array{S,N},
-    B::AbstractArray{T,N},
+    A::Array,
+    B::AbstractArray,
     α::Vararg{Scaling,M},
-) where {S,T,N,M}
+) where {M}
     _check_dims(A, B)
-    return _mutable_operate!(add_sub_op(op), A, B, tuple(), α)
+    return mutable_broadcast!(op, A, B, α...)
 end
 
 function mutable_operate!(
     op::AddSubMul,
-    A::Array{S,N},
+    A::Array,
     α::Scaling,
-    B::AbstractArray{T,N},
+    B::AbstractArray,
     β::Vararg{Scaling,M},
-) where {S,T,N,M}
+) where {M}
     _check_dims(A, B)
-    return _mutable_operate!(add_sub_op(op), A, B, (α,), β)
+    return mutable_broadcast!(op, A, α, B, β...)
 end
 
 function mutable_operate!(
     op::AddSubMul,
-    A::Array{S,N},
+    A::Array,
     α1::Scaling,
     α2::Scaling,
-    B::AbstractArray{T,N},
+    B::AbstractArray,
     β::Vararg{Scaling,M},
-) where {S,T,N,M}
+) where {M}
     _check_dims(A, B)
-    return _mutable_operate!(add_sub_op(op), A, B, (α1, α2), β)
+    return mutable_broadcast!(op, A, α1, α2, B, β...)
 end
 
 # Fallback, we may be able to be more efficient in more cases by adding more

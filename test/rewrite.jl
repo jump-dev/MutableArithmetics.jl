@@ -102,36 +102,36 @@ end
         X = [1, 2, 3, 4]
         Y = reshape([1, 2, 3, 4], (4, 1))
         @test MA.@rewrite(X + Y) == X + Y
-        @test_broken MA.@rewrite(Y + X) == Y + X
+        @test MA.@rewrite(Y + X) == Y + X
     end
     @testset "(4,) + (4,1,1)" begin
         X = [1, 2, 3, 4]
         Y = reshape([1, 2, 3, 4], (4, 1, 1))
         @test MA.@rewrite(X + Y) == X + Y
-        @test_broken MA.@rewrite(Y + X) == Y + X
+        @test MA.@rewrite(Y + X) == Y + X
     end
     @testset "(2,2) + (2,2,1)" begin
         X = [1 2; 3 4]
         Y = reshape([1, 2, 3, 4], (2, 2, 1))
         @test MA.@rewrite(X + Y) == X + Y
-        @test_broken MA.@rewrite(Y + X) == Y + X
+        @test MA.@rewrite(Y + X) == Y + X
     end
     @testset "(4,) - (4,1)" begin
         X = [1, 3, 5, 7]
         Y = reshape([1, 2, 3, 4], (4, 1))
         @test MA.@rewrite(X - Y) == X - Y
-        @test_broken MA.@rewrite(Y - X) == Y - X
+        @test MA.@rewrite(Y - X) == Y - X
     end
     @testset "(4,) - (4,1,1)" begin
         X = [1, 3, 5, 7]
         Y = reshape([1, 2, 3, 4], (4, 1, 1))
         @test MA.@rewrite(X - Y) == X - Y
-        @test_broken MA.@rewrite(Y - X) == Y - X
+        @test MA.@rewrite(Y - X) == Y - X
     end
     @testset "(2,2) - (2,2,1)" begin
         X = [1 3; 5 7]
         Y = reshape([1, 2, 3, 4], (2, 2, 1))
         @test MA.@rewrite(X - Y) == X - Y
-        @test_broken MA.@rewrite(Y - X) == Y - X
+        @test MA.@rewrite(Y - X) == Y - X
     end
 end

@@ -65,7 +65,7 @@ end
         A = zeros(1, 1)
         B = zeros(2, 2)
         err = DimensionMismatch(
-            "Cannot sum matrices of size `(1, 1)` and size `(2, 2)`, the size of the two matrices must be equal.",
+            "dimensions must match: a has dims (Base.OneTo(1), Base.OneTo(1)), b has dims (Base.OneTo(2), Base.OneTo(2)), mismatch at 1",
         )
         @test_throws err MA.@rewrite A + B
         x = ones(1)
@@ -81,6 +81,12 @@ end
         @test iszero(@inferred MA.operate(LinearAlgebra.dot, a, a))
         @test iszero(@inferred MA.operate(*, a', a))
         @test iszero(@inferred MA.operate(*, LinearAlgebra.transpose(a), a))
+        A = zeros(2)
+        B = zeros(2, 1)
+        err = DimensionMismatch(
+                                "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
+        )
+        @test_throws err MA.mutable_operate!(+, A, B)
     end
 end
 
