@@ -64,9 +64,14 @@ end
     @testset "Dimension mismatch" begin
         A = zeros(1, 1)
         B = zeros(2, 2)
-        err = DimensionMismatch(
-            "dimensions must match: a has dims (Base.OneTo(1), Base.OneTo(1)), b has dims (Base.OneTo(2), Base.OneTo(2)), mismatch at 1",
-        )
+        # Changed by https://github.com/JuliaLang/julia/pull/33567
+        if VERSION >= v"1.4.0-DEV.307"
+            err = DimensionMismatch(
+                "dimensions must match: a has dims (Base.OneTo(1), Base.OneTo(1)), b has dims (Base.OneTo(2), Base.OneTo(2)), mismatch at 1",
+            )
+        else
+            err = DimensionMismatch("dimensions must match")
+        end
         @test_throws err MA.@rewrite A + B
         x = ones(1)
         y = ones(2)
