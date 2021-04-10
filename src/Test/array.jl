@@ -491,6 +491,8 @@ function matrix_uniform_scaling_test(x)
     @test_rewrite (x .+ 1) + I * I
     @test_rewrite (x .+ 1) + 2 * I
     @test_rewrite (x .+ 1) + I * 2
+    @test_rewrite I + 2I * x
+    @test_rewrite x + 2I * x
 end
 
 function symmetric_matrix_uniform_scaling_test(x)
