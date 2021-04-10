@@ -76,7 +76,7 @@ end
         x = ones(1)
         y = ones(2)
         err = DimensionMismatch(
-            "first array has length 1 which does not match the length of the second, 2.",
+            "one array has length 1 which does not match the length of the next one, 2.",
         )
         @test_throws err MA.operate(*, x', y)
         @test_throws err MA.operate(*, LinearAlgebra.transpose(x), y)

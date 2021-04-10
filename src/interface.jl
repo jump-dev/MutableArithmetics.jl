@@ -103,7 +103,7 @@ function operate end
 #     custom `operate` method.
 operate(::typeof(-), x) = -x
 operate(
-    op::Union{typeof(+),typeof(-),typeof(*),AddSubMul},
+    op::Union{typeof(+),typeof(-),typeof(*),AddSubMul,typeof(add_dot)},
     x,
     y,
     args::Vararg{Any,N},
@@ -269,6 +269,7 @@ function mutable_buffered_operate_to_fallback(::NotMutable, buffer, output, op::
         ),
     )
 end
+
 
 function mutable_buffered_operate_to_fallback(::IsMutable, buffer, output, op::Function, args...)
     error(
@@ -467,4 +468,21 @@ function buffered_operate_fallback!(
     args::Vararg{Any,N},
 ) where {N}
     return mutable_buffered_operate!(buffer, op, args...)
+end
+
+# For most types, `dot(b, c) = adjoint(b) * c`.
+function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
+    return buffer_for(add_mul, a, promote_operation(adjoint, b), c)
+end
+function mutable_operate_to_fallback(::IsMutable, output, ::typeof(add_dot), a, b, c) where {N}
+    return mutable_operate_to!(output, add_mul, a, adjoint(b), c)
+end
+function mutable_operate_fallback(::IsMutable, ::typeof(add_dot), a, b, c) where {N}
+    return mutable_operate!(add_mul, a, adjoint(b), c)
+end
+function mutable_buffered_operate_to_fallback(::IsMutable, buffer, output, ::typeof(add_dot), a, b, c)
+    return mutable_buffered_operate_to!(buffer, output, add_mul, a, adjoint(b), c)
+end
+function mutable_buffered_operate_fallback(::IsMutable, buffer, ::typeof(add_dot), a, b, c)
+    return mutable_buffered_operate!(buffer, add_mul, a, adjoint(b), c)
 end

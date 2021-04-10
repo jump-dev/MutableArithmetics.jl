@@ -10,6 +10,30 @@ function Base.sum(a::AbstractArray{<:AbstractMutable})
     return operate(sum, a)
 end
 
+# When doing `x'y` where the elements of `x` and/or `y` are arrays,
+# redirecting to `dot(x, y)` is not equivalent to `x'y` as it will call
+# dot recursively on the elements of `x` and `y`:
+# See https://github.com/JuliaLang/julia/issues/35174
+# For this reason, a `_dot_nonrecursive` function was added that does
+# not recursively call `dot`:
+# https://github.com/JuliaLang/julia/commit/eae3216416453b53631afa6c803591cf2c5ae5b3
+# However, it does not exploit mutability and returns `zero(eltype(lhs)) * zero(eltype(rhs))`
+# in case the arrays are empty which creates type unstability for some types for which this
+# type is not invariant under addition.
+# TODO LinearAlgebra should have a documented function so that we don't
+#      have to overload an internal function
+if VERSION >= v"1.5.0-rc1.23"
+    function LinearAlgebra._dot_nonrecursive(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray)
+        fused_map_reduce(add_mul, lhs, rhs)
+    end
+    function LinearAlgebra._dot_nonrecursive(lhs::AbstractArray, rhs::AbstractArray{<:AbstractMutable})
+        fused_map_reduce(add_mul, lhs, rhs)
+    end
+    function LinearAlgebra._dot_nonrecursive(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray{<:AbstractMutable})
+        fused_map_reduce(add_mul, lhs, rhs)
+    end
+end
+
 LinearAlgebra.dot(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray) =
     operate(LinearAlgebra.dot, lhs, rhs)
 LinearAlgebra.dot(lhs::AbstractArray, rhs::AbstractArray{<:AbstractMutable}) =
