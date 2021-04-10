@@ -11,6 +11,7 @@ const MA = MutableArithmetics
     @test z * z isa MA.Zero
     @test z * 1 isa MA.Zero
     @test 1 * z isa MA.Zero
+    @test -z isa MA.Zero
 end
 
 # Test that the macro call `m` throws an error exception during pre-compilation
