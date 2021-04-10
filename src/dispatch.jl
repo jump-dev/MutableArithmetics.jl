@@ -137,6 +137,22 @@ function LinearAlgebra.mul!(
 )
     _mul!(ret, A, B, args...)
 end
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
+    B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
+    args...,
+)
+    _mul!(ret, A, B, args...)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
+    B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
+    args...,
+)
+    _mul!(ret, A, B, args...)
+end
 
 # SparseArrays promotes the element types of `A` and `B` to the same type
 # which always produce quadratic expressions for JuMP even if only one of them

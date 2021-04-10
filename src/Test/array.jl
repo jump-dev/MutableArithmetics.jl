@@ -313,6 +313,15 @@ function transpose_test(x)
         y = [x[i, j] for j = 1:size(x, 2), i = 1:size(x, 1)]
         @test MA.isequal_canonical(x', y)
         @test MA.isequal_canonical(copy(transpose(x)), y)
+        yy = y * y
+        @test MA.isequal_canonical(x' * x', yy)
+        @test MA.isequal_canonical(transpose(x) * transpose(x), yy)
+        z = _constant(x)
+        zt = copy(z')
+        @test MA.isequal_canonical(adjoint(x) * adjoint(z), y * zt)
+        @test MA.isequal_canonical(transpose(x) * transpose(z), y * zt)
+        @test MA.isequal_canonical(adjoint(z) * adjoint(x), zt * y)
+        @test MA.isequal_canonical(transpose(z) * transpose(x), zt * y)
     end
     if x isa AbstractVector || x isa AbstractMatrix
         @test_rewrite(x')
