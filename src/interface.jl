@@ -471,6 +471,10 @@ function buffered_operate_fallback!(
 end
 
 # For most types, `dot(b, c) = adjoint(b) * c`.
+promote_operation(::typeof(adjoint), a::Type) = a
+function promote_operation(::typeof(add_dot), a::Type, b::Type, c::Type)
+    return promote_operation(add_mul, a, promote_operation(adjoint, b), c)
+end
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
     return buffer_for(add_mul, a, promote_operation(adjoint, b), c)
 end

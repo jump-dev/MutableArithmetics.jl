@@ -9,19 +9,25 @@ function _same_length(a, b, c::Vararg{Any,N}) where {N}
     end
     _same_length(b, c...)
 end
+reduce_op(op::AddSubMul) = add_sub_op(op)
+reduce_op(op::typeof(add_dot)) = +
+neutral_element(::typeof(+), T::Type) = zero(T)
 map_op(::AddSubMul) = *
 map_op(::typeof(add_dot)) = LinearAlgebra.dot
+function promote_map_reduce(op::Function, args...)
+    T = promote_operation(
+        op,
+        promote_operation(map_op(op), args...),
+        args...,
+    )
+end
 function fused_map_reduce(
     op::Function,
     args::Vararg{Any,N},
 ) where {N}
     _same_length(args...)
-    T = promote_operation(
-        op,
-        promote_operation(map_op(op), eltype.(args)...),
-        eltype.(args)...,
-    )
-    accumulator = zero(T)
+    T = promote_map_reduce(op, eltype.(args)...)
+    accumulator = neutral_element(reduce_op(op), T)
     buffer = buffer_for(op, T, eltype.(args)...)
     for I in zip(eachindex.(args)...)
         accumulator = buffered_operate!(
