@@ -25,7 +25,7 @@ add_mul(a, b, c, d, args::Vararg{Any,N}) where {N} = add_mul(a, b, *(c, d, args.
 """
     sub_mul(a, args...)
 
-Return `a + *(args...)`.
+Return `a - *(args...)`.
 """
 function sub_mul end
 sub_mul(a, b) = a - b
