@@ -86,6 +86,7 @@ function mutable_operate!(
     return mutable_broadcast!(op, A, B)
 end
 
+# We call `scaling_to_number` as `UniformScaling` do not support broadcasting
 function mutable_operate!(
     op::AddSubMul,
     A::Array,
@@ -93,9 +94,8 @@ function mutable_operate!(
     α::Vararg{Scaling,M},
 ) where {M}
     _check_dims(A, B)
-    return mutable_broadcast!(op, A, B, α...)
+    return mutable_broadcast!(op, A, B, scaling_to_number.(α)...)
 end
-
 function mutable_operate!(
     op::AddSubMul,
     A::Array,
@@ -104,9 +104,14 @@ function mutable_operate!(
     β::Vararg{Scaling,M},
 ) where {M}
     _check_dims(A, B)
-    return mutable_broadcast!(op, A, α, B, β...)
+    return mutable_broadcast!(
+        op,
+        A,
+        scaling_to_number(α),
+        B,
+        scaling_to_number.(β)...,
+    )
 end
-
 function mutable_operate!(
     op::AddSubMul,
     A::Array,
@@ -116,7 +121,14 @@ function mutable_operate!(
     β::Vararg{Scaling,M},
 ) where {M}
     _check_dims(A, B)
-    return mutable_broadcast!(op, A, α1, α2, B, β...)
+    return mutable_broadcast!(
+        op,
+        A,
+        scaling_to_number(α1),
+        scaling_to_number(α2),
+        B,
+        scaling_to_number.(β)...,
+    )
 end
 
 # Fallback, we may be able to be more efficient in more cases by adding more

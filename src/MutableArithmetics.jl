@@ -56,6 +56,8 @@ include("broadcast.jl")
 # Implementation of the interface for Base types
 import LinearAlgebra
 const Scaling = Union{Number,LinearAlgebra.UniformScaling}
+scaling_to_number(x::Number) = x
+scaling_to_number(x::LinearAlgebra.UniformScaling) = x.λ
 scaling(x::Scaling) = x
 scaling_convert(T::Type, x) = convert(T, x)
 # `convert(::Type{<:UniformScaling}, ::UniformScaling)` is not defined in LinearAlgebra.
