@@ -55,6 +55,9 @@ Base.:+(z::Zero, ::Zero) = z
 Base.:-(::Zero, x::Any) = -x
 Base.:-(x::Any, ::Zero) = x
 Base.:-(z::Zero, ::Zero) = z
+Base.:-(z::Zero) = z
+Base.:+(z::Zero) = z
+Base.:*(z::Zero) = z
 function Base.:/(z::Zero, x::Any)
     if iszero(x)
         throw(DivideError())
