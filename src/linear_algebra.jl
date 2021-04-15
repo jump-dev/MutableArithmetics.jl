@@ -3,12 +3,19 @@ mutable_copy(A::Array) = copy_if_mutable.(A)
 
 # Sum
 
+# By default, we assume the return value is an `Array` as having a different
+# method for all cases `UpperTriangular`, `Adjoint`, ... + other matrices outside
+# `LinearAlgebra` would be cumbersome.
+# A more specific method should be implemented for other cases.
 function promote_operation(
     op::Union{typeof(+),typeof(-)},
-    ::Type{Array{S,N}},
-    ::Type{Array{T,N}},
-) where {S,T,N}
-    return Array{promote_operation(op, S, T),N}
+    ::Type{<:AbstractArray{S,N}},
+    ::Type{<:AbstractArray{T,M}},
+) where {S,T,N,M}
+    # If `N != M`, we need the axes between `min(N,M)+1` and `max(N,M)` to be
+    # `Base.OneTo(1)`. In any cases, the axes from `1` to `min(N,M)` must also
+    # match.
+    return Array{promote_operation(op, S, T),max(N,M)}
 end
 
 function promote_operation(
@@ -23,14 +30,6 @@ function promote_operation(
     op::Union{typeof(+),typeof(-)},
     ::Type{Matrix{T}},
     ::Type{LinearAlgebra.UniformScaling{S}},
-) where {S,T}
-    return Matrix{promote_operation(op, S, T)}
-end
-
-function promote_operation(
-    op::Union{typeof(+),typeof(-)},
-    ::Type{Matrix{T}},
-    ::Type{<:LinearAlgebra.Symmetric{S}},
 ) where {S,T}
     return Matrix{promote_operation(op, S, T)}
 end
@@ -61,25 +60,18 @@ end
 mul_rhs(::typeof(+)) = add_mul
 mul_rhs(::typeof(-)) = sub_mul
 
-# `Scaling` and `Array`
-function _mutable_operate!(
-    op::Union{typeof(+),typeof(-)},
-    A::Array{S,N},
-    B::Union{Array{T,N},LinearAlgebra.Symmetric{T}},
-    left_factors::Tuple,
-    right_factors::Tuple,
-) where {S,T,N}
-    for i in eachindex(A)
-        A[i] = operate!(mul_rhs(op), A[i], left_factors..., B[i], right_factors...)
-    end
-    return A
-end
-
+# We redirect the mutable `A + B` into `A .+ B`.
+# To be consistent with Julia Base, we first call `promote_shape`
+# which throws an error if the broadcasted dimension are not singleton
+# and we check that the axes of `A` are indeed the axes of the array
+# that would be returned in Julia Base (maybe we could relax this ?).
 function _check_dims(A, B)
-    if size(A) != size(B)
+    if axes(A) != promote_shape(A, B)
         throw(
             DimensionMismatch(
-                "Cannot sum matrices of size `$(size(A))` and size `$(size(B))`, the size of the two matrices must be equal.",
+                "Cannot sum or substract a matrix of axes `$(axes(B))` into" *
+                " matrix of axes `$(axes(A))`, expected axes" *
+                " `$(promote_shape(A, B))`.",
             ),
         )
     end
@@ -87,44 +79,56 @@ end
 
 function mutable_operate!(
     op::Union{typeof(+),typeof(-)},
-    A::Array{S,N},
-    B::AbstractArray{T,N},
-) where {S,T,N}
+    A::Array,
+    B::AbstractArray,
+)
     _check_dims(A, B)
-    return _mutable_operate!(op, A, B, tuple(), tuple())
+    return mutable_broadcast!(op, A, B)
 end
 
+# We call `scaling_to_number` as `UniformScaling` do not support broadcasting
 function mutable_operate!(
     op::AddSubMul,
-    A::Array{S,N},
-    B::AbstractArray{T,N},
+    A::Array,
+    B::AbstractArray,
     α::Vararg{Scaling,M},
-) where {S,T,N,M}
+) where {M}
     _check_dims(A, B)
-    return _mutable_operate!(add_sub_op(op), A, B, tuple(), α)
+    return mutable_broadcast!(op, A, B, scaling_to_number.(α)...)
 end
-
 function mutable_operate!(
     op::AddSubMul,
-    A::Array{S,N},
+    A::Array,
     α::Scaling,
-    B::AbstractArray{T,N},
+    B::AbstractArray,
     β::Vararg{Scaling,M},
-) where {S,T,N,M}
+) where {M}
     _check_dims(A, B)
-    return _mutable_operate!(add_sub_op(op), A, B, (α,), β)
+    return mutable_broadcast!(
+        op,
+        A,
+        scaling_to_number(α),
+        B,
+        scaling_to_number.(β)...,
+    )
 end
-
 function mutable_operate!(
     op::AddSubMul,
-    A::Array{S,N},
+    A::Array,
     α1::Scaling,
     α2::Scaling,
-    B::AbstractArray{T,N},
+    B::AbstractArray,
     β::Vararg{Scaling,M},
-) where {S,T,N,M}
+) where {M}
     _check_dims(A, B)
-    return _mutable_operate!(add_sub_op(op), A, B, (α1, α2), β)
+    return mutable_broadcast!(
+        op,
+        A,
+        scaling_to_number(α1),
+        scaling_to_number(α2),
+        B,
+        scaling_to_number.(β)...,
+    )
 end
 
 # Fallback, we may be able to be more efficient in more cases by adding more

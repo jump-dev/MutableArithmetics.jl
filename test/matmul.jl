@@ -54,18 +54,24 @@ end
 @testset "Errors" begin
     @testset "`promote_op` error" begin
         AT = CustomArray{Int,3}
+        f(x, y) = nothing
         err = ErrorException(
-            "`promote_operation(+, $(CustomArray{Int,3}), $(CustomArray{Int,3}))` not implemented yet, please report this.",
+            "`promote_operation($(f), $(CustomArray{Int,3}), $(CustomArray{Int,3}))` not implemented yet, please report this.",
         )
-        @test_throws err MA.promote_operation(+, AT, AT)
+        @test_throws err MA.promote_operation(f, AT, AT)
     end
 
     @testset "Dimension mismatch" begin
         A = zeros(1, 1)
         B = zeros(2, 2)
-        err = DimensionMismatch(
-            "Cannot sum matrices of size `(1, 1)` and size `(2, 2)`, the size of the two matrices must be equal.",
-        )
+        # Changed by https://github.com/JuliaLang/julia/pull/33567
+        if VERSION >= v"1.4.0-DEV.307"
+            err = DimensionMismatch(
+                "dimensions must match: a has dims (Base.OneTo(1), Base.OneTo(1)), b has dims (Base.OneTo(2), Base.OneTo(2)), mismatch at 1",
+            )
+        else
+            err = DimensionMismatch("dimensions must match")
+        end
         @test_throws err MA.@rewrite A + B
         x = ones(1)
         y = ones(2)
@@ -80,6 +86,12 @@ end
         @test iszero(@inferred MA.operate(LinearAlgebra.dot, a, a))
         @test iszero(@inferred MA.operate(*, a', a))
         @test iszero(@inferred MA.operate(*, LinearAlgebra.transpose(a), a))
+        A = zeros(2)
+        B = zeros(2, 1)
+        err = DimensionMismatch(
+                                "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
+        )
+        @test_throws err MA.mutable_operate!(+, A, B)
     end
 end
 

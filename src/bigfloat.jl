@@ -123,15 +123,15 @@ function mutable_buffered_operate!(
     return mutable_buffered_operate_to!(buffer, x, op, x, args...)
 end
 
-scaling_to_bigfloat(x::BigFloat) = x
-scaling_to_bigfloat(x::Number) = convert(BigFloat, x)
-scaling_to_bigfloat(J::LinearAlgebra.UniformScaling) = scaling_to_bigfloat(J.λ)
+function _scaling_to_bigfloat(x)
+    return convert(BigFloat, scaling_to_number(x))
+end
 function mutable_operate_to!(
     output::BigFloat,
     op::Union{typeof(+),typeof(-),typeof(*)},
     args::Vararg{Scaling,N},
 ) where {N}
-    return mutable_operate_to!(output, op, scaling_to_bigfloat.(args)...)
+    return mutable_operate_to!(output, op, _scaling_to_bigfloat.(args)...)
 end
 function mutable_operate_to!(
     output::BigFloat,
@@ -144,10 +144,10 @@ function mutable_operate_to!(
     return mutable_operate_to!(
         output,
         op,
-        scaling_to_bigfloat(x),
-        scaling_to_bigfloat(y),
-        scaling_to_bigfloat(z),
-        scaling_to_bigfloat.(args)...,
+        _scaling_to_bigfloat(x),
+        _scaling_to_bigfloat(y),
+        _scaling_to_bigfloat(z),
+        _scaling_to_bigfloat.(args)...,
     )
 end
 # Called for instance if `args` is `(v', v)` for a vector `v`.
