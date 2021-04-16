@@ -59,8 +59,8 @@ function promote_operation(
 )
     return promote_operation(add_sub_op(op), x, y)
 end
-function promote_operation(op::AddSubMul, T::Type, args::Vararg{Type,N}) where {N}
-    return promote_operation(add_sub_op(op), T, promote_operation(*, args...))
+function promote_operation(op::Union{AddSubMul,typeof(add_dot)}, T::Type, args::Vararg{Type,N}) where {N}
+    return promote_operation(reduce_op(op), T, promote_operation(map_op(op), args...))
 end
 
 """

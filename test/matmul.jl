@@ -195,13 +195,9 @@ end
             alloc_test(() -> MA.mutability(C, MA.add_mul, C, A, B), 0)
         end
 
-        # 40 bytes to create the buffer on 64-bit.
-        # 8 bytes in the double for loop. FIXME: figure out why
-        # Half size on 32-bit.
-        n = Sys.WORD_SIZE == 64 ? 48 : 24
-        alloc_test(() -> MA.add_mul!(C, A, B), n)
-        alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), n)
-        alloc_test(() -> MA.mutable_operate!(MA.add_mul, C, A, B), n)
+        alloc_test(() -> MA.add_mul!(C, A, B), BIGINT_ALLOC)
+        alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), BIGINT_ALLOC)
+        alloc_test(() -> MA.mutable_operate!(MA.add_mul, C, A, B), BIGINT_ALLOC)
     end
 end
 

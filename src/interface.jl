@@ -472,8 +472,8 @@ end
 
 # For most types, `dot(b, c) = adjoint(b) * c`.
 promote_operation(::typeof(adjoint), a::Type) = a
-function promote_operation(::typeof(add_dot), a::Type, b::Type, c::Type)
-    return promote_operation(add_mul, a, promote_operation(adjoint, b), c)
+function promote_operation(::typeof(LinearAlgebra.dot), b::Type, c::Type)
+    return promote_operation(*, promote_operation(adjoint, b), c)
 end
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
     return buffer_for(add_mul, a, promote_operation(adjoint, b), c)

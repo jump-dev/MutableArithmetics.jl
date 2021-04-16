@@ -1,3 +1,7 @@
+using LinearAlgebra
+import MutableArithmetics
+const MA = MutableArithmetics
+
 # It does not support operation with floats on purpose to test that
 # MutableArithmetics does not convert to float when it shouldn't.
 struct DummyBigInt <: MA.AbstractMutable
@@ -31,24 +35,53 @@ _data(x) = x
 _data(x::DummyBigInt) = x.data
 MA.scaling(x::DummyBigInt) = x
 
-MA.mutable_operate_to!(
+function MA.mutable_operate_to!(
     x::DummyBigInt,
     op::Function,
     args::Union{MA.Scaling,DummyBigInt}...,
-) = DummyBigInt(MA.mutable_operate_to!(x.data, op, _data.(args)...))
+)
+    return DummyBigInt(MA.mutable_operate_to!(x.data, op, _data.(args)...))
+end
+
+function MA.buffer_for(::MA.AddSubMul, args::Vararg{Type{DummyBigInt},N}) where {N}
+    return DummyBigInt(BigInt())
+end
+_undummy(x) = x
+_undummy(x::DummyBigInt) = x.data
+function MA.mutable_buffered_operate_to!(
+    buffer::DummyBigInt,
+    output::DummyBigInt,
+    op::Function,
+    args::Vararg{Union{MA.Scaling,DummyBigInt},N},
+) where {N}
+    MA.mutable_buffered_operate_to!(buffer.data, output.data, output, op, _undummy.(args)...)
+    return output
+end
+function MA.mutable_buffered_operate!(
+    buffer::DummyBigInt,
+    op::Function,
+    args::Vararg{Union{MA.Scaling,DummyBigInt},N},
+) where {N}
+    MA.mutable_buffered_operate!(buffer.data, op, _undummy.(args)...)
+    return args[1]
+end
+
 # Called for instance if `args` is `(v', v)` for a vector `v`.
-MA.mutable_operate_to!(
+function MA.mutable_operate_to!(
     output::DummyBigInt,
     op::MA.AddSubMul,
     x::Union{MA.Scaling,DummyBigInt},
     y::Union{MA.Scaling,DummyBigInt},
     z::Union{MA.Scaling,DummyBigInt},
     args::Union{MA.Scaling,DummyBigInt}...,
-) = MA.mutable_operate_to!(output, MA.add_sub_op(op), x, *(y, z, args...))
-MA.mutable_operate_to!(output::DummyBigInt, op::MA.AddSubMul, x, y, z, args...) =
-    MA.mutable_operate_to!(output, MA.add_sub_op(op), x, *(y, z, args...))
+)
+    return MA.mutable_operate_to!(output, MA.add_sub_op(op), x, *(y, z, args...))
+end
+function MA.mutable_operate_to!(output::DummyBigInt, op::MA.AddSubMul, x, y, z, args...)
+    return MA.mutable_operate_to!(output, MA.add_sub_op(op), x, *(y, z, args...))
+end
 function MA.mutable_operate!(op::Function, x::DummyBigInt, args::Vararg{Any,N}) where {N}
-    MA.mutable_operate_to!(x, op, x, args...)
+    return MA.mutable_operate_to!(x, op, x, args...)
 end
 
 function MA.mutable_operate!(op::Union{typeof(zero),typeof(one)}, x::DummyBigInt)
