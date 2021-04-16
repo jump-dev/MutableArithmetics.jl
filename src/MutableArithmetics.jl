@@ -6,6 +6,8 @@
 
 module MutableArithmetics
 
+import LinearAlgebra
+
 # Performance note:
 # We use `Vararg` instead of splatting `...` as using `where N` forces Julia to
 # specialize in the number of arguments `N`. Otherwise, we get allocations and
@@ -61,7 +63,6 @@ include("shortcuts.jl")
 include("broadcast.jl")
 
 # Implementation of the interface for Base types
-import LinearAlgebra
 const Scaling = Union{Number,LinearAlgebra.UniformScaling}
 scaling_to_number(x::Number) = x
 scaling_to_number(x::LinearAlgebra.UniformScaling) = x.λ
