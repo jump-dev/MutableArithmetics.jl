@@ -303,13 +303,24 @@ function sum_multiplication_test(matrix)
     end
 end
 
+function _is_supported(op::Function, Ts::Type...)
+    try
+        op(zero.(Ts)...)
+        true
+    catch
+        false
+    end
+end
+
 function transpose_test(x)
     if x isa Vector
         y = reshape(x, 1, length(x))
         @test MA.isequal_canonical(x', y)
         @test MA.isequal_canonical(copy(transpose(x)), y)
     end
-    if x isa AbstractMatrix
+    # If the element type does not support multiplication, e.g.
+    # JuMP or MOI quadratic functions, then we should skip these tests.
+    if x isa AbstractMatrix && _is_supported(*, eltype(x), eltype(x))
         y = [x[i, j] for j = 1:size(x, 2), i = 1:size(x, 1)]
         @test MA.isequal_canonical(x', y)
         @test MA.isequal_canonical(copy(transpose(x)), y)

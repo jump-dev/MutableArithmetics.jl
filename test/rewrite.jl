@@ -30,6 +30,11 @@ end
 
 include("dummy.jl")
 
+function is_supported_test(T)
+    @test MA.Test._is_supported(*, T, T)
+    @test MA.Test._is_supported(+, T, T)
+end
+
 function error_test(x, y, z)
     # $(:(y[j=1])) does not print the same on Julia v1.3 or Julia 1.4
     err = ErrorException("Unexpected assignment in expression `$(:(y[j=1]))`.")
@@ -58,6 +63,9 @@ using OffsetArrays
     (BigFloat, true),
     (DummyBigInt, false),
 ]
+    @testset "is_supported_test" begin
+        is_supported_test(T)
+    end
     @testset "Error" begin
         error_test(T(1), T(2), T(3))
     end
