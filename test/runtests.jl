@@ -19,5 +19,6 @@ end
     include("broadcast.jl")
 end
 include("matmul.jl")
+include("dispatch.jl")
 include("rewrite.jl")
 include("hygiene.jl")

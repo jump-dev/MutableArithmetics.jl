@@ -417,54 +417,12 @@ end
 
 function operate(
     ::typeof(*),
-    x::LinearAlgebra.Transpose{<:Any,<:AbstractVector},
+    x::TransposeOrAdjoint{<:Any,<:AbstractVector},
     y::AbstractVector,
 )
-    lx = length(x)
-    if lx != length(y)
-        throw(
-            DimensionMismatch(
-                "first array has length $(lx) which does not match the length of the second, $(length(y)).",
-            ),
-        )
-    end
-    SumType = promote_sum_mul(eltype(x), eltype(y))
-    if iszero(lx)
-        return zero(SumType)
-    end
-    # We need a buffer to hold the intermediate multiplication.
-    mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
-    s = zero(SumType)
-    for (Ix, Iy) in zip(eachindex(x), eachindex(y))
-        s = @inbounds buffered_operate!(mul_buffer, add_mul, s, x[Ix], y[Iy])
-    end
-    return s
+    return fused_map_reduce(add_mul, x, y)
 end
 
 function operate(::typeof(LinearAlgebra.dot), x::AbstractArray, y::AbstractArray)
-    lx = length(x)
-    if lx != length(y)
-        throw(
-            DimensionMismatch(
-                "first array has length $(lx) which does not match the length of the second, $(length(y)).",
-            ),
-        )
-    end
-    if iszero(lx)
-        return LinearAlgebra.dot(zero(eltype(x)), zero(eltype(y)))
-    end
-    # We need a buffer to hold the intermediate multiplication.
-    SumType = promote_sum_mul(eltype(x), eltype(y))
-    mul_buffer = buffer_for(add_mul, SumType, eltype(x), eltype(y))
-    s = zero(SumType)
-    for (Ix, Iy) in zip(eachindex(x), eachindex(y))
-        s = @inbounds buffered_operate!(
-            mul_buffer,
-            add_mul,
-            s,
-            LinearAlgebra.adjoint(x[Ix]),
-            y[Iy],
-        )
-    end
-    return s
+    return fused_map_reduce(add_dot, x, y)
 end
