@@ -71,10 +71,21 @@ end
 
 # If A is `Symmetric`, we cannot do that as we might modify the same entry twice.
 # See https://github.com/jump-dev/JuMP.jl/issues/2102
-function mutable_broadcast!(op::Function, A::Array, args::Vararg{Any,N}) where {N}
+function mutable_broadcast!(op::F, A::Array, args::Vararg{Any,N}) where {F<:Function,N}
     bc = Broadcast.broadcasted(op, A, args...)
     instantiated = Broadcast.instantiate(bc)
     return copyto!(A, mutable_broadcasted(instantiated))
+end
+
+_any_uniform_scaling() = false
+function _any_uniform_scaling(
+    ::LinearAlgebra.UniformScaling,
+    args::Vararg{Any,N},
+) where {N}
+   return true
+end
+function _any_uniform_scaling(::Any, args::Vararg{Any,N}) where {N}
+    return _any_uniform_scaling(args...)
 end
 
 """
@@ -82,9 +93,11 @@ end
 
 Returns the value of `broadcast(op, args...)`, possibly modifying `args[1]`.
 """
-function broadcast!(op::Function, args::Vararg{Any,N}) where {N}
-    # TODO use traits instead
-    if any(x -> x isa LinearAlgebra.UniformScaling, args)
+function broadcast!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
+    # `any(x -> x isa LinearAlgebra.UniformScaling, args)` produces
+    # `(1 allocation: 32 bytes)` on Julia v1.6.1 so we use
+    # `_any_uniform_scaling` instead.
+    if _any_uniform_scaling(args...)
         return broadcast_with_uniform_scaling!(op, args...)
     else
         return broadcast_fallback!(broadcast_mutability(args[1], op, args...), op, args...)
