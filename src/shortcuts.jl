@@ -27,9 +27,9 @@ Return `a - b`, possibly modifying `a`.
 sub!(a, b) = operate!(-, a, b)
 
 """
-    mul_to!(a, b, c)
+    mul_to!(a, b, c, ...)
 
-Return the product of `b` and `c`, possibly modifying `a`.
+Return the product of `b`, `c`, ..., possibly modifying `a`.
 """
 mul_to!(output, args::Vararg{Any,N}) where {N} = operate_to!(output, *, args...)
 
@@ -47,6 +47,19 @@ Shortcut for `operate(*, a, b, ...)`, see [`operate`](@ref).
 """
 mul(args::Vararg{Any,N}) where {N} = operate(*, args...)
 
+"""
+    gcd_to!(a, b, c, ...)
+
+Return the `gcd` of `b`, `c`, ..., possibly modifying `a`.
+"""
+gcd_to!(output, args::Vararg{Any,N}) where {N} = operate_to!(output, gcd, args...)
+
+"""
+    gcd!(a, b, ...)
+
+Return the `gcd` of `a`, `b`, ..., possibly modifying `a`.
+"""
+gcd!(args::Vararg{Any,N}) where {N} = operate!(gcd, args...)
 
 # `Vararg` gives extra allocations on Julia v1.3, see https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
 function promote_operation(op::AddSubMul, T::Type, x::Type, y::Type)
