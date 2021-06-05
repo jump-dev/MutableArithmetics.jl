@@ -10,10 +10,7 @@ include("interface.jl")
     include("int.jl")
 end
 @testset "BigInt" begin
-    include("bigint.jl")
-end
-@testset "BigFloat" begin
-    include("bigfloat.jl")
+    include("big.jl")
 end
 @testset "Broadcast" begin
     include("broadcast.jl")

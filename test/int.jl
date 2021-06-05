@@ -6,8 +6,12 @@ const MA = MutableArithmetics
     @test MA.promote_operation(MA.zero, Int) == Int
     @test MA.promote_operation(MA.one, Int) == Int
     @test MA.promote_operation(+, Int, Int) == Int
+    @test MA.promote_operation(+, Int, Int, Int) == Int
     @test MA.promote_operation(-, Int, Int) == Int
     @test MA.promote_operation(*, Int, Int) == Int
+    @test MA.promote_operation(*, Int, Int, Int) == Int
+    @test MA.promote_operation(gcd, Int, Int) == Int
+    @test MA.promote_operation(gcd, Int, Int, Int) == Int
     @test MA.promote_operation(MA.add_mul, Int, Int, Int) == Int
     err = ErrorException(
         "Operation `+` between `$(Array{Int,1})` and `$Int` is not allowed. You should use broadcast.",

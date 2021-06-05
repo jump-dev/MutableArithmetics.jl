@@ -35,10 +35,20 @@ promote_operation(::typeof(gcd), ::Vararg{Type{BigInt},N}) where {N} = BigInt
 function mutable_operate_to!(output::BigInt, ::typeof(gcd), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.gcd!(output, a, b)
 end
+function mutable_operate_to!(
+    output::BigInt,
+    op::typeof(gcd),
+    a::BigInt,
+    b::BigInt,
+    c::Vararg{BigInt,N},
+) where {N}
+    mutable_operate_to!(output, op, a, b)
+    return mutable_operate!(op, output, c...)
+end
 
 function mutable_operate_to!(
     output::BigInt,
-    op::Union{typeof(+),typeof(-),typeof(*),typeof(gcd)},
+    op::Union{typeof(+),typeof(-),typeof(*)},
     a::BigInt,
     b::BigInt,
     c::Vararg{BigInt,N},
