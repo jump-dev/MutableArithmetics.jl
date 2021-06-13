@@ -3,31 +3,26 @@
 # `operate!(add_mul, ...)` is similar to `JuMP.destructive_add(...)`
 # `operate!` is similar to `MOI.Utilities.operate!`
 
-"""
-    promote_operation(op::Function, ArgsTypes::Type...)
-
-Returns the type returned to the call `operate(op, args...)` where the types of
-the arguments `args` are `ArgsTypes`.
-"""
-function promote_operation end
-function promote_operation(op::Function, x::Type{<:AbstractArray}, y::Type{<:AbstractArray})
+# `promote_operation_fallback` gives fallbacks with no risk of ambiguity with
+# specific methods defined by other packages.
+function promote_operation_fallback(op::Function, x::Type{<:AbstractArray}, y::Type{<:AbstractArray})
     # `zero` is not defined for `AbstractArray` so the fallback would fail with a cryptic MethodError.
     # We replace it by a more helpful error here.
     error("`promote_operation($op, $x, $y)` not implemented yet, please report this.")
 end
-function promote_operation(::typeof(/), ::Type{S}, ::Type{T}) where {S,T}
+function promote_operation_fallback(::typeof(/), ::Type{S}, ::Type{T}) where {S,T}
     return typeof(zero(S) / oneunit(T))
 end
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
-function promote_operation(op::Function, ::Type{S}, ::Type{T}) where {S,T}
+function promote_operation_fallback(op::Function, ::Type{S}, ::Type{T}) where {S,T}
     return typeof(op(zero(S), zero(T)))
 end
-function promote_operation(op::Function, args::Vararg{Type,N}) where {N}
+function promote_operation_fallback(op::Function, args::Vararg{Type,N}) where {N}
     return typeof(op(zero.(args)...))
 end
-promote_operation(::typeof(*), ::Type{T}) where {T} = T
-function promote_operation(
+promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
+function promote_operation_fallback(
     ::typeof(*),
     ::Type{S},
     ::Type{T},
@@ -38,19 +33,30 @@ function promote_operation(
 end
 
 # Helpful error for common mistake
-function promote_operation(
+function promote_operation_fallback(
     op::Union{typeof(+),typeof(-),AddSubMul},
     A::Type{<:Array},
     α::Type{<:Number},
 )
     error("Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.")
 end
-function promote_operation(
+function promote_operation_fallback(
     op::Union{typeof(+),typeof(-),AddSubMul},
     α::Type{<:Number},
     A::Type{<:Array},
 )
     error("Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.")
+end
+
+
+"""
+    promote_operation(op::Function, ArgsTypes::Type...)
+
+Returns the type returned to the call `operate(op, args...)` where the types of
+the arguments `args` are `ArgsTypes`.
+"""
+function promote_operation(op::Function, args::Vararg{Type,N}) where {N}
+    return promote_operation_fallback(op, args...)
 end
 
 """
@@ -471,8 +477,8 @@ function buffered_operate_fallback!(
 end
 
 # For most types, `dot(b, c) = adjoint(b) * c`.
-promote_operation(::typeof(adjoint), a::Type) = a
-function promote_operation(::typeof(LinearAlgebra.dot), b::Type, c::Type)
+promote_operation_fallback(::typeof(adjoint), a::Type) = a
+function promote_operation_fallback(::typeof(LinearAlgebra.dot), b::Type, c::Type)
     return promote_operation(*, promote_operation(adjoint, b), c)
 end
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
