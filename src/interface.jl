@@ -3,8 +3,9 @@
 # `operate!(add_mul, ...)` is similar to `JuMP.destructive_add(...)`
 # `operate!` is similar to `MOI.Utilities.operate!`
 
-# `promote_operation_fallback` gives fallbacks with no risk of ambiguity with
-# specific methods defined by other packages.
+# `promote_operation_fallback` gives fallbacks for any type with no risk of
+# ambiguity with specific methods defined for a given type, even if these are
+# quite broad in the allowed operations.
 function promote_operation_fallback(op::Function, x::Type{<:AbstractArray}, y::Type{<:AbstractArray})
     # `zero` is not defined for `AbstractArray` so the fallback would fail with a cryptic MethodError.
     # We replace it by a more helpful error here.
@@ -32,22 +33,20 @@ function promote_operation_fallback(
     return promote_operation(*, promote_operation(*, S, T), U, args...)
 end
 
-# Helpful error for common mistake
-function promote_operation_fallback(
-    op::Union{typeof(+),typeof(-),AddSubMul},
-    A::Type{<:Array},
-    α::Type{<:Number},
-)
-    error("Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.")
+# `Vararg` gives extra allocations on Julia v1.3, see https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
+function promote_operation_fallback(op::AddSubMul, T::Type, x::Type, y::Type)
+    return promote_operation(add_sub_op(op), T, promote_operation(*, x, y))
 end
 function promote_operation_fallback(
-    op::Union{typeof(+),typeof(-),AddSubMul},
-    α::Type{<:Number},
-    A::Type{<:Array},
+    op::AddSubMul,
+    x::Type{<:AbstractArray},
+    y::Type{<:AbstractArray},
 )
-    error("Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.")
+    return promote_operation(add_sub_op(op), x, y)
 end
-
+function promote_operation_fallback(op::Union{AddSubMul,typeof(add_dot)}, T::Type, args::Vararg{Type,N}) where {N}
+    return promote_operation(reduce_op(op), T, promote_operation(map_op(op), args...))
+end
 
 """
     promote_operation(op::Function, ArgsTypes::Type...)
@@ -57,6 +56,22 @@ the arguments `args` are `ArgsTypes`.
 """
 function promote_operation(op::Function, args::Vararg{Type,N}) where {N}
     return promote_operation_fallback(op, args...)
+end
+
+# Helpful error for common mistake
+function promote_operation(
+    op::Union{typeof(+),typeof(-),AddSubMul},
+    A::Type{<:Array},
+    α::Type{<:Number},
+)
+    error("Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.")
+end
+function promote_operation(
+    op::Union{typeof(+),typeof(-),AddSubMul},
+    α::Type{<:Number},
+    A::Type{<:Array},
+)
+    error("Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.")
 end
 
 """

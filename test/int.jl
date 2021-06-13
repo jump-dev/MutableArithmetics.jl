@@ -13,14 +13,16 @@ const MA = MutableArithmetics
     @test MA.promote_operation(gcd, Int, Int) == Int
     @test MA.promote_operation(gcd, Int, Int, Int) == Int
     @test MA.promote_operation(MA.add_mul, Int, Int, Int) == Int
-    err = ErrorException(
-        "Operation `+` between `$(Array{Int,1})` and `$Int` is not allowed. You should use broadcast.",
-    )
-    @test_throws err MA.promote_operation(+, Vector{Int}, Int)
-    err = ErrorException(
-        "Operation `+` between `$Int` and `$(Array{Int,1})` is not allowed. You should use broadcast.",
-    )
-    @test_throws err MA.promote_operation(+, Int, Vector{Int})
+    for op in [+, -, MA.add_mul, MA.sub_mul]
+        err = ErrorException(
+            "Operation `$op` between `$(Vector{Int})` and `$Int` is not allowed. You should use broadcast.",
+        )
+        @test_throws err MA.promote_operation(op, Vector{Int}, Int)
+        err = ErrorException(
+            "Operation `$op` between `$Int` and `$(Vector{Int})` is not allowed. You should use broadcast.",
+        )
+        @test_throws err MA.promote_operation(op, Int, Vector{Int})
+    end
 end
 @testset "add_to! / add!" begin
     @test MA.mutability(Int, MA.add_to!, Int, Int) isa MA.NotMutable

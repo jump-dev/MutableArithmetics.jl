@@ -61,21 +61,6 @@ Return the `gcd` of `a`, `b`, ..., possibly modifying `a`.
 """
 gcd!(args::Vararg{Any,N}) where {N} = operate!(gcd, args...)
 
-# `Vararg` gives extra allocations on Julia v1.3, see https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
-function promote_operation(op::AddSubMul, T::Type, x::Type, y::Type)
-    return promote_operation(add_sub_op(op), T, promote_operation(*, x, y))
-end
-function promote_operation(
-    op::AddSubMul,
-    x::Type{<:AbstractArray},
-    y::Type{<:AbstractArray},
-)
-    return promote_operation(add_sub_op(op), x, y)
-end
-function promote_operation(op::Union{AddSubMul,typeof(add_dot)}, T::Type, args::Vararg{Type,N}) where {N}
-    return promote_operation(reduce_op(op), T, promote_operation(map_op(op), args...))
-end
-
 """
     add_mul_to!(output, args...)
 
