@@ -5,10 +5,14 @@ const MA = MutableArithmetics
 struct DummyMutable end
 
 MA.promote_operation(::typeof(+), ::Type{DummyMutable}, ::Type{DummyMutable}) = DummyMutable
+# Test that this does not triggers any ambiguity even if there is a fallback specific to `/`.
+MA.promote_operation(::Union{typeof(-),typeof(/)}, ::Type{DummyMutable}, ::Type{DummyMutable}) = DummyMutable
 MA.mutability(::Type{DummyMutable}) = MA.IsMutable()
 
 @testset "promote_operation" begin
     @test MA.promote_operation(/, Rational{Int}, Rational{Int}) == Rational{Int}
+    @test MA.promote_operation(-, DummyMutable, DummyMutable) == DummyMutable
+    @test MA.promote_operation(/, DummyMutable, DummyMutable) == DummyMutable
 end
 
 @testset "Errors" begin

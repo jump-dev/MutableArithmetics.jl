@@ -3,31 +3,27 @@
 # `operate!(add_mul, ...)` is similar to `JuMP.destructive_add(...)`
 # `operate!` is similar to `MOI.Utilities.operate!`
 
-"""
-    promote_operation(op::Function, ArgsTypes::Type...)
-
-Returns the type returned to the call `operate(op, args...)` where the types of
-the arguments `args` are `ArgsTypes`.
-"""
-function promote_operation end
-function promote_operation(op::Function, x::Type{<:AbstractArray}, y::Type{<:AbstractArray})
+# `promote_operation_fallback` gives fallbacks for any type with no risk of
+# ambiguity with specific methods defined for a given type, even if these are
+# quite broad in the allowed operations.
+function promote_operation_fallback(op::Function, x::Type{<:AbstractArray}, y::Type{<:AbstractArray})
     # `zero` is not defined for `AbstractArray` so the fallback would fail with a cryptic MethodError.
     # We replace it by a more helpful error here.
     error("`promote_operation($op, $x, $y)` not implemented yet, please report this.")
 end
-function promote_operation(::typeof(/), ::Type{S}, ::Type{T}) where {S,T}
+function promote_operation_fallback(::typeof(/), ::Type{S}, ::Type{T}) where {S,T}
     return typeof(zero(S) / oneunit(T))
 end
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
-function promote_operation(op::Function, ::Type{S}, ::Type{T}) where {S,T}
+function promote_operation_fallback(op::Function, ::Type{S}, ::Type{T}) where {S,T}
     return typeof(op(zero(S), zero(T)))
 end
-function promote_operation(op::Function, args::Vararg{Type,N}) where {N}
+function promote_operation_fallback(op::Function, args::Vararg{Type,N}) where {N}
     return typeof(op(zero.(args)...))
 end
-promote_operation(::typeof(*), ::Type{T}) where {T} = T
-function promote_operation(
+promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
+function promote_operation_fallback(
     ::typeof(*),
     ::Type{S},
     ::Type{T},
@@ -35,6 +31,31 @@ function promote_operation(
     args::Vararg{Type,N},
 ) where {S,T,U,N}
     return promote_operation(*, promote_operation(*, S, T), U, args...)
+end
+
+# `Vararg` gives extra allocations on Julia v1.3, see https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
+function promote_operation_fallback(op::AddSubMul, T::Type, x::Type, y::Type)
+    return promote_operation(add_sub_op(op), T, promote_operation(*, x, y))
+end
+function promote_operation_fallback(
+    op::AddSubMul,
+    x::Type{<:AbstractArray},
+    y::Type{<:AbstractArray},
+)
+    return promote_operation(add_sub_op(op), x, y)
+end
+function promote_operation_fallback(op::Union{AddSubMul,typeof(add_dot)}, T::Type, args::Vararg{Type,N}) where {N}
+    return promote_operation(reduce_op(op), T, promote_operation(map_op(op), args...))
+end
+
+"""
+    promote_operation(op::Function, ArgsTypes::Type...)
+
+Returns the type returned to the call `operate(op, args...)` where the types of
+the arguments `args` are `ArgsTypes`.
+"""
+function promote_operation(op::Function, args::Vararg{Type,N}) where {N}
+    return promote_operation_fallback(op, args...)
 end
 
 # Helpful error for common mistake
@@ -471,8 +492,8 @@ function buffered_operate_fallback!(
 end
 
 # For most types, `dot(b, c) = adjoint(b) * c`.
-promote_operation(::typeof(adjoint), a::Type) = a
-function promote_operation(::typeof(LinearAlgebra.dot), b::Type, c::Type)
+promote_operation_fallback(::typeof(adjoint), a::Type) = a
+function promote_operation_fallback(::typeof(LinearAlgebra.dot), b::Type, c::Type)
     return promote_operation(*, promote_operation(adjoint, b), c)
 end
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
