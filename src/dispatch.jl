@@ -23,13 +23,22 @@ end
 # TODO LinearAlgebra should have a documented function so that we don't
 #      have to overload an internal function
 if VERSION >= v"1.5.0-rc1.23"
-    function LinearAlgebra._dot_nonrecursive(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray)
+    function LinearAlgebra._dot_nonrecursive(
+        lhs::AbstractArray{<:AbstractMutable},
+        rhs::AbstractArray,
+    )
         fused_map_reduce(add_mul, lhs, rhs)
     end
-    function LinearAlgebra._dot_nonrecursive(lhs::AbstractArray, rhs::AbstractArray{<:AbstractMutable})
+    function LinearAlgebra._dot_nonrecursive(
+        lhs::AbstractArray,
+        rhs::AbstractArray{<:AbstractMutable},
+    )
         fused_map_reduce(add_mul, lhs, rhs)
     end
-    function LinearAlgebra._dot_nonrecursive(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray{<:AbstractMutable})
+    function LinearAlgebra._dot_nonrecursive(
+        lhs::AbstractArray{<:AbstractMutable},
+        rhs::AbstractArray{<:AbstractMutable},
+    )
         fused_map_reduce(add_mul, lhs, rhs)
     end
 end
@@ -92,6 +101,23 @@ end
 function _mul!(output, A, B, α)
     mutable_operate!(zero, output)
     return mutable_operate!(add_mul, output, A, B, scaling(α))
+end
+# LinearAlgebra uses `Base.promote_op(LinearAlgebra.matprod, ...)` to try to
+# infere the return type. If the operation is not supported, it returns
+# `Union{}`.
+function _mul!(output::AbstractArray{Union{}}, A, B)
+    # Normally, if the product is not supported, this should redirect to
+    # `MA.promote_operation(*, ...)` which redirects to
+    # `zero(...) * zero(...)` which should throw an appropriate error.
+    # E.g. in JuMP, it would say that you cannot multiply quadratic
+    # expressions with an affine expression for instance.
+    ProdType = promote_array_mul(typeof(A), typeof(B))
+    # If we arrived here, it means that we have found a type for `output`
+    # even if LinearAlgebra couldn't. This is most probably a but so let's
+    # provide extensive information to help debugging.
+    error(
+        "Cannot multiply a `$(typeof(A))` with a `$(typeof(B))` because the sum of the product of a `$(eltype(A))` and a `$(eltype(B))` could not be inferred so a `$(typeof(output))` allocated to store the output of the multiplication instead of a `$ProdType`.",
+    )
 end
 function _mul!(output, A, B)
     return mutable_operate_to!(output, *, A, B)

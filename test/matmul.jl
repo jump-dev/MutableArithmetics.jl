@@ -51,6 +51,25 @@ end
     @test MA.operate(convert, Int, 1) === 1
 end
 
+struct NoProdMutable <: MA.AbstractMutable end
+function MA.promote_operation(::typeof(*), ::Type{NoProdMutable}, ::Type{NoProdMutable})
+    return Int # Dummy result just to test error message
+end
+
+function unsupported_product()
+    A = [NoProdMutable() for i = 1:2, j = 1:2]
+    err = ErrorException(
+        string(
+            "Cannot multiply a `Matrix{NoProdMutable}` with a ",
+            "`Matrix{NoProdMutable}` because the sum of the product of a ",
+            "`NoProdMutable` and a `NoProdMutable` could not be inferred so a ",
+            "`Matrix{Union{}}` allocated to store the output of the ",
+            "multiplication instead of a `Matrix{Int64}`.",
+         ),
+    )
+    @test_throws err A * A
+end
+
 @testset "Errors" begin
     @testset "`promote_op` error" begin
         AT = CustomArray{Int,3}
@@ -89,9 +108,12 @@ end
         A = zeros(2)
         B = zeros(2, 1)
         err = DimensionMismatch(
-                                "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
+            "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
         )
         @test_throws err MA.mutable_operate!(+, A, B)
+    end
+    @testset "unsupported_product" begin
+        unsupported_product()
     end
 end
 
