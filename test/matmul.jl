@@ -51,22 +51,27 @@ end
     @test MA.operate(convert, Int, 1) === 1
 end
 
+const EXPECTED_ERROR = string(
+    "Cannot multiply a `Matrix{NoProdMutable}` with a ",
+    "`Matrix{NoProdMutable}` because the sum of the product of a ",
+    "`NoProdMutable` and a `NoProdMutable` could not be inferred so a ",
+    "`Matrix{Union{}}` allocated to store the output of the ",
+    "multiplication instead of a `Matrix{Int64}`.",
+)
+
 struct NoProdMutable <: MA.AbstractMutable end
-function MA.promote_operation(::typeof(*), ::Type{NoProdMutable}, ::Type{NoProdMutable})
-    return Int # Dummy result just to test error message
+@static if VERSION < v"1.6"
+    # Hack for making the test work on old Julia versions
+    Base.*(::NoProdMutable, ::NoProdMutable) = error(EXPECTED_ERROR)
+else
+    function MA.promote_operation(::typeof(*), ::Type{NoProdMutable}, ::Type{NoProdMutable})
+        return Int # Dummy result just to test error message
+    end
 end
 
 function unsupported_product()
     A = [NoProdMutable() for i = 1:2, j = 1:2]
-    err = ErrorException(
-        string(
-            "Cannot multiply a `Matrix{NoProdMutable}` with a ",
-            "`Matrix{NoProdMutable}` because the sum of the product of a ",
-            "`NoProdMutable` and a `NoProdMutable` could not be inferred so a ",
-            "`Matrix{Union{}}` allocated to store the output of the ",
-            "multiplication instead of a `Matrix{Int64}`.",
-         ),
-    )
+    err = ErrorException(EXPECTED_ERROR)
     @test_throws err A * A
 end
 
