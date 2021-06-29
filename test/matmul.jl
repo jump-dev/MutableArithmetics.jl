@@ -62,7 +62,7 @@ const EXPECTED_ERROR = string(
 struct NoProdMutable <: MA.AbstractMutable end
 @static if VERSION < v"1.6"
     # Hack for making the test work on old Julia versions
-    Base.*(::NoProdMutable, ::NoProdMutable) = error(EXPECTED_ERROR)
+    Base.:*(::NoProdMutable, ::NoProdMutable) = error(EXPECTED_ERROR)
 else
     function MA.promote_operation(::typeof(*), ::Type{NoProdMutable}, ::Type{NoProdMutable})
         return Int # Dummy result just to test error message
