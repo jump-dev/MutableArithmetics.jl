@@ -88,6 +88,7 @@ operate(::typeof(convert), T::Type, x::LinearAlgebra.UniformScaling) =
 
 include("bigint.jl")
 include("bigfloat.jl")
+include("rational.jl")
 
 include("reduce.jl")
 include("linear_algebra.jl")

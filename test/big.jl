@@ -1,4 +1,4 @@
-function allocation_test(op, T, short, short_to)
+function allocation_test(op, T, short, short_to, n)
     a = T(2)
     b = T(3)
     c = T(4)
@@ -9,17 +9,18 @@ function allocation_test(op, T, short, short_to)
     @test g == c
     @test a === short(a, b)
     @test g == a
-    alloc_test(() -> short(a, b), 0)
-    alloc_test(() -> short_to(c, a, b), 0)
+    alloc_test_le(() -> short(a, b), n)
+    alloc_test_le(() -> short_to(c, a, b), n)
 end
 
-@testset "$T" for T in [BigInt, BigFloat]
+@testset "$T" for T in [BigInt, BigFloat, Rational{BigInt}]
     MA.Test.int_test(T)
     @testset "Allocation" begin
-        allocation_test(+, T, MA.add!, MA.add_to!)
-        allocation_test(*, T, MA.mul!, MA.mul_to!)
-        if T == BigInt
+        allocation_test(+, T, MA.add!, MA.add_to!, T <: Rational ? 168 : 0)
+        allocation_test(*, T, MA.mul!, MA.mul_to!, T <: Rational ? 240 : 0)
+        if T != BigFloat
             allocation_test(gcd, T, MA.gcd!, MA.gcd_to!)
+            allocation_test(lcm, T, MA.lcm!, MA.lcm_to!)
         end
     end
 end

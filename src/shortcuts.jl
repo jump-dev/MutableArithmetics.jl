@@ -62,6 +62,20 @@ Return the `gcd` of `a`, `b`, ..., possibly modifying `a`.
 gcd!(args::Vararg{Any,N}) where {N} = operate!(gcd, args...)
 
 """
+    lcm_to!(a, b, c, ...)
+
+Return the `lcm` of `b`, `c`, ..., possibly modifying `a`.
+"""
+lcm_to!(output, args::Vararg{Any,N}) where {N} = operate_to!(output, lcm, args...)
+
+"""
+    lcm!(a, b, ...)
+
+Return the `lcm` of `a`, `b`, ..., possibly modifying `a`.
+"""
+lcm!(args::Vararg{Any,N}) where {N} = operate!(lcm, args...)
+
+"""
     add_mul_to!(output, args...)
 
 Return `add_mul(args...)`, possibly modifying `output`.

@@ -31,13 +31,16 @@ function mutable_operate_to!(output::BigInt, ::typeof(*), a::BigInt, b::BigInt)
 end
 
 # gcd
-promote_operation(::typeof(gcd), ::Vararg{Type{BigInt},N}) where {N} = BigInt
+promote_operation(::Union{typeof(gcd),typeof(lcm)}, ::Vararg{Type{BigInt},N}) where {N} = BigInt
 function mutable_operate_to!(output::BigInt, ::typeof(gcd), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.gcd!(output, a, b)
 end
+function mutable_operate_to!(output::BigInt, ::typeof(lcm), a::BigInt, b::BigInt)
+    return Base.GMP.MPZ.lcm!(output, a, b)
+end
 function mutable_operate_to!(
     output::BigInt,
-    op::typeof(gcd),
+    op::Union{typeof(gcd),typeof(lcm)},
     a::BigInt,
     b::BigInt,
     c::Vararg{BigInt,N},
@@ -95,8 +98,8 @@ function mutable_buffered_operate!(
     return mutable_buffered_operate_to!(buffer, x, op, x, args...)
 end
 
-function _scaling_to_bigint(x)
-    return convert(BigInt, scaling_to_number(x))
+function _scaling_to(::Type{T}, x) where {T}
+    return convert(T, scaling_to_number(x))
 end
 
 function mutable_operate_to!(
@@ -104,7 +107,7 @@ function mutable_operate_to!(
     op::Union{typeof(+),typeof(-),typeof(*)},
     args::Vararg{Scaling,N},
 ) where {N}
-    return mutable_operate_to!(output, op, _scaling_to_bigint.(args)...)
+    return mutable_operate_to!(output, op, _scaling_to.(BigInt, args)...)
 end
 function mutable_operate_to!(
     output::BigInt,
@@ -117,10 +120,10 @@ function mutable_operate_to!(
     return mutable_operate_to!(
         output,
         op,
-        _scaling_to_bigint(x),
-        _scaling_to_bigint(y),
-        _scaling_to_bigint(z),
-        _scaling_to_bigint.(args)...,
+        _scaling_to(BigInt, x),
+        _scaling_to(BigInt, y),
+        _scaling_to(BigInt, z),
+        _scaling_to.(BigInt, args)...,
     )
 end
 # Called for instance if `args` is `(v', v)` for a vector `v`.
