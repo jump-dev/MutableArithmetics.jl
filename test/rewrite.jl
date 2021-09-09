@@ -61,6 +61,8 @@ using OffsetArrays
     (Float64, true),
     (BigInt, true),
     (BigFloat, true),
+    (Rational{Int}, true),
+    (Rational{BigInt}, true),
     (DummyBigInt, false),
 ]
     @testset "is_supported_test" begin
@@ -80,7 +82,13 @@ using OffsetArrays
     @testset "Sparse" begin
         MA.Test.sparse_test(T(4), T(5), T[8 1 9; 4 3 1; 2 0 8])
     end
-    exclude = T == DummyBigInt ? ["broadcast_division", "matrix_vector_division"] : String[]
+    exclude = if T == DummyBigInt
+        ["broadcast_division", "matrix_vector_division"]
+    elseif T <: Rational
+        ["broadcast_division"]
+    else
+        String[]
+    end
     @testset "Vector" begin
         MA.Test.array_test(T[-7, 1, 4], exclude = exclude)
         MA.Test.array_test(T[3, 2, 6], exclude = exclude)

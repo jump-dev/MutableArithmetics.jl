@@ -40,7 +40,7 @@ function mutable_operate_to!(output::Rational, ::typeof(-), x::Rational, y::Rati
     xd, yd = Base.divgcd(promote(x.den, y.den)...)
     # TODO Use `checked_mul` and `checked_sub` like in Base
     mutable_operate_to!(output.num, *, x.num, yd)
-    mutable_operate!(add_sub, output.num, y.num, xd)
+    mutable_operate!(sub_mul, output.num, y.num, xd)
     mutable_operate_to!(output.den, *, x.den, yd)
     return output
 end
