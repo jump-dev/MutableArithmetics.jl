@@ -1,7 +1,8 @@
-
-% JuliaCon proceedings template
 \documentclass{juliacon}
 \setcounter{page}{1}
+
+\usepackage{cleveref}
+\crefformat{footnote}{#2\footnotemark[#1]#3}
 
 \begin{document}
 
@@ -11,516 +12,238 @@
 
 \begin{abstract}
 
-This is a guide for authors who are preparing papers for JuliaCon using the \LaTeX{} document
-preparation system and the \verb juliacon  class file.
+The definition of the arithmetic operations defined in Julia assume that the arguments are not modified.
+However, in many situations, a variable represents an accumulator that can be modified to contain the result, e.g., when summing the elements of an array.
+Moreover, many types can be mutated and mutating the element may have significant performance benefit.
+This talk presents an interface that allows algorithms to exploit a possible mutability while still being completely generic.
 
 \end{abstract}
 
 \section{Introduction}
 
-The \LaTeX{} document preparation system is a special version of the
-\TeX; typesetting program where-in a collection of \TeX; commands
-are added to \LaTeX{} to simplify typesetting. Importantly, it allows
-the author to concentrate on the logical structure of the document
-rather than its visual layout.\vskip 6pt
-Moreover, \LaTeX{} provides a consistent and comprehensive document
-preparation interface. There are simple-to-use commands for
-generating a table of contents, lists of figures and/or tables, and indexes.
-\LaTeX{} can automatically number list entries, equations, figures,
-tables, and footnotes, as well as articles, sections, and subsections.
-Using this numbering system, bibliographic citations, page
-references, and cross references to any other numbered entity (e.g.
-article, section, equation, figure, list entry, etc.) become quite simple
-and straightforward. The use of \LaTeX{} document classes allows
-a simple change of class to transform the appearance of your document.\vskip 6pt
-\LaTeX{} is a powerful tool for managing long and complex documents.
-In particular, partial processing enables long documents to
-be produced article by article without losing sequential information.
-The use of document classes allows a simple change of style
-(or style option) to transform the appearance of your document.
+Julia allows to write generic algorithms that work with arbitrary number types as long as they implement the needed operations
+such as \texttt{+}, \texttt{*}, \texttt{-}, \texttt{zero}, \texttt{one}, ...
+The definition of the arithmetic operations defined in Julia assumes that the arguments are not modified.
+However, in many situations, a variable represents an accumulator that can be modified to contain the result, e.g.,
+when reducing an array (e.g. by summing its element) or when implementing array multiplication.
+Moreover, many types can be mutated, e.g., multiple precision numbers, JuMP~\cite{dunning2017jump} expressions, MathOptInterface (MOI)~\cite{legat2021mathoptinterface} functions, polynomials (multivariate~\cite{legat2021multivariatepolynomials} or univariate), arrays, ... and mutating the element may have significant performance benefit as we will argue in this paper.
 
-
-
-\section{The JuliaCon Article Class}
-\label{sec:documentclass}
-%
-The juliacon class file preserves the standard LATEX{} interface such
-that any document that can be produced using the standard LATEX{}
-article class can also be produced with the class file.\vskip 6pt
-It is likely that the make up will change after file submission. For
-this reason, we ask you to ignore details such as slightly long lines,
-page stretching, or figures falling out of synchronization, as these
-details can be dealt with at a later stage.\vskip 6pt
-Use should be made of symbolic references (\verb \ref ) in order to
-protect against late changes of order, etc.
-
-\section{USING THE JuliaCon Article CLASS FILE}
-
-If the file \verb juliacon.cls  is not already in the appropriate system directory
-for \LaTeX{} files, either arrange for it to be put there or copy
-it to your working directory. The \verb juliacon  document class is implemented
-as a complete class, not a document style option. In order to
-use the \verb juliacon  document class, replace \verb article  by \verb juliacon  in the
-\verb \documentclass  command at the beginning of your document:
-\vskip 6pt
-\begin{centering}
-    \verb \documentclass{article}  \end{centering}
-\vskip 6pt
-replace by
-\vskip 6pt
- \verb \documentclass{juliacon}  \vskip 6pt
-In general, the following standard document \verb style  options should
-{ \itshape not} be used with the {\footnotesize \itshape article} class file:
+This paper introduce an interface called MutableArithmetics (MA).
+It allows for mutable types to implement an arithmetics exploiting their mutability and for algorithms to
+exploit their mutability while remaining completely generic.
+Moreover, it provides the following additional features:
 \begin{enumerate}
-\item[(1)] \verb 10pt,  \verb 11pt,  \verb 12pt   ? unavailable;
-\item[(2)] \verb twoside  (no associated style file) ? \verb twoside  is the default;
-\item[(3)] \verb fleqn, \verb leqno, \verb titlepage ? should not be used;
+  \item
+    \label{item:reimplement}
+    it re-implements part of the Julia standard library on top of the API to allow mutable type to use a more efficient version than the default one.
+  \item
+    \label{item:rewrite}
+    it defines a \texttt{@rewrite} macro that rewrites an expression using the standard operations (e.g \texttt{+}, \texttt{*}, ...) into a code that exploits the mutability of the intermediate values created when evalutation the expression.
 \end{enumerate}
 
-\section{Additional Document Style Options}
-\label{sec:additional_doc}
-%
-The following additional style option is available with the \verb juliacon  class file:
-\vskip 6pt
-Please place any additional command definitions at the very start of
-the \LaTeX{} file, before the \verb \begin{document} . For example, user-defined
-\verb \def  and \verb \newcommand   commands that define macros for
-technical expressions should be placed here. Other author-defined
-macros should be kept to a minimum.
-\vskip 6pt
-Commands that differ from the standard \LaTeX{} interface, or that
-are provided in addition to the standard interface, are explained in
-this guide. This guide is not a substitute for the \LaTeX{} manual itself.
-Authors planning to submit their papers in \LaTeX{} are advised to use
-\verb \juliacon.cls  as early as possible in the creation of their files.
+JuMP~\cite{dunning2017jump} used to have its own API for mutable operations on JuMP expressions and
+its own JuMP-specific implementation of \ref{item:reimplement} and \ref{item:rewrite}.
+These performance improvements are one of the key features of JuMP that allows it to have a performance that is competitive to commercial algebraic modeling languages that are not embedding in another language for linear programs~\cite[Section~3--4]{dunning2017jump}.
+These features were refactored into MA, generalizing them to arbitrary mutable types.
+Starting from JuMP v0.21, JuMP expression and MOI functions implement the MutableArithmetics API and
+the JuMP-specific implementations of \ref{item:reimplement} and \ref{item:rewrite} were replaced by the generic versions implemented in MA on top of the MA API.
 
-%
-%
-%
-%
-\begin{table*}[t]
-\tabcolsep22pt
-\tbl{If necessary, the tables can be extended both columns.}{
-\begin{tabular}{|l|l|c|c|}\hline
-Label & \multicolumn{1}{c|}{Description}
-& Number of Users &
-Number of Queries\\\hline
-Test 1 & Training Data &
-\smash{\raise-7pt\hbox{70}} & 104\\
-\cline{1-2}\cline{4-4}
-Test 2 & Testing Data I & & 105\\\hline
-Test 3 & Testing Data II & 30 & 119\\\hline
-& Total & 100 & 328\\\hline
-\end{tabular}}
-\label{tab:symbols}
-\begin{tabnote}
-This is an example of table footnote.
-\end{tabnote}
-\end{table*}
-% \begin{figure*}[t]
-% \centerline{\includegraphics[width=11cm]{juliagraphs.png}}
-% \caption{If necessary, the images can be extended both columns.}
-%   \label{fig:sample_image}
-% \end{figure*}
+\section{Design consideration}
+This section provide concrete examples that motivates the design of MA.
+We organize the section in four subsection that describes the need of four key features of MA's API.
 
-\section{Additional features}
-\label{sec:additional_faci}
-In addition to all the standard \LaTeX{} design elements, the \verb juliacon  class file includes the following features:
-In general, once you have used the additional \verb juliacon.cls facilities
-in your document, do not process it with a standard \LaTeX{} class
-file.
-
-\subsection{Titles, Author's Name, and Affiliation}
-\label{subsub:title_auth}
-The title of the article, author's name, and affiliation are used at the
-beginning of the article (for the main title). These can be produced
-using the following code:
-
-\begin{verbatim}
-\title{ This is an example of article title} }
-\author{
-   \large 1st Author \\[-3pt]
-   \normalsize 1st author's affiliation  \\[-3pt]
-    \normalsize 1st line of address \\[-3pt]
-    \normalsize 2nd line of address \\[-3pt]
-    \normalsize	1st author's email address \\[-3pt]
-  \and
-   \large 2nd Author \\[-3pt]
-   \normalsize 2nd author's affiliation  \\[-3pt]
-    \normalsize 1st line of address \\[-3pt]
-    \normalsize 2nd line of address \\[-3pt]
-    \normalsize	2nd author's email address \\[-3pt]
-\and
-   \large 3rd Author \\[-3pt]
-   \normalsize 3rd author's affiliation  \\[-3pt]
-    \normalsize 1st line of address \\[-3pt]
-    \normalsize 2nd line of address \\[-3pt]
-    \normalsize	3rd author's email address \\[-3pt]
-}
-\maketitle
-\end{verbatim}
-
-\subsection{Writing Julia code}
-
-A special environment is already defined for Julia code,
-built on top of \textit{listings} and \textit{jlcode}.
-
-\begin{verbatim}
+\subsection{May mutate}
+Consider the example of the sum of the elements of a vector.
+By default, Julia \texttt{sum} function will compute with a code equivalent to the following:
 \begin{lstlisting}[language = Julia]
-using Plots
-
-x = -3.0:0.01:3.0
-y = rand(length(x))
-plot(x, y)
+function sum(x::Vector)
+    acc = zero(eltype(x))
+    for el in x
+        acc = acc + el
+    end
+    return acc
+end
 \end{lstlisting}
-\end{verbatim}
+If the type of the elements of \texttt{x} is \texttt{BigInt}, it is more efficient to replace the line
+\lstinline|acc = acc + el| by the line
+\lstinline|Base.GMP.MPZ.add!(acc, el)|.
+Indeed, as the operation \lstinline|+| cannot modify its arguments,
+it will need to allocate a new instance of \texttt{BigInt} to contain the result.
+On the other hand, \lstinline|Base.GMP.MPZ.add!| modifies \lstinline|acc| in place to contain the result.
+
+Even if using \lstinline|Base.GMP.MPZ.add!| provides a significant performance improvement,
+the time complexity is identical.
+We now consider a mutable element type for which exploiting mutability affects the time complexity.
+Consider a type \texttt|SymolicVariable| representing a symbolic variable and the following types representing a linear combinations of these variables with coefficients of type \texttt|T|.
+This is examples encapsulates for instance JuMP affine expressions~\cite{dunning2017jump}, MOI affine functions~\cite{legat2021mathoptinterface}, polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2021multivariatepolynomials}) or symbolic sum~\cite{gowda2021high}.
 \begin{lstlisting}[language = Julia]
-using Plots
+struct Term{T}
+    coef::T
+    sym::SymbolicVariable
+end
+struct Sum{T}
+    terms::Vector{Term{T}}
+end
+Base.:+(s::Sum, t::Term) = Sum(push!(copy(s.terms), t))
+Base.zero(::Type{Term{T}}) where {T} = Sum(Term{T}[])
+\end{lstlisting}
+Calling \texttt{sum} on a vector of $n$ \texttt{Term{T}} has a time complexity $\Theta(n^2)$.
+Indeed, when calling \lstinline|acc + el| where \lstinline|acc| contains the sum of the first \lstinline|k| terms and \lstinline|el| is the $(k+1)$th term,
+the result cannot mutate \lstinline|acc.terms| and the copy of \lstinline|acc.terms| has time complexity $\Theta(k)$.
 
-x = -3.0:0.01:3.0
-y = rand(length(x))
-plot(x, y)
+A possible mutable interface would be to define an \lstinline|add!| function
+that is similar to \lstinline|+| with the only different that it
+is allowed to modify its first argument.
+By default, \lstinline|add!| would fall back to calling \lstinline|+|
+so that a method calling \lstinline|add!| would both exploit the mutability
+of mutable types but would also work for non-mutable types.
+For our example, an implementation could be:
+\begin{lstlisting}[language = Julia]
+function sum(x)
+    acc = zero(eltype(x))
+    for el in x
+        acc = MA.add!(acc, el)
+    end
+    return acc
+end
+MA.add!(a, b) = a + b # default fallback
+MA.add!(a::BigInt, b::BigInt) = Base.GMP.MPZ.add!(a, b)
+function MA.add!(s::Sum, t::Term)
+    push!(s.terms, t)
+    return s
+end
+\end{lstlisting}
+Note that the time complexity of the sum of $n$ \lstinline|Term| is now $\Theta(n)$.
+
+Julia implements a specialized method for computing the sum of \lstinline|BigInt|s that uses \lstinline|Base.GMP.MPZ.add!|.
+Similarly, before its version v0.21, JuMP used to implement a specialized method for the sum of JuMP expressions.
+The advantage of having a standardized API for mutable addition is that
+only one implementation of \lstinline|sum| is needed.
+This approach of API based on a function that may mutate its first argument in order to allow the same code to work both for mutable and non-mutable type is
+used by the \lstinline|!!| convention in BangBang~\cite{takafumi2021bangbang},
+the mutable API in AbstractAlgebra~\cite{AbstractAlgebra.jl-2017}
+as well as the \lstinline|destructive_add!| function in JuMP v0.20.
+
+\subsection{Should mutate}
+When writing a code that should mutate the first argument of an operation,
+such API that may silently return the result without modifying the first argument is not appropriate.
+For this reason, there are also mutable operations that always mutate the first argument.
+This is the approach used by the \lstinline|!| convention in Julia
+as well as the \lstinline|add_to_expression!| in JuMP.
+
+\subsection{Can mutate ?}
+A third useful feature for users of a mutable API is the ability to
+determine whether objects of a given type can be mutated\footnote{\label{foot:mutate}In this paper, the terminology ``mutate $x$ to $y$'' means mutating $x$ in such a way that its value after the mutation is equal to $y$} to the result of a mutable operation.
+To motivate this, consider the rational Julia type:
+\begin{lstlisting}[language = Julia]
+struct Rational{T}
+    num::T
+    den::T
+end
+\end{lstlisting}
+An implementation of a multiplication function (ignoring the simplification with \lstinline|gcd| for simplicity) that may
+mutate its first argument, say \lstinline|mul!!| to follow BangBang's convention,
+could be:
+\begin{lstlisting}[language = Julia]
+function mul!!(a::Rational{S}, b::Rational{T})
+    if # S can be mutated to `*(::S, ::T)`
+        mul!(a.num, b.num)
+        mul!(a.den, b.den)
+        return a
+    else
+        return a * b
+    end
+end
+\end{lstlisting}
+Note \lstinline|a.num = mul!!(a.num, b.num)| is not an option since
+the \lstinline|Rational| struct is not mutable.
+This third feature would be needed to implement this \lstinline|if| clause.
+
+\subsection{Promotion}
+Algorithms that can exploit mutability often start by creating an accumulator of
+an appropriate type.
+In the example above, \lstinline|sum| start by create the accumulator \lstinline|acc|.
+Another example is matrix multiplication which start by allocating the resulting matrix and then mutate\cref{foot:mutate} it to the result with \lstinline|LinearAlgebra.mul!|.
+To determine the element type of this resulting array,
+LinearAlgebra uses \lstinline|Base.promote_op| which relies on Julia inference.
+
+\section{API}
+
+The API defines the following four functions that provides the features motivated in the corresponding four subsections of the previous section.
+\begin{enumerate}
+  \item \lstinline|operate!!(op::Function, args...)| (resp. \lstinline|operate_to!!(output, op::Function, args...)|) returns the result of \lstinline|op(args...)| and may mutate \lstinline|args[1]| (resp. \lstinline|output|).
+  \item \lstinline|operate!(op::Function, args...)| (resp. \lstinline|operate_to!(output, op::Function, args...)|) mutate\cref{foot:mutate} \lstinline|args[1]| (resp. \lstinline|output|) to the result of \lstinline|op(args...)| and returns it.
+  \item \lstinline|mutability(T::Type, op::Function, args::Type...)| returns whether objects of type \lstinline|T| can be mutate to the result of \lstinline|op(::args[1], ::args[2], ...)|.
+  \item \lstinline|promote_operation(op::Function, args::Type...)| returns the return type of \lstinline|op(::args[1], ::args[2], ...)|.
+\end{enumerate}
+
+As we detailed in the previous section, this API covers many use cases.
+The downside of such a varied API is that it seems to be a lot of work to implement it for a mutable type.
+We show in the remainder of this section how the MA API remains simple to implement nevertheless.
+
+First, \lstinline|promote_operation| can have default fallback.
+For instance, \lstinline|promote_operation(+, ::Type{S}, ::Type{T})|
+defaults to \lstinline|typeof(zero(S) + zero(T))| which is correct if \lstinline|+(::S, ::T)| is type-stable.
+As the result of \lstinline|promote_operation| only depends on the signature of the function,
+
+There are two cases for which this default implementation of \lstinline|promote_operation| is not sufficient.
+As we will see below, \lstinline|promote_operation| is a the core of many operation so it is important that it is efficient.
+Julia may be able to compute the result of \lstinline|typeof(zero(S) + zero(T))| at compile time.
+However, if the body of \lstinline|promote_operation| is not evaluated at compile-time, this can cause performance issue.
+This is amplified for mutable types as \lstinline|zero(S) + zero(T)| may allocate.
+Moreover, if \lstinline|zero(S) + zero(T)| ends up calling \lstinline|promote_operation(+, S, T)|, this default implementation will cause not terminate.
+In both of these cases, \lstinline|promote_operation| should have a specialized implementation, e.g., by hardcoding the result for each pairs of concrete types \lstinline|S| and \lstinline|T|.
+Note that implementing \lstinline|promote_operation| should be easier than implementing the actual operation where the actual value of the result need to be computed, not just the type so this should not consitute a burden for the implementation.
+
+We have the following default implementations of \lstinline|operate!!| (resp. \lstinline|operate_to!!|) that should be correct in all cases and have optimal performance in case the trait \lstinline|mutability| is optimized out by the compiler.
+Indeed, as the functions \lstinline|op| and \lstinline|operate!(op, ...)| (resp. \lstinline|operate_to!(op, ...)|) are strictly more specific than \lstinline|operate!!| (resp. \lstinline|operate_to!!|),
+if the run-time cost of the trait \lstinline|mutability| is zero,
+if a specialized method is faster than this implementation,
+it means that either
+\lstinline|op| or \lstinline|operate!(op, ...)| (resp. \lstinline|operate_to!(op, ...)|)
+can be implemented more efficiently.
+\begin{lstlisting}[language = Julia]
+function operate!!(op, args...)
+    T = typeof.(args)
+    if mutability(T[1], op, T...) isa Mutable
+        return operate!(op, args...)
+    else
+        return op(args...)
+    end
+end
+function operate_to!!(output, op, args...)
+    O = typeof(output)
+    T = typeof.(args)
+    if mutability(O, op, T...) isa Mutable
+        return operate_to!(output, op, args...)
+    else
+        return op(args...)
+    end
+end
 \end{lstlisting}
 
-
-\subsection{Abstracts, Key words, term etc...}
-\label{subsub:abs_key_etc}
-
-At the beginning of your article, the title should be generated
-in the usual way using the \verb \maketitle  command. For genaral tem and keywords use
-\verb \terms ,
-\verb \keywords  commands respectively. The abstract should be enclosed
-within an abstract environment, All these environment
-can be produced using the following code:
-\begin{verbatim}
-\terms{Experimentation, Human Factors}
-
-\keywords{Face animation, image-based modelling...}
-
-\begin{abstract}
-In this paper, we propose a new method for the
-systematic determination of the model's base of
-time varying delay system. This method based on
-the construction of the classification data related
-to the considered system. The number, the orders,
-the time delay and the parameters of the local
-models are generated automatically without any
-knowledge about the full operating range of the
-process. The parametric identification of the local
-models is realized by a new recursive algorithm for
-on line identification of systems with unknown time
-delay. The proposed algorithm allows simultaneous
-estimation of time delay and parameters of
-discrete-time systems. The effectiveness of
-the new method has been illustrated through
-simulation.
-\end{abstract}
-
-\end{verbatim}
-
-\section{Some guidelines}
-\label{sec:some_guide}
-The following notes may help you achieve the best effects with the
-\verb juliacon  class file.
-
-\subsection{Sections}
-\label{subsub:sections}
-\LaTeXe{}  provides four levels of section headings and they are all
-defined in the \verb juliacon  class file:
-\begin{itemize}
-\item \verb \section   \item \verb \subsection  \item \verb \subsubsection  \item \verb \paragraph  \end{itemize}
-Section headings are automatically converted to allcaps style.
-\subsection{Lists}
-\label{sec:lists}
-%
-The \verb juliacon   class file provides unnumbered lists using the
-\verb unnumlist  environment for example,
-
-\begin{unnumlist}
-\item First unnumbered item which has no label and is indented from the
-left margin.
-\item Second unnumbered item.
-\item Third unnumbered item.
-\end{unnumlist}
-The unnumbered list which has no label and is indented from the
-left margin. was produced by:
-\begin{verbatim}
-\begin{unnumlist}
-\item First unnumbered item...
-\item Second unnumbered item...
-\item Third unnumbered item...
-\end{unnumlist}
-\end{verbatim}
-
-The \verb juliacon   class file also provides hyphen list using the
-\verb itemize  environment for example,
-\begin{itemize}
-\item First unnumbered bulleted item which has no label and is indented
-from the left margin.
-\item Second unnumbered bulleted item.
-\item Third unnumbered bulleted item which has no label and is indented
-from the left margin.
-\end{itemize}
-was produced by:
-\begin{verbatim}
-\begin{itemize}
-\item First item...
-\item Second item...
-\item Third item...
-\end{itemize}
-\end{verbatim}
-
-Numbered list is also provided in acmtog class file using the
-enumerate environment for example,
-\begin{enumerate}
-\item The attenuated and diluted stellar radiation.
-\item Scattered radiation, and
-\item Reradiation from other grains.
-\end{enumerate}
-
-was produced by:
-\begin{verbatim}
-\begin{enumerate}
-\item The attenuated...
-\item Scattered radiation, and...
-\item Reradiation from other grains...
-\end{enumerate}
-\end{verbatim}
-\subsection{Illustrations (or figures)}
-\label{subsub:sec_Illus}
-The \verb juliacon   class file will cope with most of the positioning of
-your illustrations and you should not normally use the optional positional
-qualifiers on the \verb figure   environment that would override
-these decisions.
-\vskip 6pt
-
-%
-\begin{figure}[t]
-\centerline{\includegraphics[width=4cm]{juliagraphs.png}}
-\caption{This is example of the image in a column.}
-	\label{fig:sample_figure}
-\end{figure}
-
-The figure \ref{fig:sample_figure} is taken from the JuliaGraphs
-organization \footnote{https://github.com/JuliaGraphs}.
-
-Figure captions should be \emph{below} the figure itself, therefore the
-\verb \caption  command should appear after the figure or space left for
-an illustration. For example, Figure 1 is produced using the following
-commands:
-
-\begin{verbatim}
-\begin{figure}
-\centerline{\includegraphics[width=20pc]{Graphics.eps}}
-\caption{An example of the testing process for a
-binary tree. The globa null hypothesis is tested
-first at level $\alpha$ (a), and the level of
-individual variables is reached last (d). Note
-that individual hypotheses can be tested at
-level $\alpha/4$ and not $\alpha/8$ as one might
-expect at first.}
-\label{sample-figure_2}
-\end{figure}
-\end{verbatim}
-Figures can be resized using first and second argument of
-\verb \includegraphics   command. First argument is used for modifying
-figure height and the second argument is used for modifying
-figure width respectively.
-\vskip 6pt
-Cross-referencing of figures, tables, and numbered, displayed
-equations using the \verb \label  and \verb \ref   commands is encouraged.
-For example, in referencing Figure 1 above, we used
-\verb Figure~\ref{sample-figure}   \subsection{Tables}
-\label{subsub:sec_Tab}
-The \verb juliacon   class file will cope with most of the positioning of
-your tables and you should not normally use the optional positional qualifiers on the table environment which would override these
-decisions. Table captions should be at the top.
-\begin{verbatim}
-\begin{table}
-\tbl{Tuning Set and Testing Set}{
-\begin{tabular}{|l|l|c|c|}\hline
-Label & \multicolumn{1}{c|}{Description}
-& Number of Users &
-Number of Queries\\\hline
-Train70 & Training Data &
-\smash{\raise-7pt\hbox{70}} & 104\\
-\cline{1-2}\cline{4-4}
-Test70 & Testing Data I & & 105\\\hline
-Test30 & Testing Data II & 30 & 119\\\hline
-& Total & 100 & 328\\\hline
-\end{tabular}}
-\end{table}\end{verbatim}
-
-\begin{table}
-\tbl{Tuning Set and Testing Set}{
-\begin{tabular}{|l|l|c|c|}\hline
-Label & \multicolumn{1}{c|}{Description}
-& Number of Users &
-Number of Queries\\\hline
-Test 1 & Training Data &
-\smash{\raise-7pt\hbox{70}} & 104\\
-\cline{1-2}\cline{4-4}
-Test 2 & Testing Data I & & 105\\\hline
-Test 3 & Testing Data II & 30 & 119\\\hline
-& Total & 100 & 328\\\hline
-\end{tabular}}
-\end{table}
-\subsection{Landscaping Pages}
-\label{subsub:landscaping_pages}
-If a table is too wide to fit the standard measure, it may be turned,
-with its caption, to 90 degrees. Landscape tables cannot be produced
-directly using the \verb juliacon   class file because \TeX{} itself cannot
-turn the page, and not all device drivers provide such a facility.
-The following procedure can be used to produce such pages.
-\vskip 6pt
-Use the package \verb rotating   in your document and change the coding
-from
-\begin{verbatim}
-\begin{table}...\end{table}
-to
-\begin{sidewaystable}...\end{sidewaystable}
-and for figures
-\begin{figure}...\end{figure}
-to
-\begin{sidewaysfigure}...\end{sidewaysfigure}
-\end{verbatim}
-
-environments in your document to turn your table on the appropriate
-page of your document. For instance, the following code prints
-a page with the running head, a message half way down and the
-table number towards the bottom.
-\begin{verbatim}
-\begin{sidewaystable}
-\tbl{Landscape table caption to go here.}{...}
-\label{landtab}
-\end{sidewaystable}
-\end{verbatim}
-
-\subsection{Double Column Figure and Tables}
-\label{subsub:double_fig_tab}
-For generating the output of figures and tables in double column
-we can use the following coding:
-
-\begin{enumerate}
-\item For Figures:
-\begin{verbatim}
-\begin{figure*}...\end{figure*}
-\end{verbatim}
-\item For landscape figures:
-\begin{verbatim}
-\begin{sidewaysfigure*}...\end{sidewaysfigure*}
-\end{verbatim}
-\item For Tables:
-\begin{verbatim}
-\begin{table*}...\end{table*}
-\end{verbatim}
-\item For landscape tables:
-\begin{verbatim}
-\begin{sidewaystable*}...\end{sidewaystable*}
-\end{verbatim}
-\end{enumerate}
-
-\subsection{Typesetting Mathematics}
-\label{subsub:type_math}
-The \verb juliacon class file will set displayed mathematics with center to
-the column width, provided that you use the \LaTeXe{} standard of
-open and closed square brackets as delimiters.
-The equation
-\[
-\sum_{i=1}^p \lambda_i = (S)
-\]
-
-was typeset using the acmtog class file with the commands
-
-\begin{verbatim}
-\[
-\sum_{i=1}^p \lambda_i = (S)
-\]
-\end{verbatim}
-
-For display equations, cross-referencing is encouraged. For example,
-\begin{verbatim}
-\begin{equation}
-(n-1)^{-1} \sum^n_{i=1} (X_i - \overline{X})^2.
-\label{eq:samplevar}
-\end{equation}
-Equation~(\ref{eq:samplevar}) gives the formula for
-sample variance.
-\end{verbatim}
-The following output is generated with the above coding:
-\begin{equation}
-(n-1)^{-1} \sum^n_{i=1} (X_i - \overline{X})^2.
-\label{eq:samplevar}
-\end{equation}
-Equation~(\ref{eq:samplevar}) gives the formula for
-sample variance.
-
-
-\subsection{Enunciations}
-\label{subsub:enunciation}
-The \verb juliacon   class file generates the enunciations with the help of
-the following commands:
-\begin{verbatim}
-\begin{theorem}...\end{theorem}
-\begin{strategy}...\end{strategy}
-\begin{property}...\end{property}
-\begin{proposition}...\end{proposition}
-\begin{lemma}...\end{lemma}
-\begin{example}...\end{example}
-\begin{proof}...\end{proof}
-\begin{definition}...\end{definition}
-\begin{algorithm}...\end{algorithm}
-\begin{remark}...\end{remark}
-\end{verbatim}
-The above-mentioned coding can also include optional arguments
-such as
-\begin{verbatim}
-\begin{theorem}[...]. Example for theorem:
-\begin{theorem}[Generalized Poincare Conjecture]
-Four score and seven ... created equal.
-\end{theorem}
-\end{verbatim}
-
-\begin{theorem}[Generalized Poincare Conjecture]
-Four score and seven years ago our fathers brought forth,
-upon this continent, a new nation, conceived in Liberty,
- and dedicated to the proposition that all men are
-created equal.
-\end{theorem}
-
-
-\subsection{Extract}
-\label{subsub:extract}
-Extract environment should be coded within
-\begin{verbatim}
-\begin{extract}..\end{extract}
-\end{verbatim}
-
-\subsection{Balancing column at last page}
-\label{subsub:Balance}
-For balancing the both column length at last page use :
-\begin{verbatim}
-\vadjust{\vfill\pagebreak}
-\end{verbatim}
-
-%\vadjust{\vfill\pagebreak}
-
-at appropriate place in your \TeX{} file or in bibliography file.
-
-\section{Handling references}
-\label{subsub:references}
-References are most easily (and correctly) generated using the
-BIBTEX, which is easily invoked via
-\begin{verbatim}
-\bibliographystyle{juliacon}
-\bibliography{ref}
-\end{verbatim}
-When submitting the document source (.tex) file to external
-parties, the ref.bib file should be sent with it.
-\cite{bezanson2017julia}
+It turns out that all type considered at the moment fall into two categories.
+The first category are the types \lstinline|T| for which
+\lstinline|mutability(T, ...)| always return \lstinline|NotMutable()|.
+These are typically the non-mutable type, e.g., \lstinline|Int|, \lstinline|Float64|, \lstinline|Rational{Int}|, ...
+In the second category are the types \lstinline|T| for which
+\lstinline|mutability(T, op, args...)| returns \lstinline|Mutable()|
+if and only if \lstinline|T == promote_operation(op, args...)|.
+Based on this observation, we define \lstinline|mutability(T::Type)| which
+returns \lstinline|Mutable()| if \lstinline|T| is in the first category
+and \lstinline|NotMutable()| if \lstinline|T| is in the second category.
+Then we have the following fallback for \lstinline|mutability|:
+\begin{lstlisting}[language = Julia]
+function mutability(T::Type, op::Function, args::Type...)
+    if mutability(T) isa Mutable &&
+        T == promote_operation(op, args...)
+        return Mutable()
+    else
+        return NotMutable()
+    end
+end
+\end{lstlisting}
 
 \input{bib.tex}
 
 \end{document}
-
-% Inspired by the International Journal of Computer Applications template
