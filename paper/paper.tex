@@ -27,7 +27,7 @@ The implementations of these arithmetic operations in Julia do not modify their 
 However, in many situations, a variable represents an accumulator that can be modified to contain the result, e.g.,
 when summing the elements of an array or when implementing array multiplication.
 Moreover, for types that support mutation, mutating the value may have a significant performance benefit over creating a new instance.
-Examples of types that implement arithmetic operations and support mutation are \texttt{Array}s, multiple precision numbers, JuMP~\cite{dunning2017jump} expressions, MathOptInterface (MOI)~\cite{legat2021mathoptinterface} functions, and polynomials (multivariate~\cite{legat2021multivariatepolynomials} or univariate).
+Examples of types that implement arithmetic operations and support mutation are \texttt{Array}s, multiple precision numbers, JuMP~\cite{dunning2017jump} expressions, MathOptInterface (MOI)~\cite{legat2021mathoptinterface} functions, and polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2021multivariatepolynomials}).
 
 This paper introduces an interface called MutableArithmetics (MA).
 It allows mutable types to implement an arithmetic exploiting their mutability, and for algorithms to
@@ -39,14 +39,14 @@ Moreover, it provides the following additional features:
     it re-implements part of the Julia standard library on top of the API to allow mutable types to use a more efficient version than the default one.
   \item
     \label{item:rewrite}
-    it defines a \texttt{@rewrite} macro that rewrites an expression using the standard operations (e.g \texttt{+}, \texttt{*}, ...) into an expression that exploits the mutability of the intermediate values created when evalutating the expression.
+    it defines a \texttt{@rewrite} macro that rewrites an expression using the standard operations (e.g \texttt{+}, \texttt{*}, ...) into an expression that exploits the mutability of the intermediate values created when evaluating the expression.
 \end{enumerate}
 
 JuMP~\cite{dunning2017jump} used to have its own API for mutable operations on JuMP expressions and
 its own JuMP-specific implementation of \ref{item:reimplement} and \ref{item:rewrite}.
 These two features are one of the key reasons why JuMP is competitive in performance with commercial algebraic modeling languages~\cite[Section~3--4]{dunning2017jump}.
 These features were refactored into MA, generalizing them to arbitrary mutable types.
-Starting from JuMP v0.21, JuMP expression and MOI functions implement the MutableArithmetics API, and
+Starting from JuMP v0.21, JuMP expressions and MOI functions implement the MutableArithmetics API, and
 the JuMP-specific implementations of \ref{item:reimplement} and \ref{item:rewrite} were replaced by the generic versions implemented in MA on top of the MA API.
 
 \section{Design consideration}
