@@ -210,7 +210,7 @@ the additive identity element.
 \begin{enumerate}
   \item \lstinline|operate!!(op::Function, args...)| (resp. \lstinline|operate_to!!(output, op::Function, args...)|) returns the result of \lstinline|op(args...)| and may mutate \lstinline|args[1]| (resp. \lstinline|output|).
   \item \lstinline|operate!(op::Function, args...)| (resp. \lstinline|operate_to!(output, op::Function, args...)|) mutate\cref{foot:mutate} \lstinline|args[1]| (resp. \lstinline|output|) to the result of \lstinline|op(args...)| and returns it.
-  \item \lstinline|mutability(T::Type, op::Function, args::Type...)| returns whether objects of type \lstinline|T| can be mutate to the result of \lstinline|op(::args[1], ::args[2], ...)|.
+  \item \lstinline|mutability(T::Type, op::Function, args::Type...)| is a trait returning \lstinline|IsMutable()| if objects of type \lstinline|T| can be mutated\cref{foot:mutate} to the result of \lstinline|op(::args[1], ::args[2], ...)| and \lstinline|IsNotMutable()| otherwise.
   \item \lstinline|promote_operation(op::Function, args::Type...)| returns the return type of \lstinline|op(::args[1], ::args[2], ...)|.
 \end{enumerate}
 
