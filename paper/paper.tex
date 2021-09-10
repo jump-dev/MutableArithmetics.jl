@@ -54,6 +54,7 @@ This section provides concrete examples that motivated the design of MA.
 The section is organized into four subsections that describe the need of four key features of MA's API.
 
 \subsection{May mutate}
+\label{sec:may_mutate}
 Consider the task of summing the elements of a vector.
 By default, Julia \texttt{sum} function will compute with a code equivalent to the following:
 \begin{lstlisting}[language = Julia]
@@ -73,9 +74,9 @@ it will need to allocate a new instance of \texttt{BigInt} to contain the result
 On the other hand, \lstinline|Base.GMP.MPZ.add!| modifies \lstinline|acc| in place to contain the result.
 
 Even if using \lstinline|Base.GMP.MPZ.add!| provides a significant performance improvement,
-the time complexity is identical.
+the time complexity order is identical: $\Theta(nm)$ in both cases where $n$ is the number of elements and $m$ is the number of bits of an element.
 We now consider a mutable element type for which exploiting mutability affects the time complexity.
-Consider a type \texttt|SymolicVariable| representing a symbolic variable and the following types representing a linear combinations of these variables with coefficients of type \texttt|T|.
+Consider a type \texttt|SymbolicVariable| representing a symbolic variable and the following types representing a linear combinations of these variables with coefficients of type \texttt|T|.
 This is examples encapsulates for instance JuMP affine expressions~\cite{dunning2017jump}, MOI affine functions~\cite{legat2021mathoptinterface}, polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2021multivariatepolynomials}) or symbolic sum~\cite{gowda2021high}.
 \begin{lstlisting}[language = Julia]
 struct Term{T}
@@ -128,13 +129,7 @@ as well as the \lstinline|destructive_add!| function in JuMP v0.20.
 \subsection{Should mutate}
 When writing a code that should mutate the first argument of an operation,
 an API that silently returns the result without modifying the first argument is not appropriate.
-For this reason, there are also mutable operations that always mutate the first argument.
-This is the approach used by the \lstinline|!| convention in Julia
-as well as the \lstinline|add_to_expression!| in JuMP.
 
-\subsection{Can mutate?}
-A third useful feature for users of a mutable API is the ability to
-determine whether objects of a given type can be mutated\footnote{\label{foot:mutate}In this paper, the terminology ``mutate $x$ to $y$'' means mutating $x$ in such a way that its value after the mutation is equal to $y$} to the result of a mutable operation.
 To motivate this, consider the rational Julia type:
 \begin{lstlisting}[language = Julia]
 struct Rational{T}
@@ -142,9 +137,26 @@ struct Rational{T}
     den::T
 end
 \end{lstlisting}
-An implementation of a multiplication function (ignoring the simplification with \lstinline|gcd| for simplicity) that may
-mutate its first argument, say \lstinline|mul!!| to follow BangBang's convention,
-could be:
+Suppose we want to mutate\cref{foot:mutate} some rational \lstinline|a::Rational| to the
+product of \lstinline|a::Rational| and some other rational \lstinline|b::Rational|
+(ignoring the simplification with \lstinline|gcd| for simplicity).
+
+Using \lstinline|a.num = mul!!(a.num, b.num)| and
+\lstinline|a.den = mul!!(a.den, b.den)|
+(where \lstinline|mul!!| follows BangBang's convention)
+is not an option since
+the \lstinline|Rational| struct is not mutable.
+
+For this reason, there are also mutable operations that should mutate the first argument.
+This is the approach used by the \lstinline|!| convention in Julia
+as well as the \lstinline|add_to_expression!| in JuMP.
+
+\subsection{Can mutate?}
+A third useful feature for users of a mutable API is the ability to
+determine whether objects of a given type can be mutated\footnote{\label{foot:mutate}In this paper, the terminology ``mutate $x$ to $y$'' means mutating $x$ in such a way that its value after the mutation is equal to $y$} to the result of a mutable operation.
+To motivate this, consider again the multiplication of rational number introduces in the previous section.
+An implementation \lstinline|mul!!| (where \lstinline|mul!!| may mutate its first argument and \lstinline|mul!| should mutate its first argument)
+for rational numbers could be:
 \begin{lstlisting}[language = Julia]
 function mul!!(a::Rational{S}, b::Rational{T})
     if # S can be mutated to `*(::S, ::T)`
@@ -156,17 +168,38 @@ function mul!!(a::Rational{S}, b::Rational{T})
     end
 end
 \end{lstlisting}
-Note \lstinline|a.num = mul!!(a.num, b.num)| is not an option since
-the \lstinline|Rational| struct is not mutable.
 This third feature would be needed to implement this \lstinline|if| clause.
 
 \subsection{Promotion}
 Algorithms that can exploit mutability often start by creating an accumulator of
 an appropriate type.
-In the example above, \lstinline|sum| start by create the accumulator \lstinline|acc|.
-Another example is matrix multiplication which start by allocating the resulting matrix and then mutate\cref{foot:mutate} it to the result with \lstinline|LinearAlgebra.mul!|.
-To determine the element type of this resulting array,
-LinearAlgebra uses \lstinline|Base.promote_op| which relies on Julia inference.
+%Consider again the example introduced in \cref{sec:may_mutate}.
+%In that example we defined \lstinline|Base.zero(::Type{Term{T}})|
+%to return a \lstinline|Sum{T}|.
+%Base.zero(::Type{Term{T}}) where {T} = Sum(Term{T}[])
+%Suppose we want to sum a vector of \lstinline|SymbolicVariable|.
+%For the generic sum implementation to work,
+%\lstinline|zero(::Type{SymbolicVariable})| may return \lstinline|zero(Sum{Int})|.
+
+Consider the following matrix-vector multiplication implementation with \lstinline|SymbolicVariable|
+where \lstinline|mul_to!| mutates\cref{foot:mutate} \lstinline|c| to \lstinline|A * b|.
+\begin{lstlisting}[language = Julia]
+function Base.:*(A::Matrix{S}, b::Vector{T})
+    c = Vector{U}(undef, size(A, 1)) # What is T ?
+    return mul_to!(c, A, b)
+end
+\end{lstlisting}
+What should be the element type \lstinline|U| of the accumulator \lstinline|c| ?
+For instance, if \lstinline|S| is \lstinline|Float64|
+and \lstinline|T| is \lstinline|SymbolicVariable|
+then \lstinline|U| should be \lstinline|Sum{Float64}|.
+LinearAlgebra uses \lstinline|Base.promote_op| for this which relies on Julia inference
+to determine the type of a sum of products of elements of type \lstinline|S| and \lstinline|T|.
+
+In the summing example introduced in \cref{sec:may_mutate},
+the type of the accumulator should also be determined as the type of the sum of elements of the vector.
+For the \lstinline|sum| function, Julia uses \lstinline|zero| as it is defined as
+the additive identity element.
 
 \section{API}
 
