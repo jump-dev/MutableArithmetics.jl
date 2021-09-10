@@ -12,48 +12,49 @@
 
 \begin{abstract}
 
-The definition of the arithmetic operations defined in Julia assume that the arguments are not modified.
-However, in many situations, a variable represents an accumulator that can be modified to contain the result, e.g., when summing the elements of an array.
-Moreover, many types can be mutated and mutating the element may have significant performance benefit.
-This talk presents an interface that allows algorithms to exploit a possible mutability while still being completely generic.
+Arithmetic operations defined in Julia do not modify their arguments.
+However, in many situations, a variable represents an accumulator that can be modified in-place to contain the result, e.g., when summing the elements of an array.
+Moreover, for types that support mutation, mutating the value may have a significant performance benefit over creating a new instance.
+This talk presents an interface that allows algorithms to exploit mutability in arithmetic operations in a generic manner.
 
 \end{abstract}
 
 \section{Introduction}
 
-Julia allows to write generic algorithms that work with arbitrary number types as long as they implement the needed operations
+Julia enables generic algorithms that work with arbitrary number types, as long as the types implement the needed operations
 such as \texttt{+}, \texttt{*}, \texttt{-}, \texttt{zero}, \texttt{one}, ...
-The definition of the arithmetic operations defined in Julia assumes that the arguments are not modified.
+The implementations of these arithmetic operations in Julia do not modify their arguments. Instead, they return a new instance of the type as the result.
 However, in many situations, a variable represents an accumulator that can be modified to contain the result, e.g.,
-when reducing an array (e.g. by summing its element) or when implementing array multiplication.
-Moreover, many types can be mutated, e.g., multiple precision numbers, JuMP~\cite{dunning2017jump} expressions, MathOptInterface (MOI)~\cite{legat2021mathoptinterface} functions, polynomials (multivariate~\cite{legat2021multivariatepolynomials} or univariate), arrays, ... and mutating the element may have significant performance benefit as we will argue in this paper.
+when summing the elements of an array or when implementing array multiplication.
+Moreover, for types that support mutation, mutating the value may have a significant performance benefit over creating a new instance.
+Examples of types that implement arithmetic operations and support mutation are \texttt{Array}s, multiple precision numbers, JuMP~\cite{dunning2017jump} expressions, MathOptInterface (MOI)~\cite{legat2021mathoptinterface} functions, and polynomials (multivariate~\cite{legat2021multivariatepolynomials} or univariate).
 
-This paper introduce an interface called MutableArithmetics (MA).
-It allows for mutable types to implement an arithmetics exploiting their mutability and for algorithms to
+This paper introduces an interface called MutableArithmetics (MA).
+It allows mutable types to implement an arithmetic exploiting their mutability, and for algorithms to
 exploit their mutability while remaining completely generic.
 Moreover, it provides the following additional features:
 \begin{enumerate}
   \item
     \label{item:reimplement}
-    it re-implements part of the Julia standard library on top of the API to allow mutable type to use a more efficient version than the default one.
+    it re-implements part of the Julia standard library on top of the API to allow mutable types to use a more efficient version than the default one.
   \item
     \label{item:rewrite}
-    it defines a \texttt{@rewrite} macro that rewrites an expression using the standard operations (e.g \texttt{+}, \texttt{*}, ...) into a code that exploits the mutability of the intermediate values created when evalutation the expression.
+    it defines a \texttt{@rewrite} macro that rewrites an expression using the standard operations (e.g \texttt{+}, \texttt{*}, ...) into an expression that exploits the mutability of the intermediate values created when evalutating the expression.
 \end{enumerate}
 
 JuMP~\cite{dunning2017jump} used to have its own API for mutable operations on JuMP expressions and
 its own JuMP-specific implementation of \ref{item:reimplement} and \ref{item:rewrite}.
-These performance improvements are one of the key features of JuMP that allows it to have a performance that is competitive to commercial algebraic modeling languages that are not embedding in another language for linear programs~\cite[Section~3--4]{dunning2017jump}.
+These two features are one of the key reasons why JuMP is competitive in performance with commercial algebraic modeling languages~\cite[Section~3--4]{dunning2017jump}.
 These features were refactored into MA, generalizing them to arbitrary mutable types.
-Starting from JuMP v0.21, JuMP expression and MOI functions implement the MutableArithmetics API and
+Starting from JuMP v0.21, JuMP expression and MOI functions implement the MutableArithmetics API, and
 the JuMP-specific implementations of \ref{item:reimplement} and \ref{item:rewrite} were replaced by the generic versions implemented in MA on top of the MA API.
 
 \section{Design consideration}
-This section provide concrete examples that motivates the design of MA.
-We organize the section in four subsection that describes the need of four key features of MA's API.
+This section provides concrete examples that motivated the design of MA.
+The section is organized into four subsections that describe the need of four key features of MA's API.
 
 \subsection{May mutate}
-Consider the example of the sum of the elements of a vector.
+Consider the task of summing the elements of a vector.
 By default, Julia \texttt{sum} function will compute with a code equivalent to the following:
 \begin{lstlisting}[language = Julia]
 function sum(x::Vector)
@@ -92,7 +93,7 @@ Indeed, when calling \lstinline|acc + el| where \lstinline|acc| contains the sum
 the result cannot mutate \lstinline|acc.terms| and the copy of \lstinline|acc.terms| has time complexity $\Theta(k)$.
 
 A possible mutable interface would be to define an \lstinline|add!| function
-that is similar to \lstinline|+| with the only different that it
+that is similar to \lstinline|+| with the only difference being that it
 is allowed to modify its first argument.
 By default, \lstinline|add!| would fall back to calling \lstinline|+|
 so that a method calling \lstinline|add!| would both exploit the mutability
@@ -119,19 +120,19 @@ Julia implements a specialized method for computing the sum of \lstinline|BigInt
 Similarly, before its version v0.21, JuMP used to implement a specialized method for the sum of JuMP expressions.
 The advantage of having a standardized API for mutable addition is that
 only one implementation of \lstinline|sum| is needed.
-This approach of API based on a function that may mutate its first argument in order to allow the same code to work both for mutable and non-mutable type is
+This approach of an API based on a function that may mutate its first argument in order to allow the same code to work both for mutable and non-mutable type is
 used by the \lstinline|!!| convention in BangBang~\cite{takafumi2021bangbang},
-the mutable API in AbstractAlgebra~\cite{AbstractAlgebra.jl-2017}
+the mutable API in AbstractAlgebra~\cite{AbstractAlgebra.jl-2017},
 as well as the \lstinline|destructive_add!| function in JuMP v0.20.
 
 \subsection{Should mutate}
 When writing a code that should mutate the first argument of an operation,
-such API that may silently return the result without modifying the first argument is not appropriate.
+an API that silently returns the result without modifying the first argument is not appropriate.
 For this reason, there are also mutable operations that always mutate the first argument.
 This is the approach used by the \lstinline|!| convention in Julia
 as well as the \lstinline|add_to_expression!| in JuMP.
 
-\subsection{Can mutate ?}
+\subsection{Can mutate?}
 A third useful feature for users of a mutable API is the ability to
 determine whether objects of a given type can be mutated\footnote{\label{foot:mutate}In this paper, the terminology ``mutate $x$ to $y$'' means mutating $x$ in such a way that its value after the mutation is equal to $y$} to the result of a mutable operation.
 To motivate this, consider the rational Julia type:
@@ -169,7 +170,7 @@ LinearAlgebra uses \lstinline|Base.promote_op| which relies on Julia inference.
 
 \section{API}
 
-The API defines the following four functions that provides the features motivated in the corresponding four subsections of the previous section.
+MutableArithmetics.jl defines the following four functions that provides the features motivated in the corresponding four subsections of the previous section.
 \begin{enumerate}
   \item \lstinline|operate!!(op::Function, args...)| (resp. \lstinline|operate_to!!(output, op::Function, args...)|) returns the result of \lstinline|op(args...)| and may mutate \lstinline|args[1]| (resp. \lstinline|output|).
   \item \lstinline|operate!(op::Function, args...)| (resp. \lstinline|operate_to!(output, op::Function, args...)|) mutate\cref{foot:mutate} \lstinline|args[1]| (resp. \lstinline|output|) to the result of \lstinline|op(args...)| and returns it.
@@ -191,7 +192,7 @@ As we will see below, \lstinline|promote_operation| is a the core of many operat
 Julia may be able to compute the result of \lstinline|typeof(zero(S) + zero(T))| at compile time.
 However, if the body of \lstinline|promote_operation| is not evaluated at compile-time, this can cause performance issue.
 This is amplified for mutable types as \lstinline|zero(S) + zero(T)| may allocate.
-Moreover, if \lstinline|zero(S) + zero(T)| ends up calling \lstinline|promote_operation(+, S, T)|, this default implementation will cause not terminate.
+Moreover, if \lstinline|zero(S) + zero(T)| ends up calling \lstinline|promote_operation(+, S, T)|, this default implementation will not terminate.
 In both of these cases, \lstinline|promote_operation| should have a specialized implementation, e.g., by hardcoding the result for each pairs of concrete types \lstinline|S| and \lstinline|T|.
 Note that implementing \lstinline|promote_operation| should be easier than implementing the actual operation where the actual value of the result need to be computed, not just the type so this should not consitute a burden for the implementation.
 
