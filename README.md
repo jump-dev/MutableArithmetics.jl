@@ -121,38 +121,65 @@ display(trial)
 
 # output
 
-BenchmarkTools.Trial:
-  memory estimate:  3.67 MiB
-  allocs estimate:  238775
-  --------------
-  minimum time:     6.116 ms (0.00% GC)
-  median time:      6.263 ms (0.00% GC)
-  mean time:        11.711 ms (27.72% GC)
-  maximum time:     122.627 ms (70.45% GC)
-  --------------
-  samples:          429
-  evals/sample:     1
+BenchmarkTools.Trial: 407 samples with 1 evaluation.
+ Range (min … max):   5.268 ms … 161.929 ms  ┊ GC (min … max):  0.00% … 73.90%
+ Time  (median):      5.900 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   12.286 ms ±  21.539 ms  ┊ GC (mean ± σ):  29.47% ± 14.50%
+
+  █▃                                                            
+  ██▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅█▆▇▅▅ ▆
+  5.27 ms       Histogram: log(frequency) by time      80.6 ms <
+
+ Memory estimate: 3.66 MiB, allocs estimate: 197732.
 ```
 
-In `MA.mutable_operate_to(::Vector, ::typeof(*), ::Matrix, ::Vector)`, we
+In `MA.mutable_operate!(::typeof(MA.add_mul), ::Vector, ::Matrix, ::Vector)`, we
 exploit the mutability of `BigInt` through the MutableArithmetics API.
 This provides a significant speedup and a drastic reduction of memory usage:
 ```julia
-trial2 = @benchmark MA.mul_to!($c2, $A2, $b2)
+trial2 = @benchmark MA.add_mul!($c2, $A2, $b2)
 display(trial2)
 
-BenchmarkTools.Trial:
-  memory estimate:  48 bytes
-  allocs estimate:  3
-  --------------
-  minimum time:     917.819 μs (0.00% GC)
-  median time:      999.239 μs (0.00% GC)
-  mean time:        1.042 ms (0.00% GC)
-  maximum time:     2.319 ms (0.00% GC)
-  --------------
-  samples:          4791
-  evals/sample:     1
+# output
+
+BenchmarkTools.Trial: 4878 samples with 1 evaluation.
+ Range (min … max):  908.860 μs …   1.758 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):       1.001 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):     1.021 ms ± 102.381 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+  █▅                                                             
+  ██▂▂▂▇▅▇▇▅▅▅▇▅▆▄▄▅▄▄▃▄▄▃▃▂▃▃▂▃▂▂▂▂▂▂▂▂▂▂▂▁▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
+  909 μs           Histogram: frequency by time         1.36 ms <
+
+ Memory estimate: 48 bytes, allocs estimate: 3.
 ```
+
+There is still 48 bytes that are allocated, where does this come from ?
+`MA.mutable_operate!(::typeof(MA.add_mul), ::BigInt, ::BigInt, ::BigInt)`
+allocates a temporary `BigInt` to hold the result of the multiplication.
+This buffer is allocated only once for the whole matrix-vector multiplication
+through the system of buffers of MutableArithmetics.
+If may Matrix-Vector products need to be computed, the buffer can even be allocated
+outside of the matrix-vector product as follows:
+```julia
+buffer = MA.buffer_for(MA.add_mul, typeof(c2), typeof(A2), typeof(b2))
+trial3 = @benchmark MA.buffered_operate!($buffer, MA.add_mul, $c2, $A2, $b2)
+display(trial3)
+
+# output
+
+BenchmarkTools.Trial: 4910 samples with 1 evaluation.
+ Range (min … max):  908.414 μs …   1.774 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     990.964 μs               ┊ GC (median):    0.00%
+ Time  (mean ± σ):     1.014 ms ± 103.364 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+  █▂                                                             
+  ██▃▂▂▄▄▅▆▃▄▄▅▄▄▃▃▄▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
+  908 μs           Histogram: frequency by time         1.35 ms <
+
+ Memory estimate: 0 bytes, allocs estimate: 0.
+```
+Note that there are now 0 allocations.
 
 > This package started out as a GSoC '19 project.
 
