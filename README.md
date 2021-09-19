@@ -2,8 +2,11 @@
 
 [![Stable][docs-stable-img]][docs-stable-url]
 [![Dev][docs-latest-img]][docs-latest-url]
-[![Build Status](https://github.com/jump-dev/MutableArithmetics.jl/workflows/CI/badge.svg?branch=master)](https://github.com/jump-dev/MutableArithmetics.jl/actions?query=workflow%3ACI)
-[![Codecov](https://codecov.io/gh/jump-dev/MutableArithmetics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jump-dev/MutableArithmetics.jl)
+[![Build Status][build-img]][build-url]
+[![Codecov][codecov-img]][codecov-url]
+[![deps][deps-img]][deps-url]
+[![version][version-img]][version-url]
+[![pkgeval][pkgeval-img]][pkgeval-url]
 
 **MutableArithmetics** (MA for short) is a [Julia](http://julialang.org) package which allows:
 *   for mutable types to implement mutable arithmetics;
@@ -126,7 +129,7 @@ BenchmarkTools.Trial: 407 samples with 1 evaluation.
  Time  (median):      5.900 ms               ┊ GC (median):     0.00%
  Time  (mean ± σ):   12.286 ms ±  21.539 ms  ┊ GC (mean ± σ):  29.47% ± 14.50%
 
-  █▃                                                            
+  █▃
   ██▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅█▆▇▅▅ ▆
   5.27 ms       Histogram: log(frequency) by time      80.6 ms <
 
@@ -147,7 +150,7 @@ BenchmarkTools.Trial: 4878 samples with 1 evaluation.
  Time  (median):       1.001 ms               ┊ GC (median):    0.00%
  Time  (mean ± σ):     1.021 ms ± 102.381 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-  █▅                                                             
+  █▅
   ██▂▂▂▇▅▇▇▅▅▅▇▅▆▄▄▅▄▄▃▄▄▃▃▂▃▃▂▃▂▂▂▂▂▂▂▂▂▂▂▁▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
   909 μs           Histogram: frequency by time         1.36 ms <
 
@@ -173,7 +176,7 @@ BenchmarkTools.Trial: 4910 samples with 1 evaluation.
  Time  (median):     990.964 μs               ┊ GC (median):    0.00%
  Time  (mean ± σ):     1.014 ms ± 103.364 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-  █▂                                                             
+  █▂
   ██▃▂▂▄▄▅▆▃▄▄▅▄▄▃▃▄▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
   908 μs           Histogram: frequency by time         1.35 ms <
 
@@ -187,3 +190,15 @@ Note that there are now 0 allocations.
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-stable-url]: https://jump.dev/MutableArithmetics.jl/stable
 [docs-latest-url]: https://jump.dev/MutableArithmetics.jl/latest
+
+[build-img]: https://github.com/jump-dev/MutableArithmetics.jl/workflows/CI/badge.svg?branch=master
+[build-url]: https://github.com/jump-dev/MutableArithmetics.jl/actions?query=workflow%3ACI
+[codecov-img]: https://codecov.io/gh/jump-dev/MutableArithmetics.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/jump-dev/MutableArithmetics.jl
+
+[deps-img]: https://juliahub.com/docs/MutableArithmetics/deps.svg
+[deps-url]: https://juliahub.com/ui/Packages/MutableArithmetics/EoEec?t=2
+[version-img]: https://juliahub.com/docs/MutableArithmetics/version.svg
+[version-url]: https://juliahub.com/ui/Packages/MutableArithmetics/EoEec
+[pkgeval-img]: https://juliahub.com/docs/MutableArithmetics/pkgeval.svg
+[pkgeval-url]: https://juliahub.com/ui/Packages/MutableArithmetics/EoEec
