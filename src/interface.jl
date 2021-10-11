@@ -277,7 +277,7 @@ end
 Modify the value of `args[1]` to be equal to the value of `op(args...)`. Can
 only be called if `mutability(args[1], op, args...)` returns `true`.
 """
-function mutable_operate!(op::Function, args::Vararg{Any,N}) where {N}
+function mutable_operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     mutable_operate_fallback(mutability(args[1], op, args...), op, args...)
 end
 
