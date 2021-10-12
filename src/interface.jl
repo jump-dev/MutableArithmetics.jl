@@ -16,10 +16,10 @@ function promote_operation_fallback(::typeof(/), ::Type{S}, ::Type{T}) where {S,
 end
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
-function promote_operation_fallback(op::Function, ::Type{S}, ::Type{T}) where {S,T}
+function promote_operation_fallback(op::F, ::Type{S}, ::Type{T}) where {F<:Function,S,T}
     return typeof(op(zero(S), zero(T)))
 end
-function promote_operation_fallback(op::Function, args::Vararg{Type,N}) where {N}
+function promote_operation_fallback(op::F, args::Vararg{Type,N}) where {F<:Function,N}
     return typeof(op(zero.(args)...))
 end
 promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
@@ -54,7 +54,7 @@ end
 Returns the type returned to the call `operate(op, args...)` where the types of
 the arguments `args` are `ArgsTypes`.
 """
-function promote_operation(op::Function, args::Vararg{Type,N}) where {N}
+function promote_operation(op::F, args::Vararg{Type,N}) where {F<:Function,N}
     return promote_operation_fallback(op, args...)
 end
 
@@ -248,7 +248,7 @@ terms of `p` and `q` hence it will never terminate. On the other hand
 `mutable_operate!(+, p, q)` uses a different algorithm that efficiently inserts
 the terms of `q` in the sorted list of terms of `p` with minimal displacement.
 """
-function mutable_operate_to!(output, op::Function, args::Vararg{Any,N}) where {N}
+function mutable_operate_to!(output, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     mutable_operate_to_fallback(mutability(output, op, args...), output, op, args...)
 end
 
@@ -281,7 +281,7 @@ function mutable_operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     mutable_operate_fallback(mutability(args[1], op, args...), op, args...)
 end
 
-buffer_for(::Function, args::Vararg{Type,N}) where {N} = nothing
+buffer_for(::F, args::Vararg{Type,N}) where {F<:Function,N} = nothing
 
 function mutable_buffered_operate_to_fallback(::NotMutable, buffer, output, op::Function, args...)
     throw(
@@ -303,9 +303,9 @@ end
 function mutable_buffered_operate_to_fallback(
     buffer,
     output,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return mutable_buffered_operate_to_fallback(
         mutability(output, op, args...),
         buffer,
@@ -318,9 +318,9 @@ end
 function mutable_buffered_operate_to_fallback(
     ::Nothing,
     output,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return mutable_operate_to!(output, op, args...)
 end
 
@@ -334,9 +334,9 @@ possibly modifying `buffer`. Can only be called if
 function mutable_buffered_operate_to!(
     buffer,
     output,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return mutable_buffered_operate_to_fallback(buffer, output, op, args...)
 end
 
@@ -358,9 +358,9 @@ end
 
 function mutable_buffered_operate_fallback(
     buffer,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return mutable_buffered_operate_fallback(
         mutability(args[1], op, args...),
         buffer,
@@ -371,9 +371,9 @@ end
 
 function mutable_buffered_operate_fallback(
     ::Nothing,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return mutable_operate!(op, args...)
 end
 
@@ -385,7 +385,7 @@ possibly modifying `buffer`. Can only be called if
 `mutability(args[1], op, args...)` returns `true`.
 """
 function mutable_buffered_operate! end
-function mutable_buffered_operate!(buffer, op::Function, args::Vararg{Any,N}) where {N}
+function mutable_buffered_operate!(buffer, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return mutable_buffered_operate_fallback(buffer, op, args...)
 end
 
@@ -394,24 +394,24 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `output`.
 """
-function operate_to!(output, op::Function, args::Vararg{Any,N}) where {N}
+function operate_to!(output, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return operate_to_fallback!(mutability(output, op, args...), output, op, args...)
 end
 
 function operate_to_fallback!(
     ::NotMutable,
     output,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return operate(op, args...)
 end
 function operate_to_fallback!(
     ::IsMutable,
     output,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return mutable_operate_to!(output, op, args...)
 end
 
@@ -420,14 +420,14 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `args[1]`.
 """
-function operate!(op::Function, args::Vararg{Any,N}) where {N}
+function operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return operate_fallback!(mutability(args[1], op, args...), op, args...)
 end
 
-function operate_fallback!(::NotMutable, op::Function, args::Vararg{Any,N}) where {N}
+function operate_fallback!(::NotMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return operate(op, args...)
 end
-function operate_fallback!(::IsMutable, op::Function, args::Vararg{Any,N}) where {N}
+function operate_fallback!(::IsMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return mutable_operate!(op, args...)
 end
 
@@ -436,7 +436,7 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `buffer` and `output`.
 """
-function buffered_operate_to!(buffer, output, op::Function, args::Vararg{Any,N}) where {N}
+function buffered_operate_to!(buffer, output, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return buffered_operate_to_fallback!(
         mutability(output, op, args...),
         buffer,
@@ -450,18 +450,18 @@ function buffered_operate_to_fallback!(
     ::NotMutable,
     buffer,
     output,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return operate(op, args...)
 end
 function buffered_operate_to_fallback!(
     ::IsMutable,
     buffer,
     output,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return mutable_buffered_operate_to!(buffer, output, op, args...)
 end
 
@@ -470,24 +470,24 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `buffer`.
 """
-function buffered_operate!(buffer, op::Function, args::Vararg{Any,N}) where {N}
+function buffered_operate!(buffer, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return buffered_operate_fallback!(mutability(args[1], op, args...), buffer, op, args...)
 end
 
 function buffered_operate_fallback!(
     ::NotMutable,
     buffer,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return operate(op, args...)
 end
 function buffered_operate_fallback!(
     ::IsMutable,
     buffer,
-    op::Function,
+    op::F,
     args::Vararg{Any,N},
-) where {N}
+) where {F<:Function,N}
     return mutable_buffered_operate!(buffer, op, args...)
 end
 
