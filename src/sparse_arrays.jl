@@ -1,16 +1,16 @@
 import SparseArrays
 
-const SparseMat = SparseArrays.SparseMatrixCSC
+const _SparseMat = SparseArrays.SparseMatrixCSC
 
 function undef_array(
-    ::Type{SparseMat{Tv,Ti}},
+    ::Type{_SparseMat{Tv,Ti}},
     rows::Base.OneTo,
     cols::Base.OneTo,
 ) where {Tv,Ti}
     return SparseArrays.spzeros(Tv, Ti, length(rows), length(cols))
 end
 
-function mutable_operate!(::typeof(zero), A::SparseMat)
+function mutable_operate!(::typeof(zero), A::_SparseMat)
     for i in eachindex(A.colptr)
         A.colptr[i] = one(A.colptr[i])
     end
@@ -36,7 +36,7 @@ end
 function _mutable_operate!(
     op::Union{typeof(+),typeof(-)},
     A::Matrix,
-    B::SparseMat,
+    B::_SparseMat,
     left_factors::Tuple,
     right_factors::Tuple,
 )
@@ -59,7 +59,7 @@ end
 
 similar_array_type(::Type{SparseArrays.SparseVector{Tv,Ti}}, ::Type{T}) where {T,Tv,Ti} =
     SparseArrays.SparseVector{T,Ti}
-similar_array_type(::Type{SparseMat{Tv,Ti}}, ::Type{T}) where {T,Tv,Ti} = SparseMat{T,Ti}
+similar_array_type(::Type{_SparseMat{Tv,Ti}}, ::Type{T}) where {T,Tv,Ti} = _SparseMat{T,Ti}
 
 # `SparseArrays/src/linalg.jl` sometimes create a sparse matrix to contain the result.
 # For instance with `Matrix * Adjoint{SparseMatrixCSC}` and then uses `generic_matmatmul!`
@@ -67,7 +67,7 @@ similar_array_type(::Type{SparseMat{Tv,Ti}}, ::Type{T}) where {T,Tv,Ti} = Sparse
 # The approach used here should be more efficient as we redirect to a method that exploits the sparsity of the rhs and `copyto!` should be faster to write the result matrix.
 function mutable_operate!(
     ::typeof(add_mul),
-    output::SparseMat{T},
+    output::_SparseMat{T},
     A::AbstractMatrix,
     B::AbstractMatrix,
 ) where {T}
@@ -80,7 +80,7 @@ end
 function mutable_operate!(
     ::typeof(add_mul),
     ret::VecOrMat{T},
-    adjA::TransposeOrAdjoint{<:Any,<:SparseMat},
+    adjA::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     B::AbstractVecOrMat,
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
@@ -103,7 +103,7 @@ end
 function mutable_operate!(
     ::typeof(add_mul),
     ret::VecOrMat{T},
-    A::SparseMat,
+    A::_SparseMat,
     B::AbstractVecOrMat,
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
@@ -125,7 +125,7 @@ function mutable_operate!(
     ::typeof(add_mul),
     ret::Matrix{T},
     A::AbstractMatrix,
-    B::SparseMat,
+    B::_SparseMat,
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
     _dim_check(ret, A, B)
@@ -148,7 +148,7 @@ function mutable_operate!(
     ::typeof(add_mul),
     ret::Matrix{T},
     A::AbstractMatrix,
-    adjB::TransposeOrAdjoint{<:Any,<:SparseMat},
+    adjB::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
     _dim_check(ret, A, adjB)
@@ -167,23 +167,23 @@ function mutable_operate!(
     return ret
 end
 
-# `SparseMat`-`SparseMat` matrix multiplication.
+# `_SparseMat`-`_SparseMat` matrix multiplication.
 # Inspired from `SparseArrays.spmatmul` which is
 # Gustavsen's matrix multiplication algorithm revisited so that row indices
 # are sorted.
 
 function promote_array_mul(
-    ::Type{<:Union{SparseMat{S,Ti},TransposeOrAdjoint{S,SparseMat{S,Ti}}}},
-    ::Type{<:Union{SparseMat{T,Ti},TransposeOrAdjoint{T,SparseMat{T,Ti}}}},
+    ::Type{<:Union{_SparseMat{S,Ti},_TransposeOrAdjoint{S,_SparseMat{S,Ti}}}},
+    ::Type{<:Union{_SparseMat{T,Ti},_TransposeOrAdjoint{T,_SparseMat{T,Ti}}}},
 ) where {S,T,Ti}
-    return SparseMat{promote_sum_mul(S, T),Ti}
+    return _SparseMat{promote_sum_mul(S, T),Ti}
 end
 
 function mutable_operate!(
     ::typeof(add_mul),
-    ret::SparseMat{T},
-    A::SparseMat,
-    B::SparseMat,
+    ret::_SparseMat{T},
+    A::_SparseMat,
+    B::_SparseMat,
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
     _dim_check(ret, A, B)
@@ -224,7 +224,7 @@ function mutable_operate!(
                 end
             end
             if ip > ip0
-                if prefer_sort(ip - k0, mA)
+                if _prefer_sort(ip - k0, mA)
                     # in-place sort of indices. Effort: O(nnz*ln(nnz)).
                     sort!(ret.rowval, ip0, ip - 1, QuickSort, Base.Order.Forward)
                     for vp = ip0:ip-1
@@ -255,30 +255,30 @@ function mutable_operate!(
     return ret
 end
 # Taken from `SparseArrays.prefer_sort` added in Julia v1.1.
-prefer_sort(nz::Integer, m::Integer) = m > 6 && 3 * SparseArrays.ilog2(nz) * nz < m
+_prefer_sort(nz::Integer, m::Integer) = m > 6 && 3 * SparseArrays.ilog2(nz) * nz < m
 function mutable_operate!(
     ::typeof(add_mul),
-    ret::SparseMat{T},
-    A::SparseMat,
-    B::TransposeOrAdjoint{<:Any,<:SparseMat},
+    ret::_SparseMat{T},
+    A::_SparseMat,
+    B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
     mutable_operate!(add_mul, ret, A, copy(B), α...)
 end
 function mutable_operate!(
     ::typeof(add_mul),
-    ret::SparseMat{T},
-    A::TransposeOrAdjoint{<:Any,<:SparseMat},
-    B::SparseMat,
+    ret::_SparseMat{T},
+    A::_TransposeOrAdjoint{<:Any,<:_SparseMat},
+    B::_SparseMat,
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
     mutable_operate!(add_mul, ret, copy(A), B, α...)
 end
 function mutable_operate!(
     ::typeof(add_mul),
-    ret::SparseMat{T},
-    A::TransposeOrAdjoint{<:Any,<:SparseMat},
-    B::TransposeOrAdjoint{<:Any,<:SparseMat},
+    ret::_SparseMat{T},
+    A::_TransposeOrAdjoint{<:Any,<:_SparseMat},
+    B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
     mutable_operate!(add_mul, ret, copy(A), B, α...)
@@ -286,17 +286,17 @@ end
 
 # This `BroadcastStyle` is used when there is a mix of sparse arrays and dense arrays.
 # The result is a sparse array.
-function broadcasted_type(
+function _broadcasted_type(
     ::SparseArrays.HigherOrderFns.PromoteToSparse,
     ::Base.HasShape{1},
     ::Type{Eltype},
 ) where {Eltype}
     return SparseArrays.SparseVector{Eltype,Int}
 end
-function broadcasted_type(
+function _broadcasted_type(
     ::SparseArrays.HigherOrderFns.PromoteToSparse,
     ::Base.HasShape{2},
     ::Type{Eltype},
 ) where {Eltype}
-    return SparseMat{Eltype,Int}
+    return _SparseMat{Eltype,Int}
 end

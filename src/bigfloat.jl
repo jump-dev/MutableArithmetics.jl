@@ -2,9 +2,9 @@ mutability(::Type{BigFloat}) = IsMutable()
 mutable_copy(x::BigFloat) = deepcopy(x)
 
 @static if VERSION >= v"1.1.0-DEV.683"
-    const MPFRRoundingMode = Base.MPFR.MPFRRoundingMode
+    const _MPFRRoundingMode = Base.MPFR.MPFRRoundingMode
 else
-    const MPFRRoundingMode = Int32
+    const _MPFRRoundingMode = Int32
 end
 
 # zero
@@ -13,7 +13,7 @@ function _set_si!(x::BigFloat, value)
     ccall(
         (:mpfr_set_si, :libmpfr),
         Int32,
-        (Ref{BigFloat}, Clong, MPFRRoundingMode),
+        (Ref{BigFloat}, Clong, _MPFRRoundingMode),
         x,
         value,
         Base.MPFR.ROUNDING_MODE[],
@@ -32,7 +32,7 @@ function mutable_operate_to!(output::BigFloat, ::typeof(+), a::BigFloat, b::BigF
     ccall(
         (:mpfr_add, :libmpfr),
         Int32,
-        (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, MPFRRoundingMode),
+        (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, _MPFRRoundingMode),
         output,
         a,
         b,
@@ -50,7 +50,7 @@ function mutable_operate_to!(output::BigFloat, ::typeof(-), a::BigFloat, b::BigF
     ccall(
         (:mpfr_sub, :libmpfr),
         Int32,
-        (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, MPFRRoundingMode),
+        (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, _MPFRRoundingMode),
         output,
         a,
         b,
@@ -65,7 +65,7 @@ function mutable_operate_to!(output::BigFloat, ::typeof(*), a::BigFloat, b::BigF
     ccall(
         (:mpfr_mul, :libmpfr),
         Int32,
-        (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, MPFRRoundingMode),
+        (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, _MPFRRoundingMode),
         output,
         a,
         b,

@@ -1,11 +1,11 @@
-function broadcasted_type(
+function _broadcasted_type(
     ::Broadcast.DefaultArrayStyle{N},
     ::Base.HasShape{N},
     ::Type{Eltype},
 ) where {N,Eltype}
     return Array{Eltype,N}
 end
-function broadcasted_type(
+function _broadcasted_type(
     ::Broadcast.DefaultArrayStyle{N},
     ::Base.HasShape{N},
     ::Type{Bool},
@@ -13,28 +13,28 @@ function broadcasted_type(
     return BitArray{N}
 end
 
-# Same as `Base.Broadcast.combine_styles` but with types as argument.
-combine_styles() = Broadcast.DefaultArrayStyle{0}()
-combine_styles(c::Type) = Broadcast.result_style(Broadcast.BroadcastStyle(c))
-combine_styles(c1::Type, c2::Type) =
-    Broadcast.result_style(combine_styles(c1), combine_styles(c2))
-@inline combine_styles(c1::Type, c2::Type, cs::Vararg{Type,N}) where {N} =
-    Broadcast.result_style(combine_styles(c1), combine_styles(c2, cs...))
+# Same as `Base.Broadcast._combine_styles` but with types as argument.
+_combine_styles() = Broadcast.DefaultArrayStyle{0}()
+_combine_styles(c::Type) = Broadcast.result_style(Broadcast.BroadcastStyle(c))
+_combine_styles(c1::Type, c2::Type) =
+    Broadcast.result_style(_combine_styles(c1), _combine_styles(c2))
+@inline _combine_styles(c1::Type, c2::Type, cs::Vararg{Type,N}) where {N} =
+    Broadcast.result_style(_combine_styles(c1), _combine_styles(c2, cs...))
 
-combine_shapes(s) = s
-combine_2_shapes(s1::Base.HasShape{N}, s2::Base.HasShape{M}) where {N,M} =
+_combine_shapes(s) = s
+_combine_2_shapes(s1::Base.HasShape{N}, s2::Base.HasShape{M}) where {N,M} =
     Base.HasShape{max(N, M)}()
-combine_shapes(s1, s2, args::Vararg{Any,N}) where {N} =
-    combine_shapes(combine_2_shapes(s1, s2), args...)
+_combine_shapes(s1, s2, args::Vararg{Any,N}) where {N} =
+    _combine_shapes(_combine_2_shapes(s1, s2), args...)
 _shape(T) = Base.HasShape{ndims(T)}()
-combine_sizes(args::Vararg{Any,N}) where {N} = combine_shapes(_shape.(args)...)
+_combine_sizes(args::Vararg{Any,N}) where {N} = _combine_shapes(_shape.(args)...)
 
 function promote_broadcast(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     # FIXME we could use `promote_operation` instead as
     # `combine_eltypes` uses `return_type` hence it may return a non-concrete type
     # and we do not handle that case.
     T = Base.Broadcast.combine_eltypes(op, args)
-    return broadcasted_type(combine_styles(args...), combine_sizes(args...), T)
+    return _broadcasted_type(_combine_styles(args...), _combine_sizes(args...), T)
 end
 
 """
@@ -98,12 +98,12 @@ function broadcast!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     # `(1 allocation: 32 bytes)` on Julia v1.6.1 so we use
     # `_any_uniform_scaling` instead.
     if _any_uniform_scaling(args...)
-        return broadcast_with_uniform_scaling!(op, args...)
+        return _broadcast_with_uniform_scaling!(op, args...)
     else
         return broadcast_fallback!(broadcast_mutability(args[1], op, args...), op, args...)
     end
 end
-function broadcast_with_uniform_scaling!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function _broadcast_with_uniform_scaling!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return op(args...)
 end
 

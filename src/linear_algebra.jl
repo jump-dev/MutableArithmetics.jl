@@ -360,7 +360,7 @@ end
 #mutable_copy(A::LinearAlgebra.Transpose) = LinearAlgebra.Transpose(mutable_copy(parent(A)))
 #mutable_copy(A::LinearAlgebra.Adjoint) = LinearAlgebra.Adjoint(mutable_copy(parent(A)))
 
-const TransposeOrAdjoint{T,MT} =
+const _TransposeOrAdjoint{T,MT} =
     Union{LinearAlgebra.Transpose{T,MT},LinearAlgebra.Adjoint{T,MT}}
 
 _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.transpose(x)
@@ -377,19 +377,19 @@ _mirror_transpose_or_adjoint(
     ::Type{<:LinearAlgebra.Adjoint},
 ) where {T} = LinearAlgebra.Adjoint{T,A}
 
-similar_array_type(TA::Type{<:TransposeOrAdjoint{T,A}}, ::Type{S}) where {S,T,A} =
+similar_array_type(TA::Type{<:_TransposeOrAdjoint{T,A}}, ::Type{S}) where {S,T,A} =
     _mirror_transpose_or_adjoint(similar_array_type(A, S), TA)
 
 # dot product
 function promote_array_mul(
-    ::Type{<:TransposeOrAdjoint{S,<:AbstractVector}},
+    ::Type{<:_TransposeOrAdjoint{S,<:AbstractVector}},
     ::Type{<:AbstractVector{T}},
 ) where {S,T}
     return promote_sum_mul(S, T)
 end
 
 function promote_array_mul(
-    A::Type{<:TransposeOrAdjoint{S,V}},
+    A::Type{<:_TransposeOrAdjoint{S,V}},
     M::Type{<:AbstractMatrix{T}},
 ) where {S,T,V<:AbstractVector}
     B = promote_array_mul(_mirror_transpose_or_adjoint(M, A), V)
@@ -406,7 +406,7 @@ end
 
 function operate(
     ::typeof(*),
-    x::TransposeOrAdjoint{<:Any,<:AbstractVector},
+    x::_TransposeOrAdjoint{<:Any,<:AbstractVector},
     y::AbstractMatrix,
 )
     return _mirror_transpose_or_adjoint(
@@ -417,7 +417,7 @@ end
 
 function operate(
     ::typeof(*),
-    x::TransposeOrAdjoint{<:Any,<:AbstractVector},
+    x::_TransposeOrAdjoint{<:Any,<:AbstractVector},
     y::AbstractVector,
 )
     return fused_map_reduce(add_mul, x, y)
