@@ -146,7 +146,7 @@ operate(::typeof(one), x) = one(x)
 """
     abstract type MutableTrait end
 
-Abstract type for [`IsMutable`](@ref) and [`NotMutable`](@ref) that are
+Abstract type for [`IsMutable`](@ref) and [`IsNotMutable`](@ref) that are
 returned by [`mutability`](@ref).
 """
 abstract type MutableTrait end
@@ -160,29 +160,29 @@ type can always be mutated to equal the result of the operation.
 struct IsMutable <: MutableTrait end
 
 """
-    struct NotMutable <: MutableTrait end
+    struct IsNotMutable <: MutableTrait end
 
 When this is returned by [`mutability`](@ref), it means that object of the given
 type cannot be mutated to equal the result of the operation.
 """
-struct NotMutable <: MutableTrait end
+struct IsNotMutable <: MutableTrait end
 
 """
     mutability(T::Type, ::typeof(op), args::Type...)::MutableTrait
 
 Return either [`IsMutable`](@ref) to indicate an object of type `T` can be
-modified to be equal to `op(args...)` or [`NotMutable`](@ref) otherwise.
+modified to be equal to `op(args...)` or [`IsNotMutable`](@ref) otherwise.
 """
 function mutability(T::Type, op, args::Vararg{Type,N}) where {N}
     if mutability(T) isa IsMutable && promote_operation(op, args...) == T
         return IsMutable()
     else
-        return NotMutable()
+        return IsNotMutable()
     end
 end
 mutability(x, op, args::Vararg{Any,N}) where {N} =
     mutability(typeof(x), op, typeof.(args)...)
-mutability(::Type) = NotMutable()
+mutability(::Type) = IsNotMutable()
 
 """
     mutable_copy(x)
@@ -199,21 +199,21 @@ be mutated.
 """
 function mutable_copy end
 mutable_copy(A::AbstractArray) = mutable_copy.(A)
-copy_if_mutable_fallback(::NotMutable, x) = x
+copy_if_mutable_fallback(::IsNotMutable, x) = x
 copy_if_mutable_fallback(::IsMutable, x) = mutable_copy(x)
 
 """
     copy_if_mutable(x)
 
 Return a copy of `x` that can be mutated with MultableArithmetics's API without
-altering `x`. If `mutability(x)` is `NotMutable` then `x` is returned as none of
+altering `x`. If `mutability(x)` is `IsNotMutable` then `x` is returned as none of
 `x` can be mutated. Otherwise, it redirects to [`mutable_copy`](@ref).
 Mutable types should not implement a method for this function but should
 implement a method for [`mutable_copy`](@ref) instead.
 """
 copy_if_mutable(x) = copy_if_mutable_fallback(mutability(typeof(x)), x)
 
-function mutable_operate_to_fallback(::NotMutable, output, op::Function, args...)
+function mutable_operate_to_fallback(::IsNotMutable, output, op::Function, args...)
     throw(
         ArgumentError(
             "Cannot call `mutable_operate_to!(::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(output))` cannot be modifed to equal the result of the operation. Use `operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
@@ -252,7 +252,7 @@ function mutable_operate_to!(output, op::F, args::Vararg{Any,N}) where {F<:Funct
     mutable_operate_to_fallback(mutability(output, op, args...), output, op, args...)
 end
 
-function mutable_operate_fallback(::NotMutable, op::Function, args...)
+function mutable_operate_fallback(::IsNotMutable, op::Function, args...)
     throw(
         ArgumentError(
             "Cannot call `mutable_operate!($op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `operate!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
@@ -283,7 +283,7 @@ end
 
 buffer_for(::F, args::Vararg{Type,N}) where {F<:Function,N} = nothing
 
-function mutable_buffered_operate_to_fallback(::NotMutable, buffer, output, op::Function, args...)
+function mutable_buffered_operate_to_fallback(::IsNotMutable, buffer, output, op::Function, args...)
     throw(
         ArgumentError(
             "Cannot call `mutable_buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(output))` cannot be modifed to equal the result of the operation. Use `buffered_operate_to!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
@@ -340,7 +340,7 @@ function mutable_buffered_operate_to!(
     return mutable_buffered_operate_to_fallback(buffer, output, op, args...)
 end
 
-function mutable_buffered_operate_fallback(::NotMutable, buffer, op::Function, args...)
+function mutable_buffered_operate_fallback(::IsNotMutable, buffer, op::Function, args...)
     throw(
         ArgumentError(
                       "Cannot call `mutable_buffered_operate!(::$(typeof(buffer)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `buffered_operate!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
@@ -399,7 +399,7 @@ function operate_to!(output, op::F, args::Vararg{Any,N}) where {F<:Function,N}
 end
 
 function operate_to_fallback!(
-    ::NotMutable,
+    ::IsNotMutable,
     output,
     op::F,
     args::Vararg{Any,N},
@@ -424,7 +424,7 @@ function operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return operate_fallback!(mutability(args[1], op, args...), op, args...)
 end
 
-function operate_fallback!(::NotMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function operate_fallback!(::IsNotMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return operate(op, args...)
 end
 function operate_fallback!(::IsMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
@@ -447,7 +447,7 @@ function buffered_operate_to!(buffer, output, op::F, args::Vararg{Any,N}) where 
 end
 
 function buffered_operate_to_fallback!(
-    ::NotMutable,
+    ::IsNotMutable,
     buffer,
     output,
     op::F,
@@ -475,7 +475,7 @@ function buffered_operate!(buffer, op::F, args::Vararg{Any,N}) where {F<:Functio
 end
 
 function buffered_operate_fallback!(
-    ::NotMutable,
+    ::IsNotMutable,
     buffer,
     op::F,
     args::Vararg{Any,N},
