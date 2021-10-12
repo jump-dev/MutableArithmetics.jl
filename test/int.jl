@@ -25,8 +25,8 @@ const MA = MutableArithmetics
     end
 end
 @testset "add_to! / add!" begin
-    @test MA.mutability(Int, MA.add_to!, Int, Int) isa MA.NotMutable
-    @test MA.mutability(Int, MA.add!, Int) isa MA.NotMutable
+    @test MA.mutability(Int, MA.add_to!, Int, Int) isa MA.IsNotMutable
+    @test MA.mutability(Int, MA.add!, Int) isa MA.IsNotMutable
     a = 5
     b = 28
     c = 41
@@ -38,8 +38,8 @@ end
 end
 
 @testset "mul_to! / mul!" begin
-    @test MA.mutability(Int, MA.mul_to!, Int, Int) isa MA.NotMutable
-    @test MA.mutability(Int, MA.mul!, Int) isa MA.NotMutable
+    @test MA.mutability(Int, MA.mul_to!, Int, Int) isa MA.IsNotMutable
+    @test MA.mutability(Int, MA.mul!, Int) isa MA.IsNotMutable
     a = 5
     b = 23
     c = 3
@@ -51,10 +51,10 @@ end
 end
 
 @testset "add_mul_to! / add_mul! / add_mul_buf_to! /add_mul_buf!" begin
-    @test MA.mutability(Int, MA.add_mul_to!, Int, Int, Int) isa MA.NotMutable
-    @test MA.mutability(Int, MA.add_mul!, Int, Int) isa MA.NotMutable
-    @test MA.mutability(Int, MA.add_mul_buf_to!, Int, Int, Int, Int) isa MA.NotMutable
-    @test MA.mutability(Int, MA.add_mul_buf!, Int, Int, Int) isa MA.NotMutable
+    @test MA.mutability(Int, MA.add_mul_to!, Int, Int, Int) isa MA.IsNotMutable
+    @test MA.mutability(Int, MA.add_mul!, Int, Int) isa MA.IsNotMutable
+    @test MA.mutability(Int, MA.add_mul_buf_to!, Int, Int, Int, Int) isa MA.IsNotMutable
+    @test MA.mutability(Int, MA.add_mul_buf!, Int, Int, Int) isa MA.IsNotMutable
     a = 5
     b = 9
     c = 3
@@ -82,13 +82,13 @@ end
 end
 
 @testset "zero!" begin
-    @test MA.mutability(Int, MA.zero!) isa MA.NotMutable
+    @test MA.mutability(Int, MA.zero!) isa MA.IsNotMutable
     a = 5
     @test MA.zero!(a) == 0
 end
 
 @testset "one!" begin
-    @test MA.mutability(Int, MA.one!) isa MA.NotMutable
+    @test MA.mutability(Int, MA.one!) isa MA.IsNotMutable
     a = 5
     @test MA.one!(a) == 1
 end
