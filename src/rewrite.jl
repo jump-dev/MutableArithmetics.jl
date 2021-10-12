@@ -520,7 +520,7 @@ function _rewrite(
             # non-trivial expression that also needs to be re-written. We need
             # `!vectorized` otherwise `A .+ (A + A)^2` would be rewritten as
             # `broadcast!(add_mul, x, AA, AA)` where `AA` is `A + A`.
-            MulType = :(MA.promote_operation(
+            MulType = :(MutableArithmetics.promote_operation(
                 *,
                 typeof($(inner_factor.args[2])),
                 typeof($(inner_factor.args[2])),

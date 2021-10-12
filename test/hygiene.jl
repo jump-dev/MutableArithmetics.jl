@@ -29,4 +29,8 @@ x = MutableArithmetics.@rewrite sum(i * j for i = 1:4 for j ∈ 1:4 if i == j)
 x = @_rewrite sum(i * j for i = 1:4 for j ∈ 1:4 if i == j)
 @test x == 30
 
+x = big(1)
+y = MutableArithmetics.@rewrite(x + (x + 1)^1)
+@test y == 3
+
 end
