@@ -29,7 +29,7 @@ combine_shapes(s1, s2, args::Vararg{Any,N}) where {N} =
 _shape(T) = Base.HasShape{ndims(T)}()
 combine_sizes(args::Vararg{Any,N}) where {N} = combine_shapes(_shape.(args)...)
 
-function promote_broadcast(op::Function, args::Vararg{Any,N}) where {N}
+function promote_broadcast(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     # FIXME we could use `promote_operation` instead as
     # `combine_eltypes` uses `return_type` hence it may return a non-concrete type
     # and we do not handle that case.
@@ -103,13 +103,13 @@ function broadcast!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
         return broadcast_fallback!(broadcast_mutability(args[1], op, args...), op, args...)
     end
 end
-function broadcast_with_uniform_scaling!(op::Function, args::Vararg{Any,N}) where {N}
+function broadcast_with_uniform_scaling!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return op(args...)
 end
 
-function broadcast_fallback!(::NotMutable, op::Function, args::Vararg{Any,N}) where {N}
+function broadcast_fallback!(::NotMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return broadcast(op, args...)
 end
-function broadcast_fallback!(::IsMutable, op::Function, args::Vararg{Any,N}) where {N}
+function broadcast_fallback!(::IsMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return mutable_broadcast!(op, args...)
 end
