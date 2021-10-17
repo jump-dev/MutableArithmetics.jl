@@ -18,7 +18,9 @@ end
     @testset "Allocation" begin
         allocation_test(+, T, MA.add!, MA.add_to!, T <: Rational ? 168 : 0)
         allocation_test(*, T, MA.mul!, MA.mul_to!, T <: Rational ? 240 : 0)
-        if T != BigFloat
+        # Requires https://github.com/JuliaLang/julia/commit/3f92832df042198b2daefc1f7ca609db38cb8173
+        # for `gcd` to be defined on `Rational`.
+        if T == BigInt || (T == Rational{BigInt} && VERSION >= v"1.4.0-DEV.606")
             allocation_test(gcd, T, MA.gcd!, MA.gcd_to!, 0)
             allocation_test(lcm, T, MA.lcm!, MA.lcm_to!, 0)
         end
