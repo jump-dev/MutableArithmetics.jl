@@ -19,8 +19,8 @@ end
         allocation_test(+, T, MA.add!, MA.add_to!, T <: Rational ? 168 : 0)
         allocation_test(*, T, MA.mul!, MA.mul_to!, T <: Rational ? 240 : 0)
         if T != BigFloat
-            allocation_test(gcd, T, MA.gcd!, MA.gcd_to!)
-            allocation_test(lcm, T, MA.lcm!, MA.lcm_to!)
+            allocation_test(gcd, T, MA.gcd!, MA.gcd_to!, 0)
+            allocation_test(lcm, T, MA.lcm!, MA.lcm_to!, 0)
         end
     end
 end
