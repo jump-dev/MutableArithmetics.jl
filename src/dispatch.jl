@@ -213,86 +213,86 @@ end
 # A few are overwritten below but many more need to be redirected to `mul` in
 # `linalg.jl`.
 
-Base.:*(A::SparseMat{<:AbstractMutable}, x::StridedVector) = mul(A, x)
-Base.:*(A::SparseMat, x::StridedVector{<:AbstractMutable}) = mul(A, x)
-Base.:*(A::SparseMat{<:AbstractMutable}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
+Base.:*(A::_SparseMat{<:AbstractMutable}, x::StridedVector) = mul(A, x)
+Base.:*(A::_SparseMat, x::StridedVector{<:AbstractMutable}) = mul(A, x)
+Base.:*(A::_SparseMat{<:AbstractMutable}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
 
 # These six methods are needed on Julia v1.2 and earlier
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat}, x::StridedVector) =
+Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat}, x::StridedVector) =
     mul(A, x)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:SparseMat}, x::StridedVector{<:AbstractMutable}) =
-    mul(A, x)
-Base.:*(
-    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat},
-    x::StridedVector{<:AbstractMutable},
-) = mul(A, x)
-Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat}, x::StridedVector) =
+Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat}, x::StridedVector{<:AbstractMutable}) =
     mul(A, x)
 Base.:*(
-    A::LinearAlgebra.Transpose{<:Any,<:SparseMat},
+    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
+    x::StridedVector{<:AbstractMutable},
+) = mul(A, x)
+Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat}, x::StridedVector) =
+    mul(A, x)
+Base.:*(
+    A::LinearAlgebra.Transpose{<:Any,<:_SparseMat},
     x::StridedVector{<:AbstractMutable},
 ) = mul(A, x)
 Base.:*(
-    A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat},
+    A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
     x::StridedVector{<:AbstractMutable},
 ) = mul(A, x)
 
-Base.:*(A::SparseMat{<:AbstractMutable}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::SparseMat{<:Any}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::SparseMat{<:AbstractMutable}, B::SparseMat{<:Any}) = mul(A, B)
+Base.:*(A::_SparseMat{<:AbstractMutable}, B::_SparseMat{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::_SparseMat{<:Any}, B::_SparseMat{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::_SparseMat{<:AbstractMutable}, B::_SparseMat{<:Any}) = mul(A, B)
 
 Base.:*(
-    A::SparseMat{<:AbstractMutable},
-    B::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat},
+    A::_SparseMat{<:AbstractMutable},
+    B::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
 ) = mul(A, B)
-Base.:*(A::SparseMat{<:Any}, B::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat}) =
+Base.:*(A::_SparseMat{<:Any}, B::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat}) =
     mul(A, B)
-Base.:*(A::SparseMat{<:AbstractMutable}, B::LinearAlgebra.Adjoint{<:Any,<:SparseMat}) =
+Base.:*(A::_SparseMat{<:AbstractMutable}, B::LinearAlgebra.Adjoint{<:Any,<:_SparseMat}) =
     mul(A, B)
 
 Base.:*(
-    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat},
-    B::SparseMat{<:AbstractMutable},
+    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
+    B::_SparseMat{<:AbstractMutable},
 ) = mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:SparseMat}, B::SparseMat{<:AbstractMutable}) =
+Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat}, B::_SparseMat{<:AbstractMutable}) =
     mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat}, B::SparseMat{<:Any}) =
+Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat}, B::_SparseMat{<:Any}) =
     mul(A, B)
 Base.:*(
-    A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat},
-    B::SparseMat{<:AbstractMutable},
+    A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
+    B::_SparseMat{<:AbstractMutable},
 ) = mul(A, B)
-Base.:*(A::LinearAlgebra.Transpose{<:Any,<:SparseMat}, B::SparseMat{<:AbstractMutable}) =
+Base.:*(A::LinearAlgebra.Transpose{<:Any,<:_SparseMat}, B::_SparseMat{<:AbstractMutable}) =
     mul(A, B)
-Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat}, B::SparseMat{<:Any}) =
+Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat}, B::_SparseMat{<:Any}) =
     mul(A, B)
 
-Base.:*(A::StridedMatrix{<:AbstractMutable}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::StridedMatrix{<:Any}, B::SparseMat{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::StridedMatrix{<:AbstractMutable}, B::SparseMat{<:Any}) = mul(A, B)
+Base.:*(A::StridedMatrix{<:AbstractMutable}, B::_SparseMat{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::StridedMatrix{<:Any}, B::_SparseMat{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::StridedMatrix{<:AbstractMutable}, B::_SparseMat{<:Any}) = mul(A, B)
 
-Base.:*(A::SparseMat{<:AbstractMutable}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::SparseMat{<:Any}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
-Base.:*(A::SparseMat{<:AbstractMutable}, B::StridedMatrix{<:Any}) = mul(A, B)
+Base.:*(A::_SparseMat{<:AbstractMutable}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::_SparseMat{<:Any}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
+Base.:*(A::_SparseMat{<:AbstractMutable}, B::StridedMatrix{<:Any}) = mul(A, B)
 
 Base.:*(
-    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat},
+    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
     B::StridedMatrix{<:AbstractMutable},
 ) = mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:SparseMat}, B::StridedMatrix{<:AbstractMutable}) =
+Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat}, B::StridedMatrix{<:AbstractMutable}) =
     mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:SparseMat}, B::StridedMatrix{<:Any}) =
+Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat}, B::StridedMatrix{<:Any}) =
     mul(A, B)
 Base.:*(
-    A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat},
-    B::StridedMatrix{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(
-    A::LinearAlgebra.Transpose{<:Any,<:SparseMat},
+    A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
     B::StridedMatrix{<:AbstractMutable},
 ) = mul(A, B)
 Base.:*(
-    A::LinearAlgebra.Transpose{<:AbstractMutable,<:SparseMat},
+    A::LinearAlgebra.Transpose{<:Any,<:_SparseMat},
+    B::StridedMatrix{<:AbstractMutable},
+) = mul(A, B)
+Base.:*(
+    A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
     B::StridedMatrix{<:Any},
 ) = mul(A, B)
 
@@ -300,8 +300,8 @@ Base.:*(
 # non-`<:Number` scalar elements, so we define some of these for `<:AbstractMutable` scalar
 # elements here.
 
-function Base.:*(A::Scaling, B::SparseMat{<:AbstractMutable})
-    return SparseMat(
+function Base.:*(A::Scaling, B::_SparseMat{<:AbstractMutable})
+    return _SparseMat(
         B.m,
         B.n,
         copy(B.colptr),
@@ -310,8 +310,8 @@ function Base.:*(A::Scaling, B::SparseMat{<:AbstractMutable})
     )
 end
 # Fix ambiguity with Base method
-function Base.:*(A::Number, B::SparseMat{<:AbstractMutable})
-    return SparseMat(
+function Base.:*(A::Number, B::_SparseMat{<:AbstractMutable})
+    return _SparseMat(
         B.m,
         B.n,
         copy(B.colptr),
@@ -320,8 +320,8 @@ function Base.:*(A::Number, B::SparseMat{<:AbstractMutable})
     )
 end
 
-function Base.:*(A::SparseMat{<:AbstractMutable}, B::Scaling)
-    return SparseMat(
+function Base.:*(A::_SparseMat{<:AbstractMutable}, B::Scaling)
+    return _SparseMat(
         A.m,
         A.n,
         copy(A.colptr),
@@ -330,8 +330,8 @@ function Base.:*(A::SparseMat{<:AbstractMutable}, B::Scaling)
     )
 end
 # Fix ambiguity with Base method
-function Base.:*(A::SparseMat{<:AbstractMutable}, B::Number)
-    return SparseMat(
+function Base.:*(A::_SparseMat{<:AbstractMutable}, B::Number)
+    return _SparseMat(
         A.m,
         A.n,
         copy(A.colptr),
@@ -340,8 +340,8 @@ function Base.:*(A::SparseMat{<:AbstractMutable}, B::Number)
     )
 end
 
-function Base.:*(A::AbstractMutable, B::SparseMat)
-    return SparseMat(
+function Base.:*(A::AbstractMutable, B::_SparseMat)
+    return _SparseMat(
         B.m,
         B.n,
         copy(B.colptr),
@@ -350,8 +350,8 @@ function Base.:*(A::AbstractMutable, B::SparseMat)
     )
 end
 
-function Base.:*(A::SparseMat, B::AbstractMutable)
-    return SparseMat(
+function Base.:*(A::_SparseMat, B::AbstractMutable)
+    return _SparseMat(
         A.m,
         A.n,
         copy(A.colptr),
@@ -360,8 +360,8 @@ function Base.:*(A::SparseMat, B::AbstractMutable)
     )
 end
 
-function Base.:/(A::SparseMat{<:AbstractMutable}, B::Scaling)
-    return SparseMat(
+function Base.:/(A::_SparseMat{<:AbstractMutable}, B::Scaling)
+    return _SparseMat(
         A.m,
         A.n,
         copy(A.colptr),
@@ -371,8 +371,8 @@ function Base.:/(A::SparseMat{<:AbstractMutable}, B::Scaling)
 end
 
 # Base assumes that the element type is unaffected by `-`
-function Base.:-(A::SparseMat{<:AbstractMutable})
-    return SparseMat(
+function Base.:-(A::_SparseMat{<:AbstractMutable})
+    return _SparseMat(
         A.m,
         A.n,
         copy(A.colptr),
@@ -382,7 +382,7 @@ function Base.:-(A::SparseMat{<:AbstractMutable})
 end
 
 # Matrix(::SparseMatrixCSC) assumes that `zero` does not affect the element type of `S`.
-function Base.Matrix(S::SparseMat{T}) where {T<:AbstractMutable}
+function Base.Matrix(S::_SparseMat{T}) where {T<:AbstractMutable}
     U = promote_operation(+, promote_operation(zero, T), T)
     A = Matrix{U}(undef, size(S)...)
     mutable_operate!(zero, A)

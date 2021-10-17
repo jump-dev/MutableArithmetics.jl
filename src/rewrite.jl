@@ -308,7 +308,7 @@ function _has_assignment_in_ref(ex::Expr)
 end
 _has_assignment_in_ref(other) = false
 
-function rewrite_sum(
+function _rewrite_sum(
     vectorized::Bool,
     minus::Bool,
     terms,
@@ -445,7 +445,7 @@ function _rewrite(
             end
             vectorized =
                 (vectorized || inner_factor.args[1] == :.+ || inner_factor.args[1] == :.-)
-            return rewrite_sum(
+            return _rewrite_sum(
                 vectorized,
                 minus,
                 inner_factor.args[start:end],
