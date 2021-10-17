@@ -55,23 +55,23 @@ broadcast_mutability(x, op, args::Vararg{Any,N}) where {N} =
 broadcast_mutability(::Type) = IsNotMutable()
 
 """
-    mutable_broadcast!(op::Function, args...)
+    broadcast!(op::Function, args...)
 
 Modify the value of `args[1]` to be equal to the value of `broadcast(op, args...)`. Can
-only be called if `mutability(args[1], op, args...)` returns `true`.
+only be called if `mutability(args[1], op, args...)` returns [`IsMutable`](@ref).
 """
-function mutable_broadcast! end
+function broadcast! end
 
 function mutable_broadcasted(broadcasted::Broadcast.Broadcasted{S}) where {S}
     function f(args::Vararg{Any,N}) where {N}
-        return operate!(broadcasted.f, args...)
+        return operate!!(broadcasted.f, args...)
     end
     return Broadcast.Broadcasted{S}(f, broadcasted.args, broadcasted.axes)
 end
 
 # If A is `Symmetric`, we cannot do that as we might modify the same entry twice.
 # See https://github.com/jump-dev/JuMP.jl/issues/2102
-function mutable_broadcast!(op::F, A::Array, args::Vararg{Any,N}) where {F<:Function,N}
+function broadcast!(op::F, A::Array, args::Vararg{Any,N}) where {F<:Function,N}
     bc = Broadcast.broadcasted(op, A, args...)
     instantiated = Broadcast.instantiate(bc)
     return copyto!(A, mutable_broadcasted(instantiated))
@@ -89,11 +89,11 @@ function _any_uniform_scaling(::Any, args::Vararg{Any,N}) where {N}
 end
 
 """
-    broadcast!(op::Function, args...)
+    broadcast!!(op::Function, args...)
 
 Returns the value of `broadcast(op, args...)`, possibly modifying `args[1]`.
 """
-function broadcast!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function broadcast!!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     # `any(x -> x isa LinearAlgebra.UniformScaling, args)` produces
     # `(1 allocation: 32 bytes)` on Julia v1.6.1 so we use
     # `_any_uniform_scaling` instead.
@@ -111,5 +111,5 @@ function broadcast_fallback!(::IsNotMutable, op::F, args::Vararg{Any,N}) where {
     return broadcast(op, args...)
 end
 function broadcast_fallback!(::IsMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
-    return mutable_broadcast!(op, args...)
+    return broadcast!(op, args...)
 end

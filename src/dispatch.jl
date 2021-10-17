@@ -91,16 +91,16 @@ function _mul!(output, A, B, α, β)
     # See SparseArrays/src/linalg.jl
     if !isone(β)
         if iszero(β)
-            mutable_operate!(zero, output)
+            operate!(zero, output)
         else
             rmul!(output, scaling(β))
         end
     end
-    return mutable_operate!(add_mul, output, A, B, scaling(α))
+    return operate!(add_mul, output, A, B, scaling(α))
 end
 function _mul!(output, A, B, α)
-    mutable_operate!(zero, output)
-    return mutable_operate!(add_mul, output, A, B, scaling(α))
+    operate!(zero, output)
+    return operate!(add_mul, output, A, B, scaling(α))
 end
 # LinearAlgebra uses `Base.promote_op(LinearAlgebra.matprod, ...)` to try to
 # infere the return type. If the operation is not supported, it returns
@@ -120,7 +120,7 @@ function _mul!(output::AbstractArray{Union{}}, A, B)
     )
 end
 function _mul!(output, A, B)
-    return mutable_operate_to!(output, *, A, B)
+    return operate_to!(output, *, A, B)
 end
 
 function LinearAlgebra.mul!(
@@ -385,8 +385,8 @@ end
 function Base.Matrix(S::_SparseMat{T}) where {T<:AbstractMutable}
     U = promote_operation(+, promote_operation(zero, T), T)
     A = Matrix{U}(undef, size(S)...)
-    mutable_operate!(zero, A)
-    return mutable_operate!(+, A, S)
+    operate!(zero, A)
+    return operate!(+, A, S)
 end
 
 # +(::SparseMatrixCSC) is not defined for generic types in Base.

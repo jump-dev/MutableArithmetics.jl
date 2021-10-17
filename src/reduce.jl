@@ -31,7 +31,7 @@ function fused_map_reduce(
     accumulator = neutral_element(reduce_op(op), T)
     buffer = buffer_for(op, T, eltype.(args)...)
     for I in zip(eachindex.(args)...)
-        accumulator = buffered_operate!(
+        accumulator = buffered_operate!!(
             buffer,
             op,
             accumulator,
@@ -43,7 +43,7 @@ end
 function operate(::typeof(sum), a::AbstractArray)
     return mapreduce(
         identity,
-        add!,
+        add!!,
         a,
         init = zero(promote_operation(+, eltype(a), eltype(a))),
     )

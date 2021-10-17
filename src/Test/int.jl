@@ -7,15 +7,15 @@ function int_add_test(::Type{T}) where {T}
         b = t(28)
         c = t(41)
         expected = t(69)
-        @test MA.isequal_canonical(MA.add_to!(a, b, c), expected)
+        @test MA.isequal_canonical(MA.add_to!!(a, b, c), expected)
         @test MA.isequal_canonical(a, expected)
-        @test MA.isequal_canonical(MA.add!(b, c), expected)
+        @test MA.isequal_canonical(MA.add!!(b, c), expected)
         @test MA.isequal_canonical(b, expected)
 
         a = t(165)
         b = t(255)
         expected = t(420)
-        @test MA.isequal_canonical(MA.add!(a, b), expected)
+        @test MA.isequal_canonical(MA.add!!(a, b), expected)
         @test MA.isequal_canonical(a, expected)
     end
 end
@@ -28,15 +28,15 @@ function int_sub_test(::Type{T}) where {T}
         b = t(28)
         c = t(41)
         expected = t(-13)
-        @test MA.isequal_canonical(MA.sub_to!(a, b, c), expected)
+        @test MA.isequal_canonical(MA.sub_to!!(a, b, c), expected)
         @test MA.isequal_canonical(a, expected)
-        @test MA.isequal_canonical(MA.sub!(b, c), expected)
+        @test MA.isequal_canonical(MA.sub!!(b, c), expected)
         @test MA.isequal_canonical(b, expected)
 
         a = t(165)
         b = t(255)
         expected = t(-90)
-        @test MA.isequal_canonical(MA.sub!(a, b), expected)
+        @test MA.isequal_canonical(MA.sub!!(a, b), expected)
         @test MA.isequal_canonical(a, expected)
     end
 end
@@ -48,14 +48,14 @@ function int_mul_test(::Type{T}) where {T}
         a = t(5)
         b = t(23)
         c = t(3)
-        @test MA.isequal_canonical(MA.mul_to!(a, b, c), t(69))
+        @test MA.isequal_canonical(MA.mul_to!!(a, b, c), t(69))
         @test MA.isequal_canonical(a, t(69))
-        @test MA.isequal_canonical(MA.mul!(b, c), t(69))
+        @test MA.isequal_canonical(MA.mul!!(b, c), t(69))
         @test MA.isequal_canonical(b, t(69))
 
         a = t(15)
         b = t(28)
-        @test MA.isequal_canonical(MA.mul!(a, b), t(420))
+        @test MA.isequal_canonical(MA.mul!!(a, b), t(420))
         @test MA.isequal_canonical(a, t(420))
     end
 end
@@ -72,16 +72,16 @@ function int_add_mul_test(::Type{T}) where {T}
         d = t(20)
         buf = t(24)
 
-        @test MA.isequal_canonical(MA.add_mul_to!(a, b, c, d), t(69))
+        @test MA.isequal_canonical(MA.add_mul_to!!(a, b, c, d), t(69))
         @test MA.isequal_canonical(a, t(69))
         a = t(5)
-        @test MA.isequal_canonical(MA.add_mul!(b, c, d), t(69))
+        @test MA.isequal_canonical(MA.add_mul!!(b, c, d), t(69))
         @test MA.isequal_canonical(b, t(69))
         b = t(9)
 
-        @test MA.isequal_canonical(MA.add_mul_buf_to!(buf, a, b, c, d), t(69))
+        @test MA.isequal_canonical(MA.add_mul_buf_to!!(buf, a, b, c, d), t(69))
         @test MA.isequal_canonical(a, t(69))
-        @test MA.isequal_canonical(MA.add_mul_buf!(buf, b, c, d), t(69))
+        @test MA.isequal_canonical(MA.add_mul_buf!!(buf, b, c, d), t(69))
         @test MA.isequal_canonical(b, t(69))
 
         a = t(148)
@@ -89,12 +89,12 @@ function int_add_mul_test(::Type{T}) where {T}
         c = t(17)
         d = t(42)
         buf = t(56)
-        @test MA.isequal_canonical(MA.add_mul!(a, b, c), t(420))
+        @test MA.isequal_canonical(MA.add_mul!!(a, b, c), t(420))
         @test MA.isequal_canonical(a, t(420))
         a = t(148)
-        @test MA.isequal_canonical(MA.add_mul_buf_to!(buf, d, a, b, c), t(420))
+        @test MA.isequal_canonical(MA.add_mul_buf_to!!(buf, d, a, b, c), t(420))
         @test MA.isequal_canonical(d, t(420))
-        @test MA.isequal_canonical(MA.add_mul_buf!(buf, a, b, c), t(420))
+        @test MA.isequal_canonical(MA.add_mul_buf!!(buf, a, b, c), t(420))
         @test MA.isequal_canonical(a, t(420))
     end
 end
@@ -112,16 +112,16 @@ function int_sub_mul_test(::Type{T}) where {T}
         buf = t(24)
 
         expected = t(-51)
-        @test MA.isequal_canonical(MA.sub_mul_to!(a, b, c, d), expected)
+        @test MA.isequal_canonical(MA.sub_mul_to!!(a, b, c, d), expected)
         @test MA.isequal_canonical(a, expected)
         a = t(5)
-        @test MA.isequal_canonical(MA.sub_mul!(b, c, d), expected)
+        @test MA.isequal_canonical(MA.sub_mul!!(b, c, d), expected)
         @test MA.isequal_canonical(b, expected)
         b = t(9)
 
-        @test MA.isequal_canonical(MA.sub_mul_buf_to!(buf, a, b, c, d), expected)
+        @test MA.isequal_canonical(MA.sub_mul_buf_to!!(buf, a, b, c, d), expected)
         @test MA.isequal_canonical(a, expected)
-        @test MA.isequal_canonical(MA.sub_mul_buf!(buf, b, c, d), expected)
+        @test MA.isequal_canonical(MA.sub_mul_buf!!(buf, b, c, d), expected)
         @test MA.isequal_canonical(b, expected)
 
         a = t(148)
@@ -130,12 +130,12 @@ function int_sub_mul_test(::Type{T}) where {T}
         d = t(42)
         buf = t(56)
         expected = t(-124)
-        @test MA.isequal_canonical(MA.sub_mul!(a, b, c), expected)
+        @test MA.isequal_canonical(MA.sub_mul!!(a, b, c), expected)
         @test MA.isequal_canonical(a, expected)
         a = t(148)
-        @test MA.isequal_canonical(MA.sub_mul_buf_to!(buf, d, a, b, c), expected)
+        @test MA.isequal_canonical(MA.sub_mul_buf_to!!(buf, d, a, b, c), expected)
         @test MA.isequal_canonical(d, expected)
-        @test MA.isequal_canonical(MA.sub_mul_buf!(buf, a, b, c), expected)
+        @test MA.isequal_canonical(MA.sub_mul_buf!!(buf, a, b, c), expected)
         @test MA.isequal_canonical(a, expected)
     end
 end
@@ -146,7 +146,7 @@ function int_zero_test(::Type{T}) where {T}
 
         t(n) = convert(T, n)
         a = t(5)
-        @test MA.isequal_canonical(MA.zero!(a), t(0))
+        @test MA.isequal_canonical(MA.zero!!(a), t(0))
         @test MA.isequal_canonical(a, t(0))
         @test iszero(a)
     end
@@ -158,7 +158,7 @@ function int_one_test(::Type{T}) where {T}
 
         t(n) = convert(T, n)
         a = t(5)
-        @test MA.isequal_canonical(MA.one!(a), t(1))
+        @test MA.isequal_canonical(MA.one!!(a), t(1))
         @test MA.isequal_canonical(a, t(1))
         @test isone(a)
     end

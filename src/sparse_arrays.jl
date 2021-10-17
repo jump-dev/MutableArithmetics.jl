@@ -10,7 +10,7 @@ function undef_array(
     return SparseArrays.spzeros(Tv, Ti, length(rows), length(cols))
 end
 
-function mutable_operate!(::typeof(zero), A::_SparseMat)
+function operate!(::typeof(zero), A::_SparseMat)
     for i in eachindex(A.colptr)
         A.colptr[i] = one(A.colptr[i])
     end
@@ -33,7 +33,7 @@ function promote_operation(
 ) where {Tv,Ti,T,N}
     return Array{promote_operation(op, Tv, T),N}
 end
-function _mutable_operate!(
+function _operate!(
     op::Union{typeof(+),typeof(-)},
     A::Matrix,
     B::_SparseMat,
@@ -45,7 +45,7 @@ function _mutable_operate!(
     for col = 1:size(B, 2)
         for k ∈ SparseArrays.nzrange(B, col)
             row = B_rowvals[k]
-            A[row, col] = operate!(
+            A[row, col] = operate!!(
                 mul_rhs(op),
                 A[row, col],
                 left_factors...,
@@ -65,19 +65,19 @@ similar_array_type(::Type{_SparseMat{Tv,Ti}}, ::Type{T}) where {T,Tv,Ti} = _Spar
 # For instance with `Matrix * Adjoint{SparseMatrixCSC}` and then uses `generic_matmatmul!`
 # which looks quite inefficient as it does not exploit the sparsity of the result matrix and the rhs.
 # The approach used here should be more efficient as we redirect to a method that exploits the sparsity of the rhs and `copyto!` should be faster to write the result matrix.
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     output::_SparseMat{T},
     A::AbstractMatrix,
     B::AbstractMatrix,
 ) where {T}
     C = Matrix{T}(undef, size(output)...)
-    mutable_operate_to!(C, *, A, B)
+    operate_to!(C, *, A, B)
     copyto!(output, C)
     return output
 end
 
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     ret::VecOrMat{T},
     adjA::_TransposeOrAdjoint{<:Any,<:_SparseMat},
@@ -93,14 +93,14 @@ function mutable_operate!(
             cur = ret[col, k]
             for j ∈ SparseArrays.nzrange(A, col)
                 A_val = _mirror_transpose_or_adjoint(A_nonzeros[j], adjA)
-                cur = operate!(add_mul, cur, A_val, B[A_rowvals[j], k], α...)
+                cur = operate!!(add_mul, cur, A_val, B[A_rowvals[j], k], α...)
             end
             ret[col, k] = cur
         end
     end
     return ret
 end
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     ret::VecOrMat{T},
     A::_SparseMat,
@@ -115,13 +115,13 @@ function mutable_operate!(
             αxj = *(B[col, k], α...)
             for j ∈ SparseArrays.nzrange(A, col)
                 ret[A_rowvals[j], k] =
-                    operate!(add_mul, ret[A_rowvals[j], k], A_nonzeros[j], αxj)
+                    operate!!(add_mul, ret[A_rowvals[j], k], A_nonzeros[j], αxj)
             end
         end
     end
     return ret
 end
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     ret::Matrix{T},
     A::AbstractMatrix,
@@ -136,7 +136,7 @@ function mutable_operate!(
             cur = ret[multivec_row, col]
             for k ∈ SparseArrays.nzrange(B, col)
                 cur =
-                    operate!(add_mul, cur, A[multivec_row, rowval[k]], B_nonzeros[k], α...)
+                    operate!!(add_mul, cur, A[multivec_row, rowval[k]], B_nonzeros[k], α...)
             end
             ret[multivec_row, col] = cur
         end
@@ -144,7 +144,7 @@ function mutable_operate!(
     return ret
 end
 
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     ret::Matrix{T},
     A::AbstractMatrix,
@@ -161,7 +161,7 @@ function mutable_operate!(
         αB_val = *(B_val, α...)
         for A_row = 1:size(A, 1)
             ret[A_row, B_row] =
-                operate!(add_mul, ret[A_row, B_row], A[A_row, B_col], αB_val)
+                operate!!(add_mul, ret[A_row, B_row], A[A_row, B_col], αB_val)
         end
     end
     return ret
@@ -179,7 +179,7 @@ function promote_array_mul(
     return _SparseMat{promote_sum_mul(S, T),Ti}
 end
 
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     ret::_SparseMat{T},
     A::_SparseMat,
@@ -214,7 +214,7 @@ function mutable_operate!(
                     k = rowvalA[kp]
                     if xb[k]
                         ret.nzval[k+k0] =
-                            operate!(add_mul, ret.nzval[k+k0], nzvalA[kp], nzB)
+                            operate!!(add_mul, ret.nzval[k+k0], nzvalA[kp], nzB)
                     else
                         ret.nzval[k+k0] = operate(*, nzvalA[kp], nzB)
                         xb[k] = true
@@ -256,32 +256,32 @@ function mutable_operate!(
 end
 # Taken from `SparseArrays.prefer_sort` added in Julia v1.1.
 _prefer_sort(nz::Integer, m::Integer) = m > 6 && 3 * SparseArrays.ilog2(nz) * nz < m
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     ret::_SparseMat{T},
     A::_SparseMat,
     B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
-    mutable_operate!(add_mul, ret, A, copy(B), α...)
+    operate!(add_mul, ret, A, copy(B), α...)
 end
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     ret::_SparseMat{T},
     A::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     B::_SparseMat,
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
-    mutable_operate!(add_mul, ret, copy(A), B, α...)
+    return operate!(add_mul, ret, copy(A), B, α...)
 end
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     ret::_SparseMat{T},
     A::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
-    mutable_operate!(add_mul, ret, copy(A), B, α...)
+    return operate!(add_mul, ret, copy(A), B, α...)
 end
 
 # This `BroadcastStyle` is used when there is a mix of sparse arrays and dense arrays.

@@ -534,7 +534,7 @@ function triangular_test(x)
     for i = 1:n
         for j = 1:(i-1)
             @test iszero(y[i, j])
-            @test MA.iszero!(y[i, j])
+            @test MA.iszero!!(y[i, j])
         end
     end
     lt = LinearAlgebra.LowerTriangular(x)
@@ -543,7 +543,7 @@ function triangular_test(x)
     for j = 1:n
         for i = 1:(j-1)
             @test iszero(z[i, j])
-            @test MA.iszero!(z[i, j])
+            @test MA.iszero!!(z[i, j])
         end
     end
 end
@@ -566,14 +566,14 @@ function diagonal_test(x)
     for j = 1:n
         for i = 1:(j-1)
             @test iszero(y[i, j])
-            @test MA.iszero!(y[i, j])
+            @test MA.iszero!!(y[i, j])
             @test iszero(y[j, i])
-            @test MA.iszero!(y[j, i])
+            @test MA.iszero!!(y[j, i])
             if abs(i - j) > 1
                 @test iszero(z[i, j])
-                @test MA.iszero!(z[i, j])
+                @test MA.iszero!!(z[i, j])
                 @test iszero(z[j, i])
-                @test MA.iszero!(z[j, i])
+                @test MA.iszero!!(z[j, i])
             end
         end
     end
