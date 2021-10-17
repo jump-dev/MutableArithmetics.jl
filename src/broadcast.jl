@@ -47,12 +47,12 @@ function broadcast_mutability(T::Type, op, args::Vararg{Type,N}) where {N}
     if mutability(T) isa IsMutable && promote_broadcast(op, args...) == T
         return IsMutable()
     else
-        return NotMutable()
+        return IsNotMutable()
     end
 end
 broadcast_mutability(x, op, args::Vararg{Any,N}) where {N} =
     broadcast_mutability(typeof(x), op, typeof.(args)...)
-broadcast_mutability(::Type) = NotMutable()
+broadcast_mutability(::Type) = IsNotMutable()
 
 """
     mutable_broadcast!(op::Function, args...)
@@ -107,7 +107,7 @@ function _broadcast_with_uniform_scaling!(op::F, args::Vararg{Any,N}) where {F<:
     return op(args...)
 end
 
-function broadcast_fallback!(::NotMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function broadcast_fallback!(::IsNotMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return broadcast(op, args...)
 end
 function broadcast_fallback!(::IsMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
