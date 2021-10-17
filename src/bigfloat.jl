@@ -123,9 +123,8 @@ function mutable_buffered_operate!(
     return mutable_buffered_operate_to!(buffer, x, op, x, args...)
 end
 
-function _scaling_to_bigfloat(x)
-    return convert(BigFloat, scaling_to_number(x))
-end
+_scaling_to_bigfloat(x) = _scaling_to(BigFloat, x)
+
 function mutable_operate_to!(
     output::BigFloat,
     op::Union{typeof(+),typeof(-),typeof(*)},

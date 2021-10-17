@@ -8,3 +8,8 @@ function alloc_test(f, n)
     f() # compile
     @test n == @allocated f()
 end
+
+function alloc_test_le(f, n)
+    f() # compile
+    @test n >= @allocated f()
+end
