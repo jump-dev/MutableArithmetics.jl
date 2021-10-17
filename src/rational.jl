@@ -88,7 +88,7 @@ end
 
 # add_mul and sub_mul
 # Buffer to hold the product
-buffer_for(::AddSubMul, args::Vararg{Type,N}) where {N} = zero(promote_operation(*, args...))
+buffer_for(::AddSubMul, args::Vararg{Type{<:Rational},N}) where {N} = zero(promote_operation(*, args...))
 function mutable_operate_to!(
     output::Rational,
     op::AddSubMul,
