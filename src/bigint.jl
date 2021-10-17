@@ -101,13 +101,14 @@ end
 function _scaling_to(::Type{T}, x) where {T}
     return convert(T, scaling_to_number(x))
 end
+_scaling_to_bigint(x) = _scaling_to(BigInt, x)
 
 function mutable_operate_to!(
     output::BigInt,
     op::Union{typeof(+),typeof(-),typeof(*)},
     args::Vararg{Scaling,N},
 ) where {N}
-    return mutable_operate_to!(output, op, _scaling_to.(BigInt, args)...)
+    return mutable_operate_to!(output, op, _scaling_to_bigint.(args)...)
 end
 function mutable_operate_to!(
     output::BigInt,
@@ -120,10 +121,10 @@ function mutable_operate_to!(
     return mutable_operate_to!(
         output,
         op,
-        _scaling_to(BigInt, x),
-        _scaling_to(BigInt, y),
-        _scaling_to(BigInt, z),
-        _scaling_to.(BigInt, args)...,
+        _scaling_to_bigint(x),
+        _scaling_to_bigint(y),
+        _scaling_to_bigint(z),
+        _scaling_to_bigint.(args)...,
     )
 end
 # Called for instance if `args` is `(v', v)` for a vector `v`.
