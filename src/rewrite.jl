@@ -16,9 +16,11 @@ MA.@rewrite(x + y * z + u * v * w)
 ```
 is rewritten into
 ```julia
-MA.add_mul!(MA.add_mul!(MA.copy_if_mutable(x),
-                        y, z),
-            u, v, w)
+MA.add_mul!!(
+    MA.add_mul!!(
+        MA.copy_if_mutable(x),
+        y, z),
+    u, v, w)
 ```
 """
 macro rewrite(expr)
@@ -27,7 +29,7 @@ end
 
 struct Zero end
 ## We need to copy `x` as it will be used as might be given by the user and be
-## given as first argument of `operate!`.
+## given as first argument of `operate!!`.
 #Base.:(+)(zero::Zero, x) = copy_if_mutable(x)
 ## `add_mul(zero, ...)` redirects to `muladd(..., zero)` which calls `... + zero`.
 #Base.:(+)(x, zero::Zero) = copy_if_mutable(x)
@@ -42,8 +44,8 @@ end
 function operate(::typeof(sub_mul), ::Zero, x, y, args::Vararg{Any,N}) where {N}
     return operate(-, operate(*, x, y, args...))
 end
-broadcast!(::Union{typeof(add_mul),typeof(+)}, ::Zero, x) = copy_if_mutable(x)
-broadcast!(::typeof(add_mul), ::Zero, x, y) = x * y
+broadcast!!(::Union{typeof(add_mul),typeof(+)}, ::Zero, x) = copy_if_mutable(x)
+broadcast!!(::typeof(add_mul), ::Zero, x, y) = x * y
 
 # Needed in `@rewrite(1 .+ sum(1 for i in 1:0) * 1^2)`
 Base.:*(z::Zero, ::Any) = z
@@ -72,7 +74,7 @@ end
 _any_zero() = false
 _any_zero(::Any, args::Vararg{Any,N}) where {N} = _any_zero(args...)
 _any_zero(::Zero, ::Vararg{Any,N}) where {N} = true
-function operate!(
+function operate!!(
     op::Union{typeof(add_mul),typeof(sub_mul)},
     x,
     args::Vararg{Any,N},
@@ -80,7 +82,7 @@ function operate!(
     if _any_zero(args...)
         return x
     else
-        return operate_fallback!(mutability(x, op, x, args...), op, x, args...)
+        return operate_fallback!!(mutability(x, op, x, args...), op, x, args...)
     end
 end
 
@@ -348,9 +350,9 @@ function _write_add_mul(
     new_var::Symbol,
 )
     if vectorized
-        f = :(MutableArithmetics.broadcast!)
+        f = :(MutableArithmetics.broadcast!!)
     else
-        f = :(MutableArithmetics.operate!)
+        f = :(MutableArithmetics.operate!!)
     end
     op = minus ? :(MutableArithmetics.sub_mul) : :(MutableArithmetics.add_mul)
     return _start_summing(
@@ -422,7 +424,7 @@ function _rewrite(
             # and right_factors are empty, otherwise we are unsure that the
             # elements in the containers have been copied, e.g., in
             # `I + (x .+ 1)`, the offdiagonal entries of `I + x` are the same as
-            # `x` so we cannot do `broadcast!(add_mul, I + x, 1)`.
+            # `x` so we cannot do `broadcast!!(add_mul, I + x, 1)`.
             code = Expr(:block)
             if length(inner_factor.args) == 2
                 # Unary addition or subtraction.
@@ -458,7 +460,7 @@ function _rewrite(
         elseif inner_factor.args[1] == :* && !vectorized
             # A multiplication expression *(args...). We need `!vectorized`
             # otherwise `x .+ A * b` would be rewritten
-            # `broadcast!(add_mul, x, A, b)`.
+            # `broadcast!!(add_mul, x, A, b)`.
             # We might need to recurse on multiple arguments, e.g., (x+y)*(x+y).
             # As a special case, only recurse on one argument and don't create
             # temporary objects
@@ -519,7 +521,7 @@ function _rewrite(
             # An expression like `base ^ exponent`, where the `base` is a
             # non-trivial expression that also needs to be re-written. We need
             # `!vectorized` otherwise `A .+ (A + A)^2` would be rewritten as
-            # `broadcast!(add_mul, x, AA, AA)` where `AA` is `A + A`.
+            # `broadcast!!(add_mul, x, AA, AA)` where `AA` is `A + A`.
             MulType = :(MutableArithmetics.promote_operation(
                 *,
                 typeof($(inner_factor.args[2])),

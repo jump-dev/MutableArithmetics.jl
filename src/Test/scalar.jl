@@ -3,18 +3,18 @@ function iszero_test(x)
 
     @test iszero(x - x)
     @test iszero(MA.@rewrite(x - x))
-    @test MA.iszero!(x - x)
-    @test MA.iszero!(MA.@rewrite(x - x))
+    @test MA.iszero!!(x - x)
+    @test MA.iszero!!(MA.@rewrite(x - x))
 
     @test iszero(0 * x)
     @test iszero(MA.@rewrite(0 * x))
-    @test MA.iszero!(0 * x)
-    @test MA.iszero!(MA.@rewrite(0 * x))
+    @test MA.iszero!!(0 * x)
+    @test MA.iszero!!(MA.@rewrite(0 * x))
 
     @test iszero(x - 2x + x)
     @test iszero(MA.@rewrite(x - 2x + x))
-    @test MA.iszero!(x - 2x + x)
-    @test MA.iszero!(MA.@rewrite(x - 2x + x))
+    @test MA.iszero!!(x - 2x + x)
+    @test MA.iszero!!(MA.@rewrite(x - 2x + x))
 
     @test MA.isequal_canonical(x_copy, x)
 end
@@ -96,7 +96,7 @@ end
 
 function convert_test(x)
     y = MA.operate(convert, typeof(x), x)
-    MA.mutable_operate!(+, y, 1)
+    MA.operate!(+, y, 1)
     @test MA.isequal_canonical(y, x + 1)
 end
 

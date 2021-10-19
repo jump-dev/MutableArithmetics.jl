@@ -35,26 +35,26 @@ function promote_operation(
 end
 
 # Only `Scaling`
-function mutable_operate!(
+function operate!(
     op::Union{typeof(+),typeof(-)},
     A::Matrix,
     B::LinearAlgebra.UniformScaling,
 )
     n = LinearAlgebra.checksquare(A)
     for i = 1:n
-        A[i, i] = operate!(op, A[i, i], B)
+        A[i, i] = operate!!(op, A[i, i], B)
     end
     return A
 end
 
-function mutable_operate!(
+function operate!(
     op::AddSubMul,
     A::Matrix,
     B::Scaling,
     C::Scaling,
     D::Vararg{Scaling,N},
 ) where {N}
-    return mutable_operate!(add_sub_op(op), A, *(B, C, D...))
+    return operate!(add_sub_op(op), A, *(B, C, D...))
 end
 
 mul_rhs(::typeof(+)) = add_mul
@@ -77,26 +77,26 @@ function _check_dims(A, B)
     end
 end
 
-function mutable_operate!(
+function operate!(
     op::Union{typeof(+),typeof(-)},
     A::Array,
     B::AbstractArray,
 )
     _check_dims(A, B)
-    return mutable_broadcast!(op, A, B)
+    return broadcast!(op, A, B)
 end
 
 # We call `scaling_to_number` as `UniformScaling` do not support broadcasting
-function mutable_operate!(
+function operate!(
     op::AddSubMul,
     A::Array,
     B::AbstractArray,
     α::Vararg{Scaling,M},
 ) where {M}
     _check_dims(A, B)
-    return mutable_broadcast!(op, A, B, scaling_to_number.(α)...)
+    return broadcast!(op, A, B, scaling_to_number.(α)...)
 end
-function mutable_operate!(
+function operate!(
     op::AddSubMul,
     A::Array,
     α::Scaling,
@@ -104,7 +104,7 @@ function mutable_operate!(
     β::Vararg{Scaling,M},
 ) where {M}
     _check_dims(A, B)
-    return mutable_broadcast!(
+    return broadcast!(
         op,
         A,
         scaling_to_number(α),
@@ -112,7 +112,7 @@ function mutable_operate!(
         scaling_to_number.(β)...,
     )
 end
-function mutable_operate!(
+function operate!(
     op::AddSubMul,
     A::Array,
     α1::Scaling,
@@ -121,7 +121,7 @@ function mutable_operate!(
     β::Vararg{Scaling,M},
 ) where {M}
     _check_dims(A, B)
-    return mutable_broadcast!(
+    return broadcast!(
         op,
         A,
         scaling_to_number(α1),
@@ -133,13 +133,13 @@ end
 
 # Fallback, we may be able to be more efficient in more cases by adding more
 # specialized methods.
-function mutable_operate!(op::AddSubMul, A::Array, x, y)
-    return mutable_operate!(op, A, x * y)
+function operate!(op::AddSubMul, A::Array, x, y)
+    return operate!(op, A, x * y)
 end
 
-function mutable_operate!(op::AddSubMul, A::Array, x, y, args::Vararg{Any,N}) where {N}
+function operate!(op::AddSubMul, A::Array, x, y, args::Vararg{Any,N}) where {N}
     @assert N > 0
-    return mutable_operate!(op, A, x, *(y, args...))
+    return operate!(op, A, x, *(y, args...))
 end
 
 # Product
@@ -269,7 +269,7 @@ function _add_mul_array(buffer, C::Vector, A::AbstractMatrix, B::AbstractVector)
             aoffs = (k - 1) * Astride
             b = B[k]
             for i in Base.OneTo(size(A, 1))
-                C[i] = buffered_operate!(buffer, add_mul, C[i], A[aoffs+i], b)
+                C[i] = buffered_operate!!(buffer, add_mul, C[i], A[aoffs+i], b)
             end
         end
     end # @inbounds
@@ -283,7 +283,7 @@ function _add_mul_array(buffer, C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
         for i = 1:size(A, 1), j = 1:size(B, 2)
             Ctmp = C[i, j]
             for k = 1:size(A, 2)
-                Ctmp = buffered_operate!(buffer, add_mul, Ctmp, A[i, k], B[k, j])
+                Ctmp = buffered_operate!!(buffer, add_mul, Ctmp, A[i, k], B[k, j])
             end
             C[i, j] = Ctmp
         end
@@ -291,7 +291,7 @@ function _add_mul_array(buffer, C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
     return C
 end
 
-function mutable_buffered_operate!(
+function buffered_operate!(
     buffer,
     ::typeof(add_mul),
     C::VecOrMat,
@@ -310,31 +310,31 @@ function buffer_for(
 ) where {S,T,U}
     return buffer_for(add_mul, S, T, U)
 end
-function mutable_operate!(
+function operate!(
     ::typeof(add_mul),
     C::VecOrMat,
     A::AbstractMatrix,
     B::AbstractVecOrMat,
 )
     buffer = buffer_for(add_mul, typeof(C), typeof(A), typeof(B))
-    return mutable_buffered_operate!(buffer, add_mul, C, A, B)
+    return buffered_operate!(buffer, add_mul, C, A, B)
 end
 
-function mutable_operate!(::typeof(zero), C::Union{Vector,Matrix})
+function operate!(::typeof(zero), C::Union{Vector,Matrix})
     # C may contain undefined values so we cannot call `zero!`
     for i in eachindex(C)
         @inbounds C[i] = zero(eltype(C))
     end
 end
 
-function mutable_operate_to!(
+function operate_to!(
     C::AbstractArray,
     ::typeof(*),
     A::AbstractArray,
     B::AbstractArray,
 )
-    mutable_operate!(zero, C)
-    return mutable_operate!(add_mul, C, A, B)
+    operate!(zero, C)
+    return operate!(add_mul, C, A, B)
 end
 
 function undef_array(::Type{Array{T,N}}, axes::Vararg{Base.OneTo,N}) where {T,N}
@@ -347,12 +347,12 @@ end
 # `LinearAlgebra.mul!`.
 function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractVector{T}) where {T,S}
     C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1))
-    return mutable_operate_to!(C, *, A, B)
+    return operate_to!(C, *, A, B)
 end
 
 function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractMatrix{T}) where {T,S}
     C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1), axes(B, 2))
-    return mutable_operate_to!(C, *, A, B)
+    return operate_to!(C, *, A, B)
 end
 
 #mutable_copy(A::LinearAlgebra.Symmetric) = LinearAlgebra.Symmetric(mutable_copy(parent(A)), LinearAlgebra.sym_uplo(A.uplo))

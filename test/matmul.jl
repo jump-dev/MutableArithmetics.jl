@@ -115,7 +115,7 @@ end
         err = DimensionMismatch(
             "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
         )
-        @test_throws err MA.mutable_operate!(+, A, B)
+        @test_throws err MA.operate!(+, A, B)
     end
     @testset "unsupported_product" begin
         unsupported_product()
@@ -129,7 +129,7 @@ end
         y = [0; 0; 0]
 
         @test MA.mul(A, x) == [3; 3; 3]
-        @test MA.mul_to!(y, A, x) == [3; 3; 3] && y == [3; 3; 3]
+        @test MA.mul_to!!(y, A, x) == [3; 3; 3] && y == [3; 3; 3]
 
         A = BigInt[1 1 1; 1 1 1; 1 1 1]
         x = BigInt[1; 1; 1]
@@ -137,9 +137,9 @@ end
 
         @test MA.mutability(y, *, A, x) isa MA.IsMutable
         @test MA.mul(A, x) == BigInt[3; 3; 3]
-        @test MA.mul_to!(y, A, x) == BigInt[3; 3; 3] && y == BigInt[3; 3; 3]
+        @test MA.mul_to!!(y, A, x) == BigInt[3; 3; 3] && y == BigInt[3; 3; 3]
         @test_throws DimensionMismatch MA.mul(BigInt[1 1; 1 1], BigInt[])
-        @test_throws DimensionMismatch MA.mul_to!(BigInt[], BigInt[1 1; 1 1], BigInt[1; 1])
+        @test_throws DimensionMismatch MA.mul_to!!(BigInt[], BigInt[1 1; 1 1], BigInt[1; 1])
 
         @testset "mutability" begin
             alloc_test(() -> MA.promote_operation(*, typeof(A), typeof(x)), 0)
@@ -166,13 +166,13 @@ end
         # 8 bytes in the double for loop. FIXME: figure out why
         # Half size on 32-bit.
         n = Sys.WORD_SIZE == 64 ? 48 : 24
-        alloc_test(() -> MA.add_mul!(y, A, x), n)
-        alloc_test(() -> MA.operate_fallback!(MA.IsMutable(), MA.add_mul, y, A, x), n)
+        alloc_test(() -> MA.add_mul!!(y, A, x), n)
+        alloc_test(() -> MA.operate_fallback!!(MA.IsMutable(), MA.add_mul, y, A, x), n)
+        alloc_test(() -> MA.operate!!(MA.add_mul, y, A, x), n)
         alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), n)
-        alloc_test(() -> MA.mutable_operate!(MA.add_mul, y, A, x), n)
         # Apparently, all allocations were on creating the buffer since this is allocation free:
         buffer = MA.buffer_for(MA.add_mul, typeof(y), typeof(A), typeof(x))
-        alloc_test(() -> MA.mutable_buffered_operate!(buffer, MA.add_mul, y, A, x), 0)
+        alloc_test(() -> MA.buffered_operate!(buffer, MA.add_mul, y, A, x), 0)
     end
     @testset "matrix-matrix product" begin
         A = [1 2 3; 4 5 6; 6 8 9]
@@ -181,7 +181,7 @@ end
 
         D = [3 -4 7; 6 -7 19; 8 -9 29]
         @test MA.mul(A, B) == D
-        @test MA.mul_to!(C, A, B) == D
+        @test MA.mul_to!!(C, A, B) == D
         @test C == D
 
         A = BigInt[1 2 3; 4 5 6; 6 8 9]
@@ -190,12 +190,12 @@ end
 
         D = BigInt[3 -4 7; 6 -7 19; 8 -9 29]
         @test MA.mul(A, B) == D
-        @test MA.mul_to!(C, A, B) == D
+        @test MA.mul_to!!(C, A, B) == D
         @test C == D
 
         @test MA.mutability(C, *, A, B) isa MA.IsMutable
         @test_throws DimensionMismatch MA.mul(BigInt[1 1; 1 1], zeros(BigInt, 1, 1))
-        @test_throws DimensionMismatch MA.mul_to!(
+        @test_throws DimensionMismatch MA.mul_to!!(
             zeros(BigInt, 1, 1),
             BigInt[1 1; 1 1],
             zeros(BigInt, 2, 1),
@@ -222,9 +222,9 @@ end
             alloc_test(() -> MA.mutability(C, MA.add_mul, C, A, B), 0)
         end
 
-        alloc_test(() -> MA.add_mul!(C, A, B), BIGINT_ALLOC)
+        alloc_test(() -> MA.add_mul!!(C, A, B), BIGINT_ALLOC)
+        alloc_test(() -> MA.operate!!(MA.add_mul, C, A, B), BIGINT_ALLOC)
         alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), BIGINT_ALLOC)
-        alloc_test(() -> MA.mutable_operate!(MA.add_mul, C, A, B), BIGINT_ALLOC)
     end
 end
 
@@ -232,7 +232,7 @@ end
     X = ones(BigInt, 1, 1)
     M = ones(1, 1)
     C = X * M
-    D = MA.operate!(MA.add_mul, C, X, M)
+    D = MA.operate!!(MA.add_mul, C, X, M)
     @test D == X * M + X * M
 end
 
@@ -240,7 +240,7 @@ end
     x = BigFloat[1, 1]
     A = BigFloat[2 2; 2 2]
     y = BigFloat[3, 3]
-    MA.operate!(MA.sub_mul, x, A, y)
+    MA.operate!!(MA.sub_mul, x, A, y)
     @test x == [-11, -11]
 end
 
@@ -248,6 +248,6 @@ end
     x = BigFloat[1, 1]
     A = BigFloat[2 2; 2 2]
     y = BigFloat[3, 3]
-    MA.operate!(MA.add_mul, x, A, y)
+    MA.operate!!(MA.add_mul, x, A, y)
     @test x == [13, 13]
 end

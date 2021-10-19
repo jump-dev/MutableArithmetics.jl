@@ -45,7 +45,7 @@ add_sub_op(::typeof(add_mul)) = +
 add_sub_op(::typeof(sub_mul)) = -
 
 """
-    iszero!(x)
+    iszero!!(x)
 
 Return a `Bool` indicating whether `x` is zero, possibly modifying `x`.
 
@@ -53,10 +53,10 @@ Return a `Bool` indicating whether `x` is zero, possibly modifying `x`.
 
 In MathOptInterface, a `ScalarAffineFunction` may contain duplicate terms.
 In `Base.iszero`, duplicate terms need to be merged but the function is left
-with duplicates as it cannot be modified. If `iszero!` is called instead,
+with duplicates as it cannot be modified. If `iszero!!` is called instead,
 the function will be canonicalized in addition for checking whether it is zero.
 """
-iszero!(x) = iszero(x)
+iszero!!(x) = iszero(x)
 
 include("interface.jl")
 include("shortcuts.jl")
