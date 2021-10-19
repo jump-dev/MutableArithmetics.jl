@@ -34,3 +34,11 @@ y = MutableArithmetics.@rewrite(x + (x + 1)^1)
 @test y == 3
 
 end
+
+# Test the scoping outside the module. See also the note in runtests.jl.
+
+using Test
+
+@testset "test_scoping" begin
+    @test M.@_rewrite(1 + (1 + 1)^1) == 3
+end
