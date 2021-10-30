@@ -1,5 +1,5 @@
 mutability(::Type{BigInt}) = IsMutable()
-mutable_copy(x::BigInt) = deepcopy(x)
+mutable_copy(x::BigInt) = Base.GMP.MPZ.set(x)
 
 # zero
 promote_operation(::typeof(zero), ::Type{BigInt}) = BigInt
