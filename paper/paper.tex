@@ -80,7 +80,7 @@ the time complexity order is identical: $\Theta(nm)$ in both cases where $n$ is 
 
 We now consider a mutable element type for which exploiting mutability affects the time complexity.
 Consider a type \lstinline|SymbolicVariable| representing a symbolic variable and the following types representing a linear combinations of these variables with coefficients of type \lstinline|T|.
-This examples encapsulates for instance JuMP affine expressions~\cite{dunning2017jump}, MOI affine functions~\cite{legat2021mathoptinterface}, polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2021multivariatepolynomials}) or symbolic sums~\cite{gowda2021high}.
+This example encapsulates for instance JuMP affine expressions~\cite{dunning2017jump}, MOI affine functions~\cite{legat2021mathoptinterface}, polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2021multivariatepolynomials}) or symbolic sums~\cite{gowda2021high}.
 \begin{lstlisting}[language = Julia]
 struct Term{T}
     coef::T
@@ -225,7 +225,7 @@ For instance, \lstinline|promote_operation(+, ::Type{S}, ::Type{T})|
 defaults to \lstinline|typeof(zero(S) + zero(T))| which is correct if \lstinline|+(::S, ::T)| is type-stable.
 
 There are two cases for which this default implementation of \lstinline|promote_operation| is not sufficient.
-First, as we will see below, \lstinline|promote_operation| is a the core of many operations so it is important that it is efficient.
+First, as we will see below, \lstinline|promote_operation| is at the core of many operations so it is important that it is efficient.
 Julia may be able to compute the result of \lstinline|typeof(zero(S) + zero(T))| at compile time.
 However, if the body of \lstinline|promote_operation| is not evaluated at compile-time, this can cause performance issues.
 This is amplified for mutable types as \lstinline|zero(S) + zero(T)| may allocate.
