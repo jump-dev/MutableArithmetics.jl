@@ -1,4 +1,6 @@
 mutability(::Type{BigFloat}) = IsMutable()
+# copied from `deepcopy_internal` implementation in Julia:
+# https://github.com/JuliaLang/julia/blob/7d41d1eb610cad490cbaece8887f9bbd2a775021/base/mpfr.jl#L1041-L1050
 function mutable_copy(x::BigFloat)
     d = x._d
     d′ = GC.@preserve d unsafe_string(pointer(d), sizeof(d)) # creates a definitely-new String
