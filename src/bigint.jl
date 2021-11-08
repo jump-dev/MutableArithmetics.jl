@@ -1,5 +1,7 @@
 mutability(::Type{BigInt}) = IsMutable()
-mutable_copy(x::BigInt) = deepcopy(x)
+# copied from `deepcopy_internal` implementation in Julia:
+# https://github.com/JuliaLang/julia/blob/7d41d1eb610cad490cbaece8887f9bbd2a775021/base/gmp.jl#L772
+mutable_copy(x::BigInt) = Base.GMP.MPZ.set(x)
 
 # zero
 promote_operation(::typeof(zero), ::Type{BigInt}) = BigInt
