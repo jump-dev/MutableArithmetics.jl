@@ -124,11 +124,16 @@ function operate end
 #     custom `operate` method.
 operate(::typeof(-), x) = -x
 operate(
-    op::Union{typeof(+),typeof(-),typeof(*),AddSubMul,typeof(add_dot)},
+    op::Union{typeof(+),typeof(*),AddSubMul,typeof(add_dot)},
     x,
     y,
     args::Vararg{Any,N},
 ) where {N} = op(x, y, args...)
+operate(
+    op::Union{typeof(-),typeof(/)},
+    x,
+    y,
+) where {N} = op(x, y)
 operate(::typeof(convert), ::Type{T}, x) where {T} = convert(T, x)
 operate(::typeof(convert), ::Type{T}, x::T) where {T} = copy_if_mutable(x)
 
