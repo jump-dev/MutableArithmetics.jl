@@ -148,6 +148,7 @@ end
 
 include("rewrite.jl")
 include("dispatch.jl")
+include("range.jl")
 
 # Test that can be used to test an implementation of the interface
 include("Test/Test.jl")
