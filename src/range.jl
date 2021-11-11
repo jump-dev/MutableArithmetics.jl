@@ -28,6 +28,6 @@ end
 
 function Base.iterate(r::MutatingStepRange{T}, i) where {T}
     i == last(r) && return nothing
-    next = convert(T, operate!(+, i, step(r)))
+    next = convert(T, operate!!(+, i, step(r)))
     return (next, next)
 end
