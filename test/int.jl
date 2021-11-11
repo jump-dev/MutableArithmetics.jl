@@ -97,3 +97,7 @@ end
     @test MA.Zero() / 1 == MA.Zero()
     @test_throws DivideError MA.Zero() / 0
 end
+
+@testset "Division" begin
+    @test 1 / 2 == MA.operate!!(/, 1, 2)
+end
