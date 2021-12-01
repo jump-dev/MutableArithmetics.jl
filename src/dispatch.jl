@@ -127,81 +127,162 @@ function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::AbstractVecOrMat,
     B::AbstractVecOrMat,
-    args::Vararg{Any,N},
 ) where {N}
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
     A::AbstractVecOrMat,
     B::AbstractVector,
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
     A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
     B::AbstractVector,
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
     A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
     B::AbstractVector,
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
     B::AbstractMatrix,
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
     B::AbstractMatrix,
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::AbstractMatrix,
     B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::AbstractMatrix,
     B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
     B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
     B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
-    args...,
 )
-    _mul!(ret, A, B, args...)
+    _mul!(ret, A, B)
+end
+
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::AbstractVecOrMat,
+    B::AbstractVecOrMat,
+    α::Number,
+    β::Number,
+) where {N}
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractVector{<:AbstractMutable},
+    A::AbstractVecOrMat,
+    B::AbstractVector,
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractVector{<:AbstractMutable},
+    A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
+    B::AbstractVector,
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractVector{<:AbstractMutable},
+    A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
+    B::AbstractVector,
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
+    B::AbstractMatrix,
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
+    B::AbstractMatrix,
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::AbstractMatrix,
+    B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::AbstractMatrix,
+    B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
+    B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
+end
+function LinearAlgebra.mul!(
+    ret::AbstractMatrix{<:AbstractMutable},
+    A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
+    B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
+    α::Number,
+    β::Number,
+)
+    _mul!(ret, A, B, α, β)
 end
 
 # SparseArrays promotes the element types of `A` and `B` to the same type
