@@ -377,6 +377,24 @@ Base.:*(
     B::StridedMatrix{<:Any},
 ) = mul(A, B)
 
+const StridedMaybeAdjOrTransMat{T} = Union{StridedMatrix{T}, LinearAlgebra.Adjoint{T, <:StridedMatrix}, LinearAlgebra.Transpose{T, <:StridedMatrix}}
+
+# See https://github.com/JuliaLang/julia/pull/37898
+# The default fallback only used `promote_type` so it may get its wrong, e.g., for JuMP and MultivariatePolynomials.
+if VERSION >= v"1.7.0-DEV.1284"
+    _mat_mat_scalar(A, B, γ) = operate!!(*, operate(*, A, B), γ)
+
+    function LinearAlgebra.mat_mat_scalar(A::StridedMaybeAdjOrTransMat{<:AbstractMutable}, B::StridedMaybeAdjOrTransMat, γ)
+        return _mat_mat_scalar(A, B, γ)
+    end
+    function LinearAlgebra.mat_mat_scalar(A::StridedMaybeAdjOrTransMat, B::StridedMaybeAdjOrTransMat{<:AbstractMutable}, γ)
+        return _mat_mat_scalar(A, B, γ)
+    end
+    function LinearAlgebra.mat_mat_scalar(A::StridedMaybeAdjOrTransMat{<:AbstractMutable}, B::StridedMaybeAdjOrTransMat{<:AbstractMutable}, γ)
+        return _mat_mat_scalar(A, B, γ)
+    end
+end
+
 # Base doesn't define efficient fallbacks for sparse array arithmetic involving
 # non-`<:Number` scalar elements, so we define some of these for `<:AbstractMutable` scalar
 # elements here.
