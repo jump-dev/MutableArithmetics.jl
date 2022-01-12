@@ -18,27 +18,27 @@ allow anyone to make use of mutability when desired.
 
 The package allows a given type to declare itself mutable through the
 `MA.mutability` trait.
-Then the user can use the `MA.operate!` function to write generic code
+Then the user can use the `MA.operate!!` function to write generic code
 that works for arbitrary type while exploiting mutability of the type
 if possible. More precisely:
 
-* The `MA.operate!(op::Function, x, args...)` redirects to `op(x, args...)`
+* The `MA.operate!!(op::Function, x, args...)` redirects to `op(x, args...)`
   if `x` is not mutable or if the result of the operation cannot be stored in `x`.
-  Otherwise, it redirects to `MA.mutable_operate!(op, x, args...)`.
-* `MA.mutable_operate!(op::Function, x, args...)` stores the result of the
+  Otherwise, it redirects to `MA.operate!(op, x, args...)`.
+* `MA.operate!(op::Function, x, args...)` stores the result of the
   operation in `x`. It is a `MethodError` if `x` is not mutable or if the
   result of the operation cannot be stored in `x`.
 
-So from a generic code, `MA.operate!` can be used when the value of `x` is not
+So from a generic code, `MA.operate!!` can be used when the value of `x` is not
 used anywhere else to recycle it if possible. This allows the code to both
 work for mutable and for non-mutable type.
 
-When the type is known to be mutable, `MA.mutable_operate!` can be used to make
+When the type is known to be mutable, `MA.operate!` can be used to make
 sure the operation is done in-place. If it is not possible, the `MethodError`
-allows to easily fix the issue while `MA.operate!` would have silently fallen
+allows to easily fix the issue while `MA.operate!!` would have silently fallen
 back to the non-mutating function.
 
-In conclusion, the distinction between `MA.operate!` and `MA.mutable_operate!`
+In conclusion, the distinction between `MA.operate!!` and `MA.operate!`
 allows to cover all use case while having an universal convention accross all
 operations.
 
@@ -136,11 +136,11 @@ BenchmarkTools.Trial: 407 samples with 1 evaluation.
  Memory estimate: 3.66 MiB, allocs estimate: 197732.
 ```
 
-In `MA.mutable_operate!(::typeof(MA.add_mul), ::Vector, ::Matrix, ::Vector)`, we
+In `MA.operate!(::typeof(MA.add_mul), ::Vector, ::Matrix, ::Vector)`, we
 exploit the mutability of `BigInt` through the MutableArithmetics API.
 This provides a significant speedup and a drastic reduction of memory usage:
 ```julia
-trial2 = @benchmark MA.add_mul!($c2, $A2, $b2)
+trial2 = @benchmark MA.add_mul!!($c2, $A2, $b2)
 display(trial2)
 
 # output
@@ -158,7 +158,7 @@ BenchmarkTools.Trial: 4878 samples with 1 evaluation.
 ```
 
 There is still 48 bytes that are allocated, where does this come from ?
-`MA.mutable_operate!(::typeof(MA.add_mul), ::BigInt, ::BigInt, ::BigInt)`
+`MA.operate!(::typeof(MA.add_mul), ::BigInt, ::BigInt, ::BigInt)`
 allocates a temporary `BigInt` to hold the result of the multiplication.
 This buffer is allocated only once for the whole matrix-vector multiplication
 through the system of buffers of MutableArithmetics.
@@ -166,7 +166,7 @@ If may Matrix-Vector products need to be computed, the buffer can even be alloca
 outside of the matrix-vector product as follows:
 ```julia
 buffer = MA.buffer_for(MA.add_mul, typeof(c2), typeof(A2), typeof(b2))
-trial3 = @benchmark MA.buffered_operate!($buffer, MA.add_mul, $c2, $A2, $b2)
+trial3 = @benchmark MA.buffered_operate!!($buffer, MA.add_mul, $c2, $A2, $b2)
 display(trial3)
 
 # output
