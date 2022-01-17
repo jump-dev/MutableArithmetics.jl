@@ -1,7 +1,7 @@
 # MutableArithmetics.jl
 
 [![Stable][docs-stable-img]][docs-stable-url]
-[![Dev][docs-latest-img]][docs-latest-url]
+[![Dev][docs-dev-img]][docs-dev-url]
 [![Build Status][build-img]][build-url]
 [![Codecov][codecov-img]][codecov-url]
 [![deps][deps-img]][deps-url]
@@ -93,7 +93,7 @@ to the implementations of this package. See `src/dispatch.jl` for more details.
 ## Documentation
 
 - [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
-- [**LATEST**][docs-latest-url] &mdash; *in-development version of the documentation.*
+- [**LATEST**][docs-dev-url] &mdash; *in-development version of the documentation.*
 
 ## Quick Example & Benchmark
 
@@ -187,9 +187,9 @@ Note that there are now 0 allocations.
 > This package started out as a GSoC '19 project.
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-stable-url]: https://jump.dev/MutableArithmetics.jl/stable
-[docs-latest-url]: https://jump.dev/MutableArithmetics.jl/latest
+[docs-dev-url]: https://jump.dev/MutableArithmetics.jl/dev
 
 [build-img]: https://github.com/jump-dev/MutableArithmetics.jl/workflows/CI/badge.svg?branch=master
 [build-url]: https://github.com/jump-dev/MutableArithmetics.jl/actions?query=workflow%3ACI
