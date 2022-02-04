@@ -7,6 +7,7 @@
 module MutableArithmetics
 
 import LinearAlgebra
+import SparseArrays
 
 # Performance note:
 # We use `Vararg` instead of splatting `...` as using `where N` forces Julia to
@@ -101,12 +102,12 @@ end
 
 include("implementations/BigInt.jl")
 include("implementations/BigFloat.jl")
-include("implementations/Rational.jl")
+include("implementations/LinearAlgebra.jl")
 include("implementations/MutatingStepRange.jl")
+include("implementations/Rational.jl")
+include("implementations/SparseArrays.jl")
 
 include("reduce.jl")
-include("linear_algebra.jl")
-include("sparse_arrays.jl")
 
 """
     isequal_canonical(a, b)

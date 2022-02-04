@@ -1,12 +1,15 @@
+# This file contains methods to implement the MutableArithmetics API for types
+# in the LinearAlgebra stdlib.
+
 mutability(::Type{<:Array}) = IsMutable()
+
 mutable_copy(A::Array) = copy_if_mutable.(A)
 
 # Sum
 
-# By default, we assume the return value is an `Array` as having a different
-# method for all cases `UpperTriangular`, `Adjoint`, ... + other matrices outside
-# `LinearAlgebra` would be cumbersome.
-# A more specific method should be implemented for other cases.
+# By default, we assume the return value is an `Array` because having a
+# different method for all combinations of cases would be cumbersome. A more
+# specific method could be implemented for specific cases.
 function promote_operation(
     op::Union{typeof(+),typeof(-)},
     ::Type{<:AbstractArray{S,N}},
@@ -57,6 +60,8 @@ function operate!(
     return operate!(add_sub_op(op), A, *(B, C, D...))
 end
 
+# TODO(odow): these are the only cases that appear in all of JuliaHub. They
+# should become private.
 mul_rhs(::typeof(+)) = add_mul
 mul_rhs(::typeof(-)) = sub_mul
 
@@ -75,6 +80,7 @@ function _check_dims(A, B)
             ),
         )
     end
+    return
 end
 
 function operate!(op::Union{typeof(+),typeof(-)}, A::Array, B::AbstractArray)
@@ -92,6 +98,7 @@ function operate!(
     _check_dims(A, B)
     return broadcast!(op, A, B, scaling_to_number.(α)...)
 end
+
 function operate!(
     op::AddSubMul,
     A::Array,
@@ -102,6 +109,7 @@ function operate!(
     _check_dims(A, B)
     return broadcast!(op, A, scaling_to_number(α), B, scaling_to_number.(β)...)
 end
+
 function operate!(
     op::AddSubMul,
     A::Array,
@@ -161,7 +169,7 @@ end
 
 # `{S}` and `{T}` are used to avoid ambiguity with above methods.
 function promote_operation(
-    op::typeof(*),
+    ::typeof(*),
     A::Type{<:AbstractArray{S}},
     B::Type{<:AbstractArray{T}},
 ) where {S,T}
@@ -243,6 +251,7 @@ function _dim_check(C::AbstractVector, A::AbstractMatrix, B::AbstractVector)
             ),
         )
     end
+    return
 end
 
 function _dim_check(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
@@ -262,6 +271,7 @@ function _dim_check(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
             ),
         )
     end
+    return
 end
 
 function _add_mul_array(buffer, C::Vector, A::AbstractMatrix, B::AbstractVector)
@@ -314,6 +324,7 @@ function buffer_for(
 ) where {S,T,U}
     return buffer_for(add_mul, S, T, U)
 end
+
 function operate!(
     ::typeof(add_mul),
     C::VecOrMat,
@@ -329,6 +340,7 @@ function operate!(::typeof(zero), C::Union{Vector,Matrix})
     for i in eachindex(C)
         @inbounds C[i] = zero(eltype(C))
     end
+    return
 end
 
 function operate_to!(
@@ -345,10 +357,9 @@ function undef_array(::Type{Array{T,N}}, axes::Vararg{Base.OneTo,N}) where {T,N}
     return Array{T,N}(undef, length.(axes))
 end
 
-# Does what `LinearAlgebra/src/matmul.jl` does for abstract
-# matrices and vector, estimate the resulting element type,
-# allocate the resulting array but it redirects to `mul_to!` instead of
-# `LinearAlgebra.mul!`.
+# Does what `LinearAlgebra/src/matmul.jl` does for abstract matrices and
+# vectors: estimate the resulting element type, allocate the resulting array but
+# it redirects to `mul_to!` instead of `LinearAlgebra.mul!`.
 function operate(
     ::typeof(*),
     A::AbstractMatrix{S},
@@ -370,11 +381,6 @@ function operate(
     )
     return operate_to!(C, *, A, B)
 end
-
-#mutable_copy(A::LinearAlgebra.Symmetric) = LinearAlgebra.Symmetric(mutable_copy(parent(A)), LinearAlgebra.sym_uplo(A.uplo))
-# Broadcast applies the transpose
-#mutable_copy(A::LinearAlgebra.Transpose) = LinearAlgebra.Transpose(mutable_copy(parent(A)))
-#mutable_copy(A::LinearAlgebra.Adjoint) = LinearAlgebra.Adjoint(mutable_copy(parent(A)))
 
 const _TransposeOrAdjoint{T,MT} =
     Union{LinearAlgebra.Transpose{T,MT},LinearAlgebra.Adjoint{T,MT}}
@@ -409,6 +415,7 @@ function similar_array_type(
 end
 
 # dot product
+
 function promote_array_mul(
     ::Type{<:_TransposeOrAdjoint{S,<:AbstractVector}},
     ::Type{<:AbstractVector{T}},

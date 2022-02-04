@@ -1,3 +1,6 @@
+# This file contains methods to implement the MutableArithmetics API for
+# Base.BigInt.
+
 mutability(::Type{BigInt}) = IsMutable()
 
 # Copied from `deepcopy_internal` implementation in Julia:

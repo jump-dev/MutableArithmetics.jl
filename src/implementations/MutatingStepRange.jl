@@ -1,3 +1,8 @@
+# This file contains methods to implement the MutableArithmetics API for a new
+# MutatingStepRange type. This feature was originally designed because of a
+# discussion in the julialang/julia issue #39008:
+# https://github.com/JuliaLang/julia/issues/39008
+
 struct MutatingStepRange{T,S} <: OrdinalRange{T,S}
     start::T
     step::S

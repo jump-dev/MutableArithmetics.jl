@@ -1,3 +1,6 @@
+# This file contains methods to implement the MutableArithmetics API for
+# Base.Rational{T}.
+
 # `Rational` is a `struct`, not a `mutable struct`, so if `T` is not
 # mutable, we cannot mutate the rational.
 mutability(::Type{Rational{T}}) where {T} = mutability(T)
