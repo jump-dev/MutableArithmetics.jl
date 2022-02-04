@@ -2,7 +2,7 @@ using Test
 import MutableArithmetics
 const MA = MutableArithmetics
 
-function mutating_step_range_test(::Type{T}) where T
+function mutating_step_range_test(::Type{T}) where {T}
     r = MA.MutatingStepRange(T(2), T(3), T(9))
     expected = MA.mutability(T) isa MA.IsMutable ? 8 * ones(T, 3) : T[2, 5, 8]
     @test collect(r) == expected

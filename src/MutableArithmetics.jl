@@ -22,7 +22,9 @@ Return `a + *(args...)`. Note that `add_mul(a, b, c) = muladd(b, c, a)`.
 function add_mul end
 add_mul(a, b) = a + b
 add_mul(a, b, c) = muladd(b, c, a)
-add_mul(a, b, c, d, args::Vararg{Any,N}) where {N} = add_mul(a, b, *(c, d, args...))
+function add_mul(a, b, c, d, args::Vararg{Any,N}) where {N}
+    return add_mul(a, b, *(c, d, args...))
+end
 
 """
     sub_mul(a, args...)
@@ -38,7 +40,9 @@ sub_mul(a, b, c, args::Vararg{Any,N}) where {N} = a - *(b, c, args...)
 
 Return `a + dot(args...)`.
 """
-add_dot(a, b, c, args::Vararg{Any,N}) where {N} = a + LinearAlgebra.dot(b, c, args...)
+function add_dot(a, b, c, args::Vararg{Any,N}) where {N}
+    return a + LinearAlgebra.dot(b, c, args...)
+end
 
 const AddSubMul = Union{typeof(add_mul),typeof(sub_mul)}
 add_sub_op(::typeof(add_mul)) = +
@@ -83,8 +87,9 @@ function operate(
     return LinearAlgebra.UniformScaling(operate(convert, T, x.λ))
 end
 scaling_convert(T::Type, x::LinearAlgebra.UniformScaling) = convert(T, x.λ)
-operate(::typeof(convert), T::Type, x::LinearAlgebra.UniformScaling) =
-    operate(convert, T, x.λ)
+function operate(::typeof(convert), T::Type, x::LinearAlgebra.UniformScaling)
+    return operate(convert, T, x.λ)
+end
 
 include("bigint.jl")
 include("bigfloat.jl")
@@ -127,13 +132,19 @@ end
 function isequal_canonical(x::LinearAlgebra.Adjoint, y::LinearAlgebra.Adjoint)
     return isequal_canonical(parent(x), parent(y))
 end
-function isequal_canonical(x::LinearAlgebra.Transpose, y::LinearAlgebra.Transpose)
+function isequal_canonical(
+    x::LinearAlgebra.Transpose,
+    y::LinearAlgebra.Transpose,
+)
     return isequal_canonical(parent(x), parent(y))
 end
 function isequal_canonical(x::LinearAlgebra.Diagonal, y::LinearAlgebra.Diagonal)
     return isequal_canonical(parent(x), parent(y))
 end
-function isequal_canonical(x::LinearAlgebra.Tridiagonal, y::LinearAlgebra.Tridiagonal)
+function isequal_canonical(
+    x::LinearAlgebra.Tridiagonal,
+    y::LinearAlgebra.Tridiagonal,
+)
     return isequal_canonical(x.dl, y.dl) &&
            isequal_canonical(x.d, y.d) &&
            isequal_canonical(x.du, y.du)

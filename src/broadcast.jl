@@ -16,25 +16,45 @@ end
 # Same as `Base.Broadcast._combine_styles` but with types as argument.
 _combine_styles() = Broadcast.DefaultArrayStyle{0}()
 _combine_styles(c::Type) = Broadcast.result_style(Broadcast.BroadcastStyle(c))
-_combine_styles(c1::Type, c2::Type) =
-    Broadcast.result_style(_combine_styles(c1), _combine_styles(c2))
-@inline _combine_styles(c1::Type, c2::Type, cs::Vararg{Type,N}) where {N} =
-    Broadcast.result_style(_combine_styles(c1), _combine_styles(c2, cs...))
+function _combine_styles(c1::Type, c2::Type)
+    return Broadcast.result_style(_combine_styles(c1), _combine_styles(c2))
+end
+@inline function _combine_styles(
+    c1::Type,
+    c2::Type,
+    cs::Vararg{Type,N},
+) where {N}
+    return Broadcast.result_style(
+        _combine_styles(c1),
+        _combine_styles(c2, cs...),
+    )
+end
 
 _combine_shapes(s) = s
-_combine_2_shapes(s1::Base.HasShape{N}, s2::Base.HasShape{M}) where {N,M} =
-    Base.HasShape{max(N, M)}()
-_combine_shapes(s1, s2, args::Vararg{Any,N}) where {N} =
-    _combine_shapes(_combine_2_shapes(s1, s2), args...)
+function _combine_2_shapes(
+    s1::Base.HasShape{N},
+    s2::Base.HasShape{M},
+) where {N,M}
+    return Base.HasShape{max(N, M)}()
+end
+function _combine_shapes(s1, s2, args::Vararg{Any,N}) where {N}
+    return _combine_shapes(_combine_2_shapes(s1, s2), args...)
+end
 _shape(T) = Base.HasShape{ndims(T)}()
-_combine_sizes(args::Vararg{Any,N}) where {N} = _combine_shapes(_shape.(args)...)
+function _combine_sizes(args::Vararg{Any,N}) where {N}
+    return _combine_shapes(_shape.(args)...)
+end
 
 function promote_broadcast(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     # FIXME we could use `promote_operation` instead as
     # `combine_eltypes` uses `return_type` hence it may return a non-concrete type
     # and we do not handle that case.
     T = Base.Broadcast.combine_eltypes(op, args)
-    return _broadcasted_type(_combine_styles(args...), _combine_sizes(args...), T)
+    return _broadcasted_type(
+        _combine_styles(args...),
+        _combine_sizes(args...),
+        T,
+    )
 end
 
 """
@@ -50,8 +70,9 @@ function broadcast_mutability(T::Type, op, args::Vararg{Type,N}) where {N}
         return IsNotMutable()
     end
 end
-broadcast_mutability(x, op, args::Vararg{Any,N}) where {N} =
-    broadcast_mutability(typeof(x), op, typeof.(args)...)
+function broadcast_mutability(x, op, args::Vararg{Any,N}) where {N}
+    return broadcast_mutability(typeof(x), op, typeof.(args)...)
+end
 broadcast_mutability(::Type) = IsNotMutable()
 
 """
@@ -82,7 +103,7 @@ function _any_uniform_scaling(
     ::LinearAlgebra.UniformScaling,
     args::Vararg{Any,N},
 ) where {N}
-   return true
+    return true
 end
 function _any_uniform_scaling(::Any, args::Vararg{Any,N}) where {N}
     return _any_uniform_scaling(args...)
@@ -100,16 +121,31 @@ function broadcast!!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     if _any_uniform_scaling(args...)
         return _broadcast_with_uniform_scaling!(op, args...)
     else
-        return broadcast_fallback!(broadcast_mutability(args[1], op, args...), op, args...)
+        return broadcast_fallback!(
+            broadcast_mutability(args[1], op, args...),
+            op,
+            args...,
+        )
     end
 end
-function _broadcast_with_uniform_scaling!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function _broadcast_with_uniform_scaling!(
+    op::F,
+    args::Vararg{Any,N},
+) where {F<:Function,N}
     return op(args...)
 end
 
-function broadcast_fallback!(::IsNotMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function broadcast_fallback!(
+    ::IsNotMutable,
+    op::F,
+    args::Vararg{Any,N},
+) where {F<:Function,N}
     return broadcast(op, args...)
 end
-function broadcast_fallback!(::IsMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function broadcast_fallback!(
+    ::IsMutable,
+    op::F,
+    args::Vararg{Any,N},
+) where {F<:Function,N}
     return broadcast!(op, args...)
 end

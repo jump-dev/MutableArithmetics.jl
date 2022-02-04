@@ -20,34 +20,46 @@ function iszero_test(x)
 end
 
 function empty_sum_test(x)
-    @test MA.isequal_canonical(MA.@rewrite(x + sum(1 for i = 1:0) * sum(x for i = 1:0)), x)
-    @test MA.isequal_canonical(MA.@rewrite(x + sum(x for i = 1:0) * sum(1 for i = 1:0)), x)
-    @test MA.isequal_canonical(MA.@rewrite(x + sum(1 for i = 1:0) * 1^2), x)
-    @test MA.isequal_canonical(MA.@rewrite(x + 1^2 * sum(1 for i = 1:0)), x)
+    @test MA.isequal_canonical(
+        MA.@rewrite(x + sum(1 for i in 1:0) * sum(x for i in 1:0)),
+        x,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(x + sum(x for i in 1:0) * sum(1 for i in 1:0)),
+        x,
+    )
+    @test MA.isequal_canonical(MA.@rewrite(x + sum(1 for i in 1:0) * 1^2), x)
+    @test MA.isequal_canonical(MA.@rewrite(x + 1^2 * sum(1 for i in 1:0)), x)
     # `1^2` is considered as a complex expression by `@rewrite`.
     @test MA.isequal_canonical(
-        MA.@rewrite(x + 1^2 * sum(1 for i = 1:0) * sum(x for i = 1:0)),
+        MA.@rewrite(x + 1^2 * sum(1 for i in 1:0) * sum(x for i in 1:0)),
         x,
     )
     @test MA.isequal_canonical(
-        MA.@rewrite(x + sum(1 for i = 1:0) * 1^2 * sum(x for i = 1:0)),
+        MA.@rewrite(x + sum(1 for i in 1:0) * 1^2 * sum(x for i in 1:0)),
         x,
     )
     @test MA.isequal_canonical(
-        MA.@rewrite(x + 1^2 * sum(1 for i = 1:0) * sum(x for i = 1:0) * 1^2),
+        MA.@rewrite(x + 1^2 * sum(1 for i in 1:0) * sum(x for i in 1:0) * 1^2),
         x,
     )
     # Fails because the sum is not rewritten because `*` is not rewritten when `vectorized` is `true`.
     #@test MA.isequal_canonical(MA.@rewrite(x .+ sum(1 for i in 1:0) * sum(x for i in 1:0)), x)
     #@test MA.isequal_canonical(MA.@rewrite(x .+ 1^2 * sum(1 for i in 1:0) * sum(x for i in 1:0) * 1^2), x)
-    @test MA.isequal_canonical(MA.@rewrite(x .+ sum(1 for i = 1:0)), x)
-    @test_broken MA.isequal_canonical(MA.@rewrite(x .+ sum(1 for i = 1:0) * 1^2), x + 0)
-    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i = 1:0) .+ x), x)
-    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i = 1:0) * 1^2 .+ x), x)
-    @test MA.isequal_canonical(MA.@rewrite(x .- sum(1 for i = 1:0)), x)
-    @test_broken MA.isequal_canonical(MA.@rewrite(x .- sum(1 for i = 1:0) * 1^2), x)
-    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i = 1:0) .- x), -x)
-    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i = 1:0) * 1^2 .- x), -x)
+    @test MA.isequal_canonical(MA.@rewrite(x .+ sum(1 for i in 1:0)), x)
+    @test_broken MA.isequal_canonical(
+        MA.@rewrite(x .+ sum(1 for i in 1:0) * 1^2),
+        x + 0,
+    )
+    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i in 1:0) .+ x), x)
+    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i in 1:0) * 1^2 .+ x), x)
+    @test MA.isequal_canonical(MA.@rewrite(x .- sum(1 for i in 1:0)), x)
+    @test_broken MA.isequal_canonical(
+        MA.@rewrite(x .- sum(1 for i in 1:0) * 1^2),
+        x,
+    )
+    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i in 1:0) .- x), -x)
+    @test MA.isequal_canonical(MA.@rewrite(sum(1 for i in 1:0) * 1^2 .- x), -x)
 end
 
 function cube_test(x)
@@ -76,7 +88,7 @@ end
 
 # See JuMP issue #656
 function scalar_in_any_test(x)
-    ints = [i for i = 1:2]
+    ints = [i for i in 1:2]
     anys = Array{Any}(undef, 2)
     anys[1] = 10
     anys[2] = 20 + x

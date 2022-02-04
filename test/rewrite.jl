@@ -44,7 +44,7 @@ function error_test(x, y, z)
     err = ErrorException(
         "The curly syntax (sum{},prod{},norm2{}) is no longer supported. Expression: `sum{(i for i = 1:2)}`.",
     )
-    @test_macro_throws err MA.@rewrite sum{i for i = 1:2}
+    @test_macro_throws err MA.@rewrite sum{i for i in 1:2}
     err = ErrorException("Unexpected comparison in expression `z >= y`.")
     @test_macro_throws err MA.@rewrite z >= y
     err = ErrorException("Unexpected comparison in expression `y <= z`.")

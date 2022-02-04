@@ -38,8 +38,14 @@ function quadratic_isequal_canonical_test(w, x, y, z)
     @test !MA.isequal_canonical(aff, aff2)
     @test !MA.isequal_canonical(aff2, aff)
 
-    @test MA.isequal_canonical(MA.sub_mul(MA.add_mul(aff, c, y), a, x) + c - b, aff2)
-    @test MA.isequal_canonical(MA.sub_mul(MA.add_mul(aff2, a, x), c, y) + b - c, aff)
+    @test MA.isequal_canonical(
+        MA.sub_mul(MA.add_mul(aff, c, y), a, x) + c - b,
+        aff2,
+    )
+    @test MA.isequal_canonical(
+        MA.sub_mul(MA.add_mul(aff2, a, x), c, y) + b - c,
+        aff,
+    )
 
     q = @inferred b * y * z + aff
     if MA.isequal_canonical(y * z, z * y)

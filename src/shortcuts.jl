@@ -3,7 +3,9 @@
 
 Return the sum of `b` and `c`, possibly modifying `a`.
 """
-add_to!!(output, args::Vararg{Any,N}) where {N} = operate_to!!(output, +, args...)
+function add_to!!(output, args::Vararg{Any,N}) where {N}
+    return operate_to!!(output, +, args...)
+end
 
 """
     add!!(a, b, ...)
@@ -31,7 +33,9 @@ sub!!(a, b) = operate!!(-, a, b)
 
 Return the product of `b`, `c`, ..., possibly modifying `a`.
 """
-mul_to!!(output, args::Vararg{Any,N}) where {N} = operate_to!!(output, *, args...)
+function mul_to!!(output, args::Vararg{Any,N}) where {N}
+    return operate_to!!(output, *, args...)
+end
 
 """
     mul!!(a, b, ...)
@@ -52,7 +56,9 @@ mul(args::Vararg{Any,N}) where {N} = operate(*, args...)
 
 Return the `gcd` of `b`, `c`, ..., possibly modifying `a`.
 """
-gcd_to!!(output, args::Vararg{Any,N}) where {N} = operate_to!!(output, gcd, args...)
+function gcd_to!!(output, args::Vararg{Any,N}) where {N}
+    return operate_to!!(output, gcd, args...)
+end
 
 """
     gcd!!(a, b, ...)
@@ -66,7 +72,9 @@ gcd!!(args::Vararg{Any,N}) where {N} = operate!!(gcd, args...)
 
 Return the `lcm` of `b`, `c`, ..., possibly modifying `a`.
 """
-lcm_to!!(output, args::Vararg{Any,N}) where {N} = operate_to!!(output, lcm, args...)
+function lcm_to!!(output, args::Vararg{Any,N}) where {N}
+    return operate_to!!(output, lcm, args...)
+end
 
 """
     lcm!!(a, b, ...)
@@ -80,7 +88,9 @@ lcm!!(args::Vararg{Any,N}) where {N} = operate!!(lcm, args...)
 
 Return `add_mul(args...)`, possibly modifying `output`.
 """
-add_mul_to!!(output, args::Vararg{Any,N}) where {N} = operate_to!!(output, add_mul, args...)
+function add_mul_to!!(output, args::Vararg{Any,N}) where {N}
+    return operate_to!!(output, add_mul, args...)
+end
 
 """
     add_mul!!(args...)
@@ -95,7 +105,7 @@ add_mul!!(args::Vararg{Any,N}) where {N} = operate!!(add_mul, args...)
 Return `add_mul(args...)`, possibly modifying `output` and `buffer`.
 """
 function add_mul_buf_to!!(buffer, output, args::Vararg{Any,N}) where {N}
-    buffered_operate_to!!(buffer, output, add_mul, args...)
+    return buffered_operate_to!!(buffer, output, add_mul, args...)
 end
 
 """
@@ -104,7 +114,7 @@ end
 Return `add_mul(args...)`, possibly modifying `args[1]` and `buffer`.
 """
 function add_mul_buf!!(buffer, args::Vararg{Any,N}) where {N}
-    buffered_operate!!(buffer, add_mul, args...)
+    return buffered_operate!!(buffer, add_mul, args...)
 end
 
 """
@@ -112,7 +122,9 @@ end
 
 Return `sub_mul(args...)`, possibly modifying `output`.
 """
-sub_mul_to!!(output, args::Vararg{Any,N}) where {N} = operate_to!!(output, sub_mul, args...)
+function sub_mul_to!!(output, args::Vararg{Any,N}) where {N}
+    return operate_to!!(output, sub_mul, args...)
+end
 
 """
     sub_mul!!(args...)
@@ -127,7 +139,7 @@ sub_mul!!(args::Vararg{Any,N}) where {N} = operate!!(sub_mul, args...)
 Return `sub_mul(args...)`, possibly modifying `output` and `buffer`.
 """
 function sub_mul_buf_to!!(buffer, output, args::Vararg{Any,N}) where {N}
-    buffered_operate_to!!(buffer, output, sub_mul, args...)
+    return buffered_operate_to!!(buffer, output, sub_mul, args...)
 end
 
 """
@@ -136,7 +148,7 @@ end
 Return `sub_mul(args...)`, possibly modifying `args[1]` and `buffer`.
 """
 function sub_mul_buf!!(buffer, args::Vararg{Any,N}) where {N}
-    buffered_operate!!(buffer, sub_mul, args...)
+    return buffered_operate!!(buffer, sub_mul, args...)
 end
 
 """

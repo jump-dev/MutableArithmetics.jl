@@ -42,8 +42,8 @@ function _operate!(
 )
     B_nonzeros = SparseArrays.nonzeros(B)
     B_rowvals = SparseArrays.rowvals(B)
-    for col = 1:size(B, 2)
-        for k ∈ SparseArrays.nzrange(B, col)
+    for col in 1:size(B, 2)
+        for k in SparseArrays.nzrange(B, col)
             row = B_rowvals[k]
             A[row, col] = operate!!(
                 mul_rhs(op),
@@ -57,9 +57,18 @@ function _operate!(
     return A
 end
 
-similar_array_type(::Type{SparseArrays.SparseVector{Tv,Ti}}, ::Type{T}) where {T,Tv,Ti} =
-    SparseArrays.SparseVector{T,Ti}
-similar_array_type(::Type{_SparseMat{Tv,Ti}}, ::Type{T}) where {T,Tv,Ti} = _SparseMat{T,Ti}
+function similar_array_type(
+    ::Type{SparseArrays.SparseVector{Tv,Ti}},
+    ::Type{T},
+) where {T,Tv,Ti}
+    return SparseArrays.SparseVector{T,Ti}
+end
+function similar_array_type(
+    ::Type{_SparseMat{Tv,Ti}},
+    ::Type{T},
+) where {T,Tv,Ti}
+    return _SparseMat{T,Ti}
+end
 
 # `SparseArrays/src/linalg.jl` sometimes create a sparse matrix to contain the result.
 # For instance with `Matrix * Adjoint{SparseMatrixCSC}` and then uses `generic_matmatmul!`
@@ -88,10 +97,10 @@ function operate!(
     A = parent(adjA)
     A_nonzeros = SparseArrays.nonzeros(A)
     A_rowvals = SparseArrays.rowvals(A)
-    for k ∈ 1:size(ret, 2)
-        for col ∈ 1:A.n
+    for k in 1:size(ret, 2)
+        for col in 1:A.n
             cur = ret[col, k]
-            for j ∈ SparseArrays.nzrange(A, col)
+            for j in SparseArrays.nzrange(A, col)
                 A_val = _mirror_transpose_or_adjoint(A_nonzeros[j], adjA)
                 cur = operate!!(add_mul, cur, A_val, B[A_rowvals[j], k], α...)
             end
@@ -110,10 +119,10 @@ function operate!(
     _dim_check(ret, A, B)
     A_nonzeros = SparseArrays.nonzeros(A)
     A_rowvals = SparseArrays.rowvals(A)
-    for col ∈ 1:size(A, 2)
-        for k ∈ 1:size(ret, 2)
+    for col in 1:size(A, 2)
+        for k in 1:size(ret, 2)
             αxj = *(B[col, k], α...)
-            for j ∈ SparseArrays.nzrange(A, col)
+            for j in SparseArrays.nzrange(A, col)
                 ret[A_rowvals[j], k] =
                     operate!!(add_mul, ret[A_rowvals[j], k], A_nonzeros[j], αxj)
             end
@@ -131,12 +140,17 @@ function operate!(
     _dim_check(ret, A, B)
     rowval = SparseArrays.rowvals(B)
     B_nonzeros = SparseArrays.nonzeros(B)
-    for multivec_row = 1:size(A, 1)
-        for col ∈ 1:size(B, 2)
+    for multivec_row in 1:size(A, 1)
+        for col in 1:size(B, 2)
             cur = ret[multivec_row, col]
-            for k ∈ SparseArrays.nzrange(B, col)
-                cur =
-                    operate!!(add_mul, cur, A[multivec_row, rowval[k]], B_nonzeros[k], α...)
+            for k in SparseArrays.nzrange(B, col)
+                cur = operate!!(
+                    add_mul,
+                    cur,
+                    A[multivec_row, rowval[k]],
+                    B_nonzeros[k],
+                    α...,
+                )
             end
             ret[multivec_row, col] = cur
         end
@@ -155,11 +169,11 @@ function operate!(
     B = parent(adjB)
     B_rowvals = SparseArrays.rowvals(B)
     B_nonzeros = SparseArrays.nonzeros(B)
-    for B_col ∈ 1:size(B, 2), k ∈ SparseArrays.nzrange(B, B_col)
+    for B_col in 1:size(B, 2), k in SparseArrays.nzrange(B, B_col)
         B_row = B_rowvals[k]
         B_val = _mirror_transpose_or_adjoint(B_nonzeros[k], adjB)
         αB_val = *(B_val, α...)
-        for A_row = 1:size(A, 1)
+        for A_row in 1:size(A, 1)
             ret[A_row, B_row] =
                 operate!!(add_mul, ret[A_row, B_row], A[A_row, B_col], αB_val)
         end
@@ -199,7 +213,7 @@ function operate!(
     @inbounds begin
         ip = 1
         xb = fill(false, mA)
-        for i = 1:nB
+        for i in 1:nB
             if ip + mA - 1 > nnz_ret
                 nnz_ret += max(mA, nnz_ret >> 2)
                 resize!(ret.rowval, nnz_ret)
@@ -226,15 +240,21 @@ function operate!(
             if ip > ip0
                 if _prefer_sort(ip - k0, mA)
                     # in-place sort of indices. Effort: O(nnz*ln(nnz)).
-                    sort!(ret.rowval, ip0, ip - 1, QuickSort, Base.Order.Forward)
-                    for vp = ip0:ip-1
+                    sort!(
+                        ret.rowval,
+                        ip0,
+                        ip - 1,
+                        QuickSort,
+                        Base.Order.Forward,
+                    )
+                    for vp in ip0:ip-1
                         k = ret.rowval[vp]
                         xb[k] = false
                         ret.nzval[vp] = ret.nzval[k+k0]
                     end
                 else
                     # scan result vector (effort O(mA))
-                    for k = 1:mA
+                    for k in 1:mA
                         if xb[k]
                             xb[k] = false
                             ret.rowval[ip0] = k
@@ -255,7 +275,9 @@ function operate!(
     return ret
 end
 # Taken from `SparseArrays.prefer_sort` added in Julia v1.1.
-_prefer_sort(nz::Integer, m::Integer) = m > 6 && 3 * SparseArrays.ilog2(nz) * nz < m
+function _prefer_sort(nz::Integer, m::Integer)
+    return m > 6 && 3 * SparseArrays.ilog2(nz) * nz < m
+end
 function operate!(
     ::typeof(add_mul),
     ret::_SparseMat{T},
@@ -263,7 +285,7 @@ function operate!(
     B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
-    operate!(add_mul, ret, A, copy(B), α...)
+    return operate!(add_mul, ret, A, copy(B), α...)
 end
 function operate!(
     ::typeof(add_mul),

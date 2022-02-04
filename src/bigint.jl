@@ -33,7 +33,12 @@ function operate_to!(output::BigInt, ::typeof(*), a::BigInt, b::BigInt)
 end
 
 # gcd
-promote_operation(::Union{typeof(gcd),typeof(lcm)}, ::Vararg{Type{BigInt},N}) where {N} = BigInt
+function promote_operation(
+    ::Union{typeof(gcd),typeof(lcm)},
+    ::Vararg{Type{BigInt},N},
+) where {N}
+    return BigInt
+end
 function operate_to!(output::BigInt, ::typeof(gcd), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.gcd!(output, a, b)
 end
@@ -62,7 +67,7 @@ function operate_to!(
     return operate!(op, output, c...)
 end
 function operate!(op::Function, x::BigInt, args::Vararg{Any,N}) where {N}
-    operate_to!(x, op, x, args...)
+    return operate_to!(x, op, x, args...)
 end
 
 # add_mul and sub_mul

@@ -6,20 +6,37 @@
 # `promote_operation_fallback` gives fallbacks for any type with no risk of
 # ambiguity with specific methods defined for a given type, even if these are
 # quite broad in the allowed operations.
-function promote_operation_fallback(op::Function, x::Type{<:AbstractArray}, y::Type{<:AbstractArray})
+function promote_operation_fallback(
+    op::Function,
+    x::Type{<:AbstractArray},
+    y::Type{<:AbstractArray},
+)
     # `zero` is not defined for `AbstractArray` so the fallback would fail with a cryptic MethodError.
     # We replace it by a more helpful error here.
-    error("`promote_operation($op, $x, $y)` not implemented yet, please report this.")
+    return error(
+        "`promote_operation($op, $x, $y)` not implemented yet, please report this.",
+    )
 end
-function promote_operation_fallback(::typeof(/), ::Type{S}, ::Type{T}) where {S,T}
+function promote_operation_fallback(
+    ::typeof(/),
+    ::Type{S},
+    ::Type{T},
+) where {S,T}
     return typeof(zero(S) / oneunit(T))
 end
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
-function promote_operation_fallback(op::F, ::Type{S}, ::Type{T}) where {F<:Function,S,T}
+function promote_operation_fallback(
+    op::F,
+    ::Type{S},
+    ::Type{T},
+) where {F<:Function,S,T}
     return typeof(op(zero(S), zero(T)))
 end
-function promote_operation_fallback(op::F, args::Vararg{Type,N}) where {F<:Function,N}
+function promote_operation_fallback(
+    op::F,
+    args::Vararg{Type,N},
+) where {F<:Function,N}
     return typeof(op(zero.(args)...))
 end
 promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
@@ -44,8 +61,16 @@ function promote_operation_fallback(
 )
     return promote_operation(add_sub_op(op), x, y)
 end
-function promote_operation_fallback(op::Union{AddSubMul,typeof(add_dot)}, T::Type, args::Vararg{Type,N}) where {N}
-    return promote_operation(reduce_op(op), T, promote_operation(map_op(op), args...))
+function promote_operation_fallback(
+    op::Union{AddSubMul,typeof(add_dot)},
+    T::Type,
+    args::Vararg{Type,N},
+) where {N}
+    return promote_operation(
+        reduce_op(op),
+        T,
+        promote_operation(map_op(op), args...),
+    )
 end
 
 """
@@ -64,14 +89,18 @@ function promote_operation(
     A::Type{<:Array},
     α::Type{<:Number},
 )
-    error("Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.")
+    return error(
+        "Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.",
+    )
 end
 function promote_operation(
     op::Union{typeof(+),typeof(-),AddSubMul},
     α::Type{<:Number},
     A::Type{<:Array},
 )
-    error("Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.")
+    return error(
+        "Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.",
+    )
 end
 
 """
@@ -123,17 +152,15 @@ function operate end
 #     API without altering `x` and `y`. If it is not the case, implement a
 #     custom `operate` method.
 operate(::typeof(-), x) = -x
-operate(
+function operate(
     op::Union{typeof(+),typeof(*),AddSubMul,typeof(add_dot)},
     x,
     y,
     args::Vararg{Any,N},
-) where {N} = op(x, y, args...)
-operate(
-    op::Union{typeof(-),typeof(/)},
-    x,
-    y,
-) where {N} = op(x, y)
+) where {N}
+    return op(x, y, args...)
+end
+operate(op::Union{typeof(-),typeof(/)}, x, y) where {N} = op(x, y)
 operate(::typeof(convert), ::Type{T}, x) where {T} = convert(T, x)
 operate(::typeof(convert), ::Type{T}, x::T) where {T} = copy_if_mutable(x)
 
@@ -185,8 +212,9 @@ function mutability(T::Type, op, args::Vararg{Type,N}) where {N}
         return IsNotMutable()
     end
 end
-mutability(x, op, args::Vararg{Any,N}) where {N} =
-    mutability(typeof(x), op, typeof.(args)...)
+function mutability(x, op, args::Vararg{Any,N}) where {N}
+    return mutability(typeof(x), op, typeof.(args)...)
+end
 mutability(::Type) = IsNotMutable()
 
 """
@@ -230,7 +258,7 @@ function operate_to_fallback!(::IsMutable, output, op::AddSubMul, x, y)
     return operate_to!(output, add_sub_op(op), x, y)
 end
 function operate_to_fallback!(::IsMutable, output, op::Function, args...)
-    error(
+    return error(
         "`operate_to!(::$(typeof(output)), $op, ::",
         join(typeof.(args), ", ::"),
         ")` is not implemented yet.",
@@ -254,7 +282,12 @@ terms of `p` and `q` hence it will never terminate. On the other hand
 the terms of `q` in the sorted list of terms of `p` with minimal displacement.
 """
 function operate_to!(output, op::F, args::Vararg{Any,N}) where {F<:Function,N}
-    operate_to_fallback!(mutability(output, op, args...), output, op, args...)
+    return operate_to_fallback!(
+        mutability(output, op, args...),
+        output,
+        op,
+        args...,
+    )
 end
 
 function operate_fallback!(::IsNotMutable, op::Function, args...)
@@ -269,7 +302,7 @@ function operate_fallback!(::IsMutable, op::AddSubMul, x, y)
     return operate!(add_sub_op(op), x, y)
 end
 function operate_fallback!(::IsMutable, op::Function, args...)
-    error(
+    return error(
         "`operate!($op, ::",
         join(typeof.(args), ", ::"),
         ")` is not implemented yet.",
@@ -283,12 +316,18 @@ Modify the value of `args[1]` to be equal to the value of `op(args...)`. Can
 only be called if `mutability(args[1], op, args...)` returns [`IsMutable`](@ref).
 """
 function operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
-    operate_fallback!(mutability(args[1], op, args...), op, args...)
+    return operate_fallback!(mutability(args[1], op, args...), op, args...)
 end
 
 buffer_for(::F, args::Vararg{Type,N}) where {F<:Function,N} = nothing
 
-function buffered_operate_to_fallback!(::IsNotMutable, buffer, output, op::Function, args...)
+function buffered_operate_to_fallback!(
+    ::IsNotMutable,
+    buffer,
+    output,
+    op::Function,
+    args...,
+)
     throw(
         ArgumentError(
             "Cannot call `buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(output))` cannot be modifed to equal the result of the operation. Use `buffered_operate_to!!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
@@ -296,9 +335,14 @@ function buffered_operate_to_fallback!(::IsNotMutable, buffer, output, op::Funct
     )
 end
 
-
-function buffered_operate_to_fallback!(::IsMutable, buffer, output, op::Function, args...)
-    error(
+function buffered_operate_to_fallback!(
+    ::IsMutable,
+    buffer,
+    output,
+    op::Function,
+    args...,
+)
+    return error(
         "`buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), $op, ::",
         join(typeof.(args), ", ::"),
         ")` is not implemented.",
@@ -316,7 +360,7 @@ function buffered_operate_to_fallback!(
         buffer,
         output,
         op,
-        args...
+        args...,
     )
 end
 
@@ -345,16 +389,21 @@ function buffered_operate_to!(
     return buffered_operate_to_fallback!(buffer, output, op, args...)
 end
 
-function buffered_operate_fallback!(::IsNotMutable, buffer, op::Function, args...)
+function buffered_operate_fallback!(
+    ::IsNotMutable,
+    buffer,
+    op::Function,
+    args...,
+)
     throw(
         ArgumentError(
-                      "Cannot call `buffered_operate!(::$(typeof(buffer)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `buffered_operate!!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
+            "Cannot call `buffered_operate!(::$(typeof(buffer)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `buffered_operate!!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
         ),
     )
 end
 
 function buffered_operate_fallback!(::IsMutable, buffer, op::Function, args...)
-    error(
+    return error(
         "`buffered_operate!(::$(typeof(buffer)), $op, ::",
         join(typeof.(args), ", ::"),
         ")` is not implemented.",
@@ -370,7 +419,7 @@ function buffered_operate_fallback!(
         mutability(args[1], op, args...),
         buffer,
         op,
-        args...
+        args...,
     )
 end
 
@@ -390,7 +439,11 @@ possibly modifying `buffer`. Can only be called if
 `mutability(args[1], op, args...)` returns [`IsMutable`](@ref).
 """
 function buffered_operate! end
-function buffered_operate!(buffer, op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function buffered_operate!(
+    buffer,
+    op::F,
+    args::Vararg{Any,N},
+) where {F<:Function,N}
     return buffered_operate_fallback!(buffer, op, args...)
 end
 
@@ -400,7 +453,12 @@ end
 Returns the value of `op(args...)`, possibly modifying `output`.
 """
 function operate_to!!(output, op::F, args::Vararg{Any,N}) where {F<:Function,N}
-    return operate_to_fallback!!(mutability(output, op, args...), output, op, args...)
+    return operate_to_fallback!!(
+        mutability(output, op, args...),
+        output,
+        op,
+        args...,
+    )
 end
 
 function operate_to_fallback!!(
@@ -429,10 +487,18 @@ function operate!!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return operate_fallback!!(mutability(args[1], op, args...), op, args...)
 end
 
-function operate_fallback!!(::IsNotMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function operate_fallback!!(
+    ::IsNotMutable,
+    op::F,
+    args::Vararg{Any,N},
+) where {F<:Function,N}
     return operate(op, args...)
 end
-function operate_fallback!!(::IsMutable, op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function operate_fallback!!(
+    ::IsMutable,
+    op::F,
+    args::Vararg{Any,N},
+) where {F<:Function,N}
     return operate!(op, args...)
 end
 
@@ -441,7 +507,12 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `buffer` and `output`.
 """
-function buffered_operate_to!!(buffer, output, op::F, args::Vararg{Any,N}) where {F<:Function,N}
+function buffered_operate_to!!(
+    buffer,
+    output,
+    op::F,
+    args::Vararg{Any,N},
+) where {F<:Function,N}
     return buffered_operate_to_fallback!!(
         mutability(output, op, args...),
         buffer,
@@ -475,8 +546,17 @@ end
 
 Returns the value of `op(args...)`, possibly modifying `buffer`.
 """
-function buffered_operate!!(buffer, op::F, args::Vararg{Any,N}) where {F<:Function,N}
-    return buffered_operate_fallback!!(mutability(args[1], op, args...), buffer, op, args...)
+function buffered_operate!!(
+    buffer,
+    op::F,
+    args::Vararg{Any,N},
+) where {F<:Function,N}
+    return buffered_operate_fallback!!(
+        mutability(args[1], op, args...),
+        buffer,
+        op,
+        args...,
+    )
 end
 
 function buffered_operate_fallback!!(
@@ -498,21 +578,47 @@ end
 
 # For most types, `dot(b, c) = adjoint(b) * c`.
 promote_operation_fallback(::typeof(adjoint), a::Type) = a
-function promote_operation_fallback(::typeof(LinearAlgebra.dot), b::Type, c::Type)
+function promote_operation_fallback(
+    ::typeof(LinearAlgebra.dot),
+    b::Type,
+    c::Type,
+)
     return promote_operation(*, promote_operation(adjoint, b), c)
 end
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
     return buffer_for(add_mul, a, promote_operation(adjoint, b), c)
 end
-function operate_to_fallback!(::IsMutable, output, ::typeof(add_dot), a, b, c) where {N}
+function operate_to_fallback!(
+    ::IsMutable,
+    output,
+    ::typeof(add_dot),
+    a,
+    b,
+    c,
+) where {N}
     return operate_to!(output, add_mul, a, adjoint(b), c)
 end
 function operate_fallback!(::IsMutable, ::typeof(add_dot), a, b, c) where {N}
     return operate!(add_mul, a, adjoint(b), c)
 end
-function buffered_operate_to_fallback!(::IsMutable, buffer, output, ::typeof(add_dot), a, b, c)
+function buffered_operate_to_fallback!(
+    ::IsMutable,
+    buffer,
+    output,
+    ::typeof(add_dot),
+    a,
+    b,
+    c,
+)
     return buffered_operate_to!(buffer, output, add_mul, a, adjoint(b), c)
 end
-function buffered_operate_fallback!(::IsMutable, buffer, ::typeof(add_dot), a, b, c)
+function buffered_operate_fallback!(
+    ::IsMutable,
+    buffer,
+    ::typeof(add_dot),
+    a,
+    b,
+    c,
+)
     return buffered_operate!(buffer, add_mul, a, adjoint(b), c)
 end
