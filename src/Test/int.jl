@@ -119,7 +119,10 @@ function int_sub_mul_test(::Type{T}) where {T}
         @test MA.isequal_canonical(b, expected)
         b = t(9)
 
-        @test MA.isequal_canonical(MA.sub_mul_buf_to!!(buf, a, b, c, d), expected)
+        @test MA.isequal_canonical(
+            MA.sub_mul_buf_to!!(buf, a, b, c, d),
+            expected,
+        )
         @test MA.isequal_canonical(a, expected)
         @test MA.isequal_canonical(MA.sub_mul_buf!!(buf, b, c, d), expected)
         @test MA.isequal_canonical(b, expected)
@@ -133,7 +136,10 @@ function int_sub_mul_test(::Type{T}) where {T}
         @test MA.isequal_canonical(MA.sub_mul!!(a, b, c), expected)
         @test MA.isequal_canonical(a, expected)
         a = t(148)
-        @test MA.isequal_canonical(MA.sub_mul_buf_to!!(buf, d, a, b, c), expected)
+        @test MA.isequal_canonical(
+            MA.sub_mul_buf_to!!(buf, d, a, b, c),
+            expected,
+        )
         @test MA.isequal_canonical(d, expected)
         @test MA.isequal_canonical(MA.sub_mul_buf!!(buf, a, b, c), expected)
         @test MA.isequal_canonical(a, expected)

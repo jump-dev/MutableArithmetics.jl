@@ -20,7 +20,11 @@ function operate!(::typeof(one), x::Rational)
 end
 
 # +
-function promote_operation(::typeof(+), ::Type{Rational{S}}, ::Type{Rational{T}}) where {S,T}
+function promote_operation(
+    ::typeof(+),
+    ::Type{Rational{S}},
+    ::Type{Rational{T}},
+) where {S,T}
     return Rational{promote_sum_mul(S, T)}
 end
 function operate_to!(output::Rational, ::typeof(+), x::Rational, y::Rational)
@@ -33,7 +37,11 @@ function operate_to!(output::Rational, ::typeof(+), x::Rational, y::Rational)
 end
 
 # -
-function promote_operation(::typeof(-), ::Type{Rational{S}}, ::Type{Rational{T}}) where {S,T}
+function promote_operation(
+    ::typeof(-),
+    ::Type{Rational{S}},
+    ::Type{Rational{T}},
+) where {S,T}
     return Rational{promote_sum_mul(S, T)}
 end
 function operate_to!(output::Rational, ::typeof(-), x::Rational, y::Rational)
@@ -46,7 +54,11 @@ function operate_to!(output::Rational, ::typeof(-), x::Rational, y::Rational)
 end
 
 # *
-function promote_operation(::typeof(*), ::Type{Rational{S}}, ::Type{Rational{T}}) where {S,T}
+function promote_operation(
+    ::typeof(*),
+    ::Type{Rational{S}},
+    ::Type{Rational{T}},
+) where {S,T}
     return Rational{promote_operation(*, S, T)}
 end
 function operate_to!(output::Rational, ::typeof(*), x::Rational, y::Rational)
@@ -58,7 +70,11 @@ function operate_to!(output::Rational, ::typeof(*), x::Rational, y::Rational)
 end
 
 # gcd
-function promote_operation(::Union{typeof(gcd),typeof(lcm)}, ::Type{Rational{S}}, ::Type{Rational{T}}) where {S,T}
+function promote_operation(
+    ::Union{typeof(gcd),typeof(lcm)},
+    ::Type{Rational{S}},
+    ::Type{Rational{T}},
+) where {S,T}
     return Rational{promote_operation(gcd, S, T)}
 end
 function operate_to!(output::Rational, ::typeof(gcd), a::Rational, b::Rational)
@@ -83,12 +99,14 @@ function operate_to!(
     return operate!(op, output, c...)
 end
 function operate!(op::Function, x::Rational, args::Vararg{Any,N}) where {N}
-    operate_to!(x, op, x, args...)
+    return operate_to!(x, op, x, args...)
 end
 
 # add_mul and sub_mul
 # Buffer to hold the product
-buffer_for(::AddSubMul, args::Vararg{Type{<:Rational},N}) where {N} = zero(promote_operation(*, args...))
+function buffer_for(::AddSubMul, args::Vararg{Type{<:Rational},N}) where {N}
+    return zero(promote_operation(*, args...))
+end
 function operate_to!(
     output::Rational,
     op::AddSubMul,

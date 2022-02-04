@@ -15,7 +15,7 @@ function promote_operation(
     # If `N != M`, we need the axes between `min(N,M)+1` and `max(N,M)` to be
     # `Base.OneTo(1)`. In any cases, the axes from `1` to `min(N,M)` must also
     # match.
-    return Array{promote_operation(op, S, T),max(N,M)}
+    return Array{promote_operation(op, S, T),max(N, M)}
 end
 
 function promote_operation(
@@ -41,7 +41,7 @@ function operate!(
     B::LinearAlgebra.UniformScaling,
 )
     n = LinearAlgebra.checksquare(A)
-    for i = 1:n
+    for i in 1:n
         A[i, i] = operate!!(op, A[i, i], B)
     end
     return A
@@ -77,11 +77,7 @@ function _check_dims(A, B)
     end
 end
 
-function operate!(
-    op::Union{typeof(+),typeof(-)},
-    A::Array,
-    B::AbstractArray,
-)
+function operate!(op::Union{typeof(+),typeof(-)}, A::Array, B::AbstractArray)
     _check_dims(A, B)
     return broadcast!(op, A, B)
 end
@@ -104,13 +100,7 @@ function operate!(
     β::Vararg{Scaling,M},
 ) where {M}
     _check_dims(A, B)
-    return broadcast!(
-        op,
-        A,
-        scaling_to_number(α),
-        B,
-        scaling_to_number.(β)...,
-    )
+    return broadcast!(op, A, scaling_to_number(α), B, scaling_to_number.(β)...)
 end
 function operate!(
     op::AddSubMul,
@@ -144,7 +134,10 @@ end
 
 # Product
 
-function similar_array_type(::Type{LinearAlgebra.Symmetric{T,MT}}, ::Type{S}) where {S,T,MT}
+function similar_array_type(
+    ::Type{LinearAlgebra.Symmetric{T,MT}},
+    ::Type{S},
+) where {S,T,MT}
     return LinearAlgebra.Symmetric{S,similar_array_type(MT, S)}
 end
 
@@ -238,11 +231,17 @@ function _dim_check(C::AbstractVector, A::AbstractMatrix, B::AbstractVector)
     mA, nA = size(A)
     if mB != nA
         throw(
-            DimensionMismatch("matrix A has dimensions ($mA,$nA), vector B has length $mB"),
+            DimensionMismatch(
+                "matrix A has dimensions ($mA,$nA), vector B has length $mB",
+            ),
         )
     end
     if mA != length(C)
-        throw(DimensionMismatch("result C has length $(length(C)), needs length $mA"))
+        throw(
+            DimensionMismatch(
+                "result C has length $(length(C)), needs length $mA",
+            ),
+        )
     end
 end
 
@@ -257,7 +256,11 @@ function _dim_check(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
         )
     end
     if size(C, 1) != mA || size(C, 2) != nB
-        throw(DimensionMismatch("result C has dimensions $(size(C)), needs ($mA,$nB)"))
+        throw(
+            DimensionMismatch(
+                "result C has dimensions $(size(C)), needs ($mA,$nB)",
+            ),
+        )
     end
 end
 
@@ -280,10 +283,11 @@ end
 # same diagonal element.
 function _add_mul_array(buffer, C::Matrix, A::AbstractMatrix, B::AbstractMatrix)
     @inbounds begin
-        for i = 1:size(A, 1), j = 1:size(B, 2)
+        for i in 1:size(A, 1), j in 1:size(B, 2)
             Ctmp = C[i, j]
-            for k = 1:size(A, 2)
-                Ctmp = buffered_operate!!(buffer, add_mul, Ctmp, A[i, k], B[k, j])
+            for k in 1:size(A, 2)
+                Ctmp =
+                    buffered_operate!!(buffer, add_mul, Ctmp, A[i, k], B[k, j])
             end
             C[i, j] = Ctmp
         end
@@ -299,7 +303,7 @@ function buffered_operate!(
     B::AbstractVecOrMat,
 )
     _dim_check(C, A, B)
-    _add_mul_array(buffer, C, A, B)
+    return _add_mul_array(buffer, C, A, B)
 end
 
 function buffer_for(
@@ -345,13 +349,25 @@ end
 # matrices and vector, estimate the resulting element type,
 # allocate the resulting array but it redirects to `mul_to!` instead of
 # `LinearAlgebra.mul!`.
-function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractVector{T}) where {T,S}
+function operate(
+    ::typeof(*),
+    A::AbstractMatrix{S},
+    B::AbstractVector{T},
+) where {T,S}
     C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1))
     return operate_to!(C, *, A, B)
 end
 
-function operate(::typeof(*), A::AbstractMatrix{S}, B::AbstractMatrix{T}) where {T,S}
-    C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1), axes(B, 2))
+function operate(
+    ::typeof(*),
+    A::AbstractMatrix{S},
+    B::AbstractMatrix{T},
+) where {T,S}
+    C = undef_array(
+        promote_array_mul(typeof(A), typeof(B)),
+        axes(A, 1),
+        axes(B, 2),
+    )
     return operate_to!(C, *, A, B)
 end
 
@@ -363,22 +379,34 @@ end
 const _TransposeOrAdjoint{T,MT} =
     Union{LinearAlgebra.Transpose{T,MT},LinearAlgebra.Adjoint{T,MT}}
 
-_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose) = LinearAlgebra.transpose(x)
+function _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Transpose)
+    return LinearAlgebra.transpose(x)
+end
 
-_mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint) = LinearAlgebra.adjoint(x)
+function _mirror_transpose_or_adjoint(x, ::LinearAlgebra.Adjoint)
+    return LinearAlgebra.adjoint(x)
+end
 
-_mirror_transpose_or_adjoint(
+function _mirror_transpose_or_adjoint(
     A::Type{<:AbstractArray{T}},
     ::Type{<:LinearAlgebra.Transpose},
-) where {T} = LinearAlgebra.Transpose{T,A}
+) where {T}
+    return LinearAlgebra.Transpose{T,A}
+end
 
-_mirror_transpose_or_adjoint(
+function _mirror_transpose_or_adjoint(
     A::Type{<:AbstractArray{T}},
     ::Type{<:LinearAlgebra.Adjoint},
-) where {T} = LinearAlgebra.Adjoint{T,A}
+) where {T}
+    return LinearAlgebra.Adjoint{T,A}
+end
 
-similar_array_type(TA::Type{<:_TransposeOrAdjoint{T,A}}, ::Type{S}) where {S,T,A} =
-    _mirror_transpose_or_adjoint(similar_array_type(A, S), TA)
+function similar_array_type(
+    TA::Type{<:_TransposeOrAdjoint{T,A}},
+    ::Type{S},
+) where {S,T,A}
+    return _mirror_transpose_or_adjoint(similar_array_type(A, S), TA)
+end
 
 # dot product
 function promote_array_mul(
@@ -423,6 +451,10 @@ function operate(
     return fused_map_reduce(add_mul, x, y)
 end
 
-function operate(::typeof(LinearAlgebra.dot), x::AbstractArray, y::AbstractArray)
+function operate(
+    ::typeof(LinearAlgebra.dot),
+    x::AbstractArray,
+    y::AbstractArray,
+)
     return fused_map_reduce(add_dot, x, y)
 end

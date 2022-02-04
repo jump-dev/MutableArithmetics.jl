@@ -91,7 +91,7 @@ function operate_to!(
     return operate!(op, output, c...)
 end
 function operate!(op::Function, x::BigFloat, args::Vararg{Any,N}) where {N}
-    operate_to!(x, op, x, args...)
+    return operate_to!(x, op, x, args...)
 end
 
 # add_mul and sub_mul

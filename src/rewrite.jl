@@ -117,7 +117,7 @@ function _parse_idx_set(arg::Expr)
     if parse_done
         return idxvar, idxset
     end
-    error("Invalid syntax: $arg")
+    return error("Invalid syntax: $arg")
 end
 
 """
@@ -163,15 +163,22 @@ function rewrite_generator(ex, inner)
         loop = Expr(
             :for,
             esc(itrsets(ex.args[2].args[2:end])),
-            Expr(:if, esc(ex.args[2].args[1]), rewrite_generator(ex.args[1], inner)),
+            Expr(
+                :if,
+                esc(ex.args[2].args[1]),
+                rewrite_generator(ex.args[1], inner),
+            ),
         )
         for idxset in ex.args[2].args[2:end]
             idxvar, s = _parse_idx_set(idxset)
             push!(idxvars, idxvar)
         end
     else
-        loop =
-            Expr(:for, esc(itrsets(ex.args[2:end])), rewrite_generator(ex.args[1], inner))
+        loop = Expr(
+            :for,
+            esc(itrsets(ex.args[2:end])),
+            rewrite_generator(ex.args[1], inner),
+        )
         for idxset in ex.args[2:end]
             idxvar, s = _parse_idx_set(idxset)
             push!(idxvars, idxvar)
@@ -322,11 +329,19 @@ function _rewrite_sum(
 )
     var = current_sum
     for term in terms[1:(end-1)]
-        var, code = _rewrite(vectorized, minus, term, var, left_factors, right_factors)
+        var, code =
+            _rewrite(vectorized, minus, term, var, left_factors, right_factors)
         push!(block.args, code)
     end
-    new_output, code =
-        _rewrite(vectorized, minus, terms[end], var, left_factors, right_factors, output)
+    new_output, code = _rewrite(
+        vectorized,
+        minus,
+        terms[end],
+        var,
+        left_factors,
+        right_factors,
+        output,
+    )
     @assert new_output == output
     push!(block.args, code)
     return output, block
@@ -334,7 +349,11 @@ end
 
 function _start_summing(current_sum::Nothing, first_term::Function)
     variable = gensym()
-    return Expr(:block, :($variable = MutableArithmetics.Zero()), first_term(variable))
+    return Expr(
+        :block,
+        :($variable = MutableArithmetics.Zero()),
+        first_term(variable),
+    )
 end
 function _start_summing(current_sum::Symbol, first_term::Function)
     return first_term(current_sum)
@@ -445,8 +464,11 @@ function _rewrite(
             if inner_factor.args[1] == :- || inner_factor.args[1] == :.-
                 minus = !minus
             end
-            vectorized =
-                (vectorized || inner_factor.args[1] == :.+ || inner_factor.args[1] == :.-)
+            vectorized = (
+                vectorized ||
+                inner_factor.args[1] == :.+ ||
+                inner_factor.args[1] == :.-
+            )
             return _rewrite_sum(
                 vectorized,
                 minus,
@@ -466,30 +488,42 @@ function _rewrite(
             # temporary objects
             if (
                 isone(mapreduce(_is_complex_expr, +, inner_factor.args)) &&
-                isone(mapreduce(_is_decomposable_with_factors, +, inner_factor.args))
+                isone(
+                    mapreduce(
+                        _is_decomposable_with_factors,
+                        +,
+                        inner_factor.args,
+                    ),
+                )
             )
                 # `findfirst` return the index in `2:...` so we need to add `1`.
-                which_idx = 1 + findfirst(2:length(inner_factor.args)) do i
-                    _is_decomposable_with_factors(inner_factor.args[i])
-                end
+                which_idx =
+                    1 + findfirst(2:length(inner_factor.args)) do i
+                        return _is_decomposable_with_factors(
+                            inner_factor.args[i],
+                        )
+                    end
                 return _rewrite(
                     vectorized,
                     minus,
                     inner_factor.args[which_idx],
                     current_sum,
-                    vcat(left_factors, [esc(inner_factor.args[i]) for i = 2:(which_idx-1)]),
+                    vcat(
+                        left_factors,
+                        [esc(inner_factor.args[i]) for i in 2:(which_idx-1)],
+                    ),
                     vcat(
                         right_factors,
                         [
                             esc(inner_factor.args[i]) for
-                            i = length(inner_factor.args):-1:(which_idx+1)
+                            i in length(inner_factor.args):-1:(which_idx+1)
                         ],
                     ),
                     new_var,
                 )
             else
                 code = Expr(:block)
-                for i = 2:length(inner_factor.args)
+                for i in 2:length(inner_factor.args)
                     arg = inner_factor.args[i]
                     if _is_complex_expr(arg)  # `arg` needs rewriting.
                         new_arg, new_arg_code = rewrite(arg)
@@ -606,7 +640,8 @@ function _rewrite(
                 new_var,
             )
         elseif (
-            length(inner_factor.args) >= 2 && (
+            length(inner_factor.args) >= 2 &&
+            (
                 isexpr(inner_factor.args[2], :generator) ||
                 isexpr(inner_factor.args[2], :flatten)
             ) &&

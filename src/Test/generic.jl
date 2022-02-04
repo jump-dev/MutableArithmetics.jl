@@ -1,3 +1,6 @@
+#!format:off
+# TODO(odow): JuliaFormatter cannot format this file for some reason?
+
 macro test_rewrite(expr)
     esc(quote
         @test MA.isequal_canonical(MA.@rewrite($expr), $expr)

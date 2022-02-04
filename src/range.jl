@@ -4,18 +4,21 @@ struct MutatingStepRange{T,S} <: OrdinalRange{T,S}
     stop::T
 
     function MutatingStepRange{T,S}(start::T, step::S, stop::T) where {T,S}
-        new(start, step, Base.steprange_last(start, step, stop))
+        return new(start, step, Base.steprange_last(start, step, stop))
     end
 end
-MutatingStepRange(start::T, step::S, stop::T) where {T,S} = MutatingStepRange{T,S}(start, step, stop)
+function MutatingStepRange(start::T, step::S, stop::T) where {T,S}
+    return MutatingStepRange{T,S}(start, step, stop)
+end
 Base.step(r::MutatingStepRange) = r.step
 function Base.unsafe_length(r::MutatingStepRange)
     n = Integer(div((r.stop - r.start) + r.step, r.step))
-    isempty(r) ? zero(n) : n
+    return isempty(r) ? zero(n) : n
 end
 Base.length(r::MutatingStepRange) = Base.unsafe_length(r)
-Base.isempty(r::MutatingStepRange) =
-    (r.start != r.stop) & ((r.step > zero(r.step)) != (r.stop > r.start))
+function Base.isempty(r::MutatingStepRange)
+    return (r.start != r.stop) & ((r.step > zero(r.step)) != (r.stop > r.start))
+end
 
 function Base.iterate(r::MutatingStepRange)
     if isempty(r)

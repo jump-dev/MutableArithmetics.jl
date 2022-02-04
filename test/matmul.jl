@@ -13,8 +13,10 @@ function dot_test(x, y)
     @test MA.operate(LinearAlgebra.dot, y, x) == LinearAlgebra.dot(y, x)
     @test MA.operate(*, x', y) == x' * y
     @test MA.operate(*, y', x) == y' * x
-    @test MA.operate(*, LinearAlgebra.transpose(x), y) == LinearAlgebra.transpose(x) * y
-    @test MA.operate(*, LinearAlgebra.transpose(y), x) == LinearAlgebra.transpose(y) * x
+    @test MA.operate(*, LinearAlgebra.transpose(x), y) ==
+          LinearAlgebra.transpose(x) * y
+    @test MA.operate(*, LinearAlgebra.transpose(y), x) ==
+          LinearAlgebra.transpose(y) * x
 end
 
 @testset "dot" begin
@@ -41,12 +43,17 @@ end
 end
 
 @testset "convert" begin
-    @test MA.scaling_convert(LinearAlgebra.UniformScaling{Int}, LinearAlgebra.I) isa
-          LinearAlgebra.UniformScaling
+    @test MA.scaling_convert(
+        LinearAlgebra.UniformScaling{Int},
+        LinearAlgebra.I,
+    ) isa LinearAlgebra.UniformScaling
     @test MA.scaling_convert(Int, LinearAlgebra.I) === 1
     @test MA.scaling_convert(Int, 1) === 1
-    @test MA.operate(convert, LinearAlgebra.UniformScaling{Int}, LinearAlgebra.I) isa
-          LinearAlgebra.UniformScaling
+    @test MA.operate(
+        convert,
+        LinearAlgebra.UniformScaling{Int},
+        LinearAlgebra.I,
+    ) isa LinearAlgebra.UniformScaling
     @test MA.operate(convert, Int, LinearAlgebra.I) === 1
     @test MA.operate(convert, Int, 1) === 1
 end
@@ -64,13 +71,17 @@ struct NoProdMutable <: MA.AbstractMutable end
     # Hack for making the test work on old Julia versions
     Base.:*(::NoProdMutable, ::NoProdMutable) = error(EXPECTED_ERROR)
 else
-    function MA.promote_operation(::typeof(*), ::Type{NoProdMutable}, ::Type{NoProdMutable})
+    function MA.promote_operation(
+        ::typeof(*),
+        ::Type{NoProdMutable},
+        ::Type{NoProdMutable},
+    )
         return Int # Dummy result just to test error message
     end
 end
 
 function unsupported_product()
-    A = [NoProdMutable() for i = 1:2, j = 1:2]
+    A = [NoProdMutable() for i in 1:2, j in 1:2]
     err = ErrorException(EXPECTED_ERROR)
     @test_throws err A * A
 end
@@ -104,7 +115,9 @@ end
         )
         @test_throws err MA.operate(*, x', y)
         @test_throws err MA.operate(*, LinearAlgebra.transpose(x), y)
-        err = DimensionMismatch("matrix A has dimensions (2,2), vector B has length 1")
+        err = DimensionMismatch(
+            "matrix A has dimensions (2,2), vector B has length 1",
+        )
         @test_throws err MA.operate(*, x', B)
         a = zeros(0)
         @test iszero(@inferred MA.operate(LinearAlgebra.dot, a, a))
@@ -139,7 +152,11 @@ end
         @test MA.mul(A, x) == BigInt[3; 3; 3]
         @test MA.mul_to!!(y, A, x) == BigInt[3; 3; 3] && y == BigInt[3; 3; 3]
         @test_throws DimensionMismatch MA.mul(BigInt[1 1; 1 1], BigInt[])
-        @test_throws DimensionMismatch MA.mul_to!!(BigInt[], BigInt[1 1; 1 1], BigInt[1; 1])
+        @test_throws DimensionMismatch MA.mul_to!!(
+            BigInt[],
+            BigInt[1 1; 1 1],
+            BigInt[1; 1],
+        )
 
         @testset "mutability" begin
             alloc_test(() -> MA.promote_operation(*, typeof(A), typeof(x)), 0)
@@ -152,11 +169,22 @@ end
                 0,
             )
             alloc_test(
-                () -> MA.promote_operation(MA.add_mul, typeof(y), typeof(A), typeof(x)),
+                () -> MA.promote_operation(
+                    MA.add_mul,
+                    typeof(y),
+                    typeof(A),
+                    typeof(x),
+                ),
                 0,
             )
             alloc_test(
-                () -> MA.mutability(typeof(y), MA.add_mul, typeof(y), typeof(A), typeof(x)),
+                () -> MA.mutability(
+                    typeof(y),
+                    MA.add_mul,
+                    typeof(y),
+                    typeof(A),
+                    typeof(x),
+                ),
                 0,
             )
             alloc_test(() -> MA.mutability(y, MA.add_mul, y, A, x), 0)
@@ -167,7 +195,10 @@ end
         # Half size on 32-bit.
         n = Sys.WORD_SIZE == 64 ? 48 : 24
         alloc_test(() -> MA.add_mul!!(y, A, x), n)
-        alloc_test(() -> MA.operate_fallback!!(MA.IsMutable(), MA.add_mul, y, A, x), n)
+        alloc_test(
+            () -> MA.operate_fallback!!(MA.IsMutable(), MA.add_mul, y, A, x),
+            n,
+        )
         alloc_test(() -> MA.operate!!(MA.add_mul, y, A, x), n)
         alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), n)
         # Apparently, all allocations were on creating the buffer since this is allocation free:
@@ -177,7 +208,7 @@ end
     @testset "matrix-matrix product" begin
         A = [1 2 3; 4 5 6; 6 8 9]
         B = [1 -1 2; -2 3 1; 2 -3 1]
-        C = [one(Int) for i = 1:3, j = 1:3]
+        C = [one(Int) for i in 1:3, j in 1:3]
 
         D = [3 -4 7; 6 -7 19; 8 -9 29]
         @test MA.mul(A, B) == D
@@ -186,7 +217,7 @@ end
 
         A = BigInt[1 2 3; 4 5 6; 6 8 9]
         B = BigInt[1 -1 2; -2 3 1; 2 -3 1]
-        C = [one(BigInt) for i = 1:3, j = 1:3]
+        C = [one(BigInt) for i in 1:3, j in 1:3]
 
         D = BigInt[3 -4 7; 6 -7 19; 8 -9 29]
         @test MA.mul(A, B) == D
@@ -194,7 +225,10 @@ end
         @test C == D
 
         @test MA.mutability(C, *, A, B) isa MA.IsMutable
-        @test_throws DimensionMismatch MA.mul(BigInt[1 1; 1 1], zeros(BigInt, 1, 1))
+        @test_throws DimensionMismatch MA.mul(
+            BigInt[1 1; 1 1],
+            zeros(BigInt, 1, 1),
+        )
         @test_throws DimensionMismatch MA.mul_to!!(
             zeros(BigInt, 1, 1),
             BigInt[1 1; 1 1],
@@ -212,11 +246,22 @@ end
                 0,
             )
             alloc_test(
-                () -> MA.promote_operation(MA.add_mul, typeof(C), typeof(A), typeof(B)),
+                () -> MA.promote_operation(
+                    MA.add_mul,
+                    typeof(C),
+                    typeof(A),
+                    typeof(B),
+                ),
                 0,
             )
             alloc_test(
-                () -> MA.mutability(typeof(C), MA.add_mul, typeof(C), typeof(A), typeof(B)),
+                () -> MA.mutability(
+                    typeof(C),
+                    MA.add_mul,
+                    typeof(C),
+                    typeof(A),
+                    typeof(B),
+                ),
                 0,
             )
             alloc_test(() -> MA.mutability(C, MA.add_mul, C, A, B), 0)

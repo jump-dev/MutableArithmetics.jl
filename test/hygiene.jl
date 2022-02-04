@@ -14,9 +14,9 @@ macro _rewrite(expr)
 end
 
 # Don't include this in `@test` to make sure it is in global scope
-x = MutableArithmetics.@rewrite sum(i for i = 1:10)
+x = MutableArithmetics.@rewrite sum(i for i in 1:10)
 @test x == 55
-x = @_rewrite sum(i for i = 1:10)
+x = @_rewrite sum(i for i in 1:10)
 @test x == 55
 
 x = MutableArithmetics.@rewrite sum(i for i in 1:10 if isodd(i))
@@ -24,9 +24,9 @@ x = MutableArithmetics.@rewrite sum(i for i in 1:10 if isodd(i))
 x = @_rewrite sum(i for i in 1:10 if isodd(i))
 @test x == 25
 
-x = MutableArithmetics.@rewrite sum(i * j for i = 1:4 for j ∈ 1:4 if i == j)
+x = MutableArithmetics.@rewrite sum(i * j for i in 1:4 for j ∈ 1:4 if i == j)
 @test x == 30
-x = @_rewrite sum(i * j for i = 1:4 for j ∈ 1:4 if i == j)
+x = @_rewrite sum(i * j for i in 1:4 for j ∈ 1:4 if i == j)
 @test x == 30
 
 x = big(1)

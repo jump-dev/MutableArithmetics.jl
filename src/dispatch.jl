@@ -27,30 +27,40 @@ if VERSION >= v"1.5.0-rc1.23"
         lhs::AbstractArray{<:AbstractMutable},
         rhs::AbstractArray,
     )
-        fused_map_reduce(add_mul, lhs, rhs)
+        return fused_map_reduce(add_mul, lhs, rhs)
     end
     function LinearAlgebra._dot_nonrecursive(
         lhs::AbstractArray,
         rhs::AbstractArray{<:AbstractMutable},
     )
-        fused_map_reduce(add_mul, lhs, rhs)
+        return fused_map_reduce(add_mul, lhs, rhs)
     end
     function LinearAlgebra._dot_nonrecursive(
         lhs::AbstractArray{<:AbstractMutable},
         rhs::AbstractArray{<:AbstractMutable},
     )
-        fused_map_reduce(add_mul, lhs, rhs)
+        return fused_map_reduce(add_mul, lhs, rhs)
     end
 end
 
-LinearAlgebra.dot(lhs::AbstractArray{<:AbstractMutable}, rhs::AbstractArray) =
-    operate(LinearAlgebra.dot, lhs, rhs)
-LinearAlgebra.dot(lhs::AbstractArray, rhs::AbstractArray{<:AbstractMutable}) =
-    operate(LinearAlgebra.dot, lhs, rhs)
-LinearAlgebra.dot(
+function LinearAlgebra.dot(
+    lhs::AbstractArray{<:AbstractMutable},
+    rhs::AbstractArray,
+)
+    return operate(LinearAlgebra.dot, lhs, rhs)
+end
+function LinearAlgebra.dot(
+    lhs::AbstractArray,
+    rhs::AbstractArray{<:AbstractMutable},
+)
+    return operate(LinearAlgebra.dot, lhs, rhs)
+end
+function LinearAlgebra.dot(
     lhs::AbstractArray{<:AbstractMutable},
     rhs::AbstractArray{<:AbstractMutable},
-) = operate(LinearAlgebra.dot, lhs, rhs)
+)
+    return operate(LinearAlgebra.dot, lhs, rhs)
+end
 
 # Special-case because the the base version wants to do fill!(::Array{AbstractVariableRef}, zero(GenericAffExpr{Float64,eltype(x)}))
 _one_indexed(A) = all(x -> isa(x, Base.OneTo), axes(A))
@@ -115,7 +125,7 @@ function _mul!(output::AbstractArray{Union{}}, A, B)
     # If we arrived here, it means that we have found a type for `output`
     # even if LinearAlgebra couldn't. This is most probably a but so let's
     # provide extensive information to help debugging.
-    error(
+    return error(
         "Cannot multiply a `$(typeof(A))` with a `$(typeof(B))` because the sum of the product of a `$(eltype(A))` and a `$(eltype(B))` could not be inferred so a `$(typeof(output))` allocated to store the output of the multiplication instead of a `$ProdType`.",
     )
 end
@@ -128,70 +138,70 @@ function LinearAlgebra.mul!(
     A::AbstractVecOrMat,
     B::AbstractVecOrMat,
 ) where {N}
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
     A::AbstractVecOrMat,
     B::AbstractVector,
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
     A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
     B::AbstractVector,
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
     A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
     B::AbstractVector,
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
     B::AbstractMatrix,
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
     B::AbstractMatrix,
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::AbstractMatrix,
     B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::AbstractMatrix,
     B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
     B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
     B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
 )
-    _mul!(ret, A, B)
+    return _mul!(ret, A, B)
 end
 
 function LinearAlgebra.mul!(
@@ -201,7 +211,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 ) where {N}
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
@@ -210,7 +220,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
@@ -219,7 +229,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
@@ -228,7 +238,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
@@ -237,7 +247,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
@@ -246,7 +256,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
@@ -255,7 +265,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
@@ -264,7 +274,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
@@ -273,7 +283,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
@@ -282,7 +292,7 @@ function LinearAlgebra.mul!(
     α::Number,
     β::Number,
 )
-    _mul!(ret, A, B, α, β)
+    return _mul!(ret, A, B, α, β)
 end
 
 # SparseArrays promotes the element types of `A` and `B` to the same type
@@ -296,101 +306,201 @@ end
 
 Base.:*(A::_SparseMat{<:AbstractMutable}, x::StridedVector) = mul(A, x)
 Base.:*(A::_SparseMat, x::StridedVector{<:AbstractMutable}) = mul(A, x)
-Base.:*(A::_SparseMat{<:AbstractMutable}, x::StridedVector{<:AbstractMutable}) = mul(A, x)
+function Base.:*(
+    A::_SparseMat{<:AbstractMutable},
+    x::StridedVector{<:AbstractMutable},
+)
+    return mul(A, x)
+end
 
 # These six methods are needed on Julia v1.2 and earlier
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat}, x::StridedVector) =
-    mul(A, x)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat}, x::StridedVector{<:AbstractMutable}) =
-    mul(A, x)
-Base.:*(
+function Base.:*(
+    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
+    x::StridedVector,
+)
+    return mul(A, x)
+end
+function Base.:*(
+    A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat},
+    x::StridedVector{<:AbstractMutable},
+)
+    return mul(A, x)
+end
+function Base.:*(
     A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
     x::StridedVector{<:AbstractMutable},
-) = mul(A, x)
-Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat}, x::StridedVector) =
-    mul(A, x)
-Base.:*(
+)
+    return mul(A, x)
+end
+function Base.:*(
+    A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
+    x::StridedVector,
+)
+    return mul(A, x)
+end
+function Base.:*(
     A::LinearAlgebra.Transpose{<:Any,<:_SparseMat},
     x::StridedVector{<:AbstractMutable},
-) = mul(A, x)
-Base.:*(
+)
+    return mul(A, x)
+end
+function Base.:*(
     A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
     x::StridedVector{<:AbstractMutable},
-) = mul(A, x)
+)
+    return mul(A, x)
+end
 
-Base.:*(A::_SparseMat{<:AbstractMutable}, B::_SparseMat{<:AbstractMutable}) = mul(A, B)
+function Base.:*(
+    A::_SparseMat{<:AbstractMutable},
+    B::_SparseMat{<:AbstractMutable},
+)
+    return mul(A, B)
+end
 Base.:*(A::_SparseMat{<:Any}, B::_SparseMat{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::_SparseMat{<:AbstractMutable}, B::_SparseMat{<:Any}) = mul(A, B)
 
-Base.:*(
+function Base.:*(
     A::_SparseMat{<:AbstractMutable},
     B::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
-) = mul(A, B)
-Base.:*(A::_SparseMat{<:Any}, B::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat}) =
-    mul(A, B)
-Base.:*(A::_SparseMat{<:AbstractMutable}, B::LinearAlgebra.Adjoint{<:Any,<:_SparseMat}) =
-    mul(A, B)
+)
+    return mul(A, B)
+end
+function Base.:*(
+    A::_SparseMat{<:Any},
+    B::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
+)
+    return mul(A, B)
+end
+function Base.:*(
+    A::_SparseMat{<:AbstractMutable},
+    B::LinearAlgebra.Adjoint{<:Any,<:_SparseMat},
+)
+    return mul(A, B)
+end
 
-Base.:*(
+function Base.:*(
     A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
     B::_SparseMat{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat}, B::_SparseMat{<:AbstractMutable}) =
-    mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat}, B::_SparseMat{<:Any}) =
-    mul(A, B)
-Base.:*(
+)
+    return mul(A, B)
+end
+function Base.:*(
+    A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat},
+    B::_SparseMat{<:AbstractMutable},
+)
+    return mul(A, B)
+end
+function Base.:*(
+    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
+    B::_SparseMat{<:Any},
+)
+    return mul(A, B)
+end
+function Base.:*(
     A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
     B::_SparseMat{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(A::LinearAlgebra.Transpose{<:Any,<:_SparseMat}, B::_SparseMat{<:AbstractMutable}) =
-    mul(A, B)
-Base.:*(A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat}, B::_SparseMat{<:Any}) =
-    mul(A, B)
+)
+    return mul(A, B)
+end
+function Base.:*(
+    A::LinearAlgebra.Transpose{<:Any,<:_SparseMat},
+    B::_SparseMat{<:AbstractMutable},
+)
+    return mul(A, B)
+end
+function Base.:*(
+    A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
+    B::_SparseMat{<:Any},
+)
+    return mul(A, B)
+end
 
-Base.:*(A::StridedMatrix{<:AbstractMutable}, B::_SparseMat{<:AbstractMutable}) = mul(A, B)
+function Base.:*(
+    A::StridedMatrix{<:AbstractMutable},
+    B::_SparseMat{<:AbstractMutable},
+)
+    return mul(A, B)
+end
 Base.:*(A::StridedMatrix{<:Any}, B::_SparseMat{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::StridedMatrix{<:AbstractMutable}, B::_SparseMat{<:Any}) = mul(A, B)
 
-Base.:*(A::_SparseMat{<:AbstractMutable}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
+function Base.:*(
+    A::_SparseMat{<:AbstractMutable},
+    B::StridedMatrix{<:AbstractMutable},
+)
+    return mul(A, B)
+end
 Base.:*(A::_SparseMat{<:Any}, B::StridedMatrix{<:AbstractMutable}) = mul(A, B)
 Base.:*(A::_SparseMat{<:AbstractMutable}, B::StridedMatrix{<:Any}) = mul(A, B)
 
-Base.:*(
+function Base.:*(
     A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
     B::StridedMatrix{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat}, B::StridedMatrix{<:AbstractMutable}) =
-    mul(A, B)
-Base.:*(A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat}, B::StridedMatrix{<:Any}) =
-    mul(A, B)
-Base.:*(
+)
+    return mul(A, B)
+end
+function Base.:*(
+    A::LinearAlgebra.Adjoint{<:Any,<:_SparseMat},
+    B::StridedMatrix{<:AbstractMutable},
+)
+    return mul(A, B)
+end
+function Base.:*(
+    A::LinearAlgebra.Adjoint{<:AbstractMutable,<:_SparseMat},
+    B::StridedMatrix{<:Any},
+)
+    return mul(A, B)
+end
+function Base.:*(
     A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
     B::StridedMatrix{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(
+)
+    return mul(A, B)
+end
+function Base.:*(
     A::LinearAlgebra.Transpose{<:Any,<:_SparseMat},
     B::StridedMatrix{<:AbstractMutable},
-) = mul(A, B)
-Base.:*(
+)
+    return mul(A, B)
+end
+function Base.:*(
     A::LinearAlgebra.Transpose{<:AbstractMutable,<:_SparseMat},
     B::StridedMatrix{<:Any},
-) = mul(A, B)
+)
+    return mul(A, B)
+end
 
-const StridedMaybeAdjOrTransMat{T} = Union{StridedMatrix{T}, LinearAlgebra.Adjoint{T, <:StridedMatrix}, LinearAlgebra.Transpose{T, <:StridedMatrix}}
+const StridedMaybeAdjOrTransMat{T} = Union{
+    StridedMatrix{T},
+    LinearAlgebra.Adjoint{T,<:StridedMatrix},
+    LinearAlgebra.Transpose{T,<:StridedMatrix},
+}
 
 # See https://github.com/JuliaLang/julia/pull/37898
 # The default fallback only used `promote_type` so it may get its wrong, e.g., for JuMP and MultivariatePolynomials.
 if VERSION >= v"1.7.0-DEV.1284"
     _mat_mat_scalar(A, B, γ) = operate!!(*, operate(*, A, B), γ)
 
-    function LinearAlgebra.mat_mat_scalar(A::StridedMaybeAdjOrTransMat{<:AbstractMutable}, B::StridedMaybeAdjOrTransMat, γ)
+    function LinearAlgebra.mat_mat_scalar(
+        A::StridedMaybeAdjOrTransMat{<:AbstractMutable},
+        B::StridedMaybeAdjOrTransMat,
+        γ,
+    )
         return _mat_mat_scalar(A, B, γ)
     end
-    function LinearAlgebra.mat_mat_scalar(A::StridedMaybeAdjOrTransMat, B::StridedMaybeAdjOrTransMat{<:AbstractMutable}, γ)
+    function LinearAlgebra.mat_mat_scalar(
+        A::StridedMaybeAdjOrTransMat,
+        B::StridedMaybeAdjOrTransMat{<:AbstractMutable},
+        γ,
+    )
         return _mat_mat_scalar(A, B, γ)
     end
-    function LinearAlgebra.mat_mat_scalar(A::StridedMaybeAdjOrTransMat{<:AbstractMutable}, B::StridedMaybeAdjOrTransMat{<:AbstractMutable}, γ)
+    function LinearAlgebra.mat_mat_scalar(
+        A::StridedMaybeAdjOrTransMat{<:AbstractMutable},
+        B::StridedMaybeAdjOrTransMat{<:AbstractMutable},
+        γ,
+    )
         return _mat_mat_scalar(A, B, γ)
     end
 end
@@ -511,22 +621,31 @@ end
 # Needed for Julia v1.0, otherwise, `broadcast(*, α, A)` gives a `Array` and
 # not a `Symmetric`.
 function Base.:*(α::Number, A::LinearAlgebra.Symmetric{<:AbstractMutable})
-    return LinearAlgebra.Symmetric(α * parent(A), LinearAlgebra.sym_uplo(A.uplo))
+    return LinearAlgebra.Symmetric(
+        α * parent(A),
+        LinearAlgebra.sym_uplo(A.uplo),
+    )
 end
 function Base.:*(α::Number, A::LinearAlgebra.Hermitian{<:AbstractMutable})
-    return LinearAlgebra.Hermitian(α * parent(A), LinearAlgebra.sym_uplo(A.uplo))
+    return LinearAlgebra.Hermitian(
+        α * parent(A),
+        LinearAlgebra.sym_uplo(A.uplo),
+    )
 end
-
 
 # These three have specific methods that just redirect to `Matrix{T}` which
 # does not work, e.g. if `zero(T)` has a different type than `T`.
 function Base.Matrix(x::LinearAlgebra.Tridiagonal{T}) where {T<:AbstractMutable}
     return Matrix{promote_type(promote_operation(zero, T), T)}(x)
 end
-function Base.Matrix(x::LinearAlgebra.UpperTriangular{T}) where {T<:AbstractMutable}
+function Base.Matrix(
+    x::LinearAlgebra.UpperTriangular{T},
+) where {T<:AbstractMutable}
     return Matrix{promote_type(promote_operation(zero, T), T)}(x)
 end
-function Base.Matrix(x::LinearAlgebra.LowerTriangular{T}) where {T<:AbstractMutable}
+function Base.Matrix(
+    x::LinearAlgebra.LowerTriangular{T},
+) where {T<:AbstractMutable}
     return Matrix{promote_type(promote_operation(zero, T), T)}(x)
 end
 
@@ -534,7 +653,7 @@ end
 # `eltype` of `B` might be different form the `eltype` of `A`.
 function Matrix(A::LinearAlgebra.Symmetric{<:AbstractMutable})
     B = LinearAlgebra.copytri!(convert(Matrix, copy(A.data)), A.uplo)
-    for i = 1:size(A, 1)
+    for i in 1:size(A, 1)
         # `B[i, i]` is used instead of `A[i, i]` on Julia v1.1 hence the need
         # to overwrite it for `AbstractMutable`.
         B[i, i] = LinearAlgebra.symmetric(
@@ -546,7 +665,7 @@ function Matrix(A::LinearAlgebra.Symmetric{<:AbstractMutable})
 end
 function Matrix(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     B = LinearAlgebra.copytri!(convert(Matrix, copy(A.data)), A.uplo, true)
-    for i = 1:size(A, 1)
+    for i in 1:size(A, 1)
         # `B[i, i]` is used instead of `A[i, i]` on Julia v1.1 hence the need
         # to overwrite it for `AbstractMutable`.
         B[i, i] = LinearAlgebra.hermitian(

@@ -53,8 +53,10 @@ end
 @testset "add_mul_to!! / add_mul!! / add_mul_buf_to!! /add_mul_buf!!" begin
     @test MA.mutability(Int, MA.add_mul_to!!, Int, Int, Int) isa MA.IsNotMutable
     @test MA.mutability(Int, MA.add_mul!!, Int, Int) isa MA.IsNotMutable
-    @test MA.mutability(Int, MA.add_mul_buf_to!!, Int, Int, Int, Int) isa MA.IsNotMutable
-    @test MA.mutability(Int, MA.add_mul_buf!!, Int, Int, Int) isa MA.IsNotMutable
+    @test MA.mutability(Int, MA.add_mul_buf_to!!, Int, Int, Int, Int) isa
+          MA.IsNotMutable
+    @test MA.mutability(Int, MA.add_mul_buf!!, Int, Int, Int) isa
+          MA.IsNotMutable
     a = 5
     b = 9
     c = 3

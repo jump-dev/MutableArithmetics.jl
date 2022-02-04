@@ -10,7 +10,7 @@ function allocation_test(op, T, short, short_to, n)
     @test a === short(a, b)
     @test g == a
     alloc_test_le(() -> short(a, b), n)
-    alloc_test_le(() -> short_to(c, a, b), n)
+    return alloc_test_le(() -> short_to(c, a, b), n)
 end
 
 @testset "$T" for T in [BigInt, BigFloat, Rational{BigInt}]

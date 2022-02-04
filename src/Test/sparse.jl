@@ -37,7 +37,10 @@ function sparse_linear_test(X11, X23, Xd)
     v = [4, 5, 6]
     @test MA.isequal_canonical(X * v, [4X11, 6X23, 0])
     @test MA.isequal_canonical((v' * X)', [4X11, 0, 5X23])
-    @test MA.isequal_canonical(transpose(copy(transpose(v)) * X), [4X11, 0, 5X23])
+    @test MA.isequal_canonical(
+        transpose(copy(transpose(v)) * X),
+        [4X11, 0, 5X23],
+    )
     @test MA.isequal_canonical(X' * v, [4X11, 0, 5X23])
     @test MA.isequal_canonical(copy(transpose(X)) * v, [4X11, 0, 5X23])
 
@@ -129,10 +132,12 @@ function sparse_quadratic_test(X11, X23, Xd)
     ]
 
     add_test(Z, A)
-    _mat_mat_test(Z, A)
+    return _mat_mat_test(Z, A)
 end
 
-const sparse_tests =
-    Dict("sparse_linear" => sparse_linear_test, "sparse_quadratic" => sparse_quadratic_test)
+const sparse_tests = Dict(
+    "sparse_linear" => sparse_linear_test,
+    "sparse_quadratic" => sparse_quadratic_test,
+)
 
 @test_suite sparse
