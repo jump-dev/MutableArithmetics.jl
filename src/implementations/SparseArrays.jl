@@ -1,4 +1,5 @@
-import SparseArrays
+# This file contains methods to implement the MutableArithmetics API for types
+# in the SparseArrays stdlib.
 
 const _SparseMat = SparseArrays.SparseMatrixCSC
 
@@ -26,6 +27,7 @@ function promote_operation(
 ) where {Tv,Ti,T,N}
     return Array{promote_operation(op, Tv, T),N}
 end
+
 function promote_operation(
     op::Union{typeof(+),typeof(-)},
     ::Type{Array{T,N}},
@@ -33,6 +35,7 @@ function promote_operation(
 ) where {Tv,Ti,T,N}
     return Array{promote_operation(op, Tv, T),N}
 end
+
 function _operate!(
     op::Union{typeof(+),typeof(-)},
     A::Matrix,
@@ -63,6 +66,7 @@ function similar_array_type(
 ) where {T,Tv,Ti}
     return SparseArrays.SparseVector{T,Ti}
 end
+
 function similar_array_type(
     ::Type{_SparseMat{Tv,Ti}},
     ::Type{T},
@@ -70,10 +74,12 @@ function similar_array_type(
     return _SparseMat{T,Ti}
 end
 
-# `SparseArrays/src/linalg.jl` sometimes create a sparse matrix to contain the result.
-# For instance with `Matrix * Adjoint{SparseMatrixCSC}` and then uses `generic_matmatmul!`
-# which looks quite inefficient as it does not exploit the sparsity of the result matrix and the rhs.
-# The approach used here should be more efficient as we redirect to a method that exploits the sparsity of the rhs and `copyto!` should be faster to write the result matrix.
+# `SparseArrays/src/linalg.jl` sometimes create a sparse matrix to contain the
+# result. For example, with `Matrix * Adjoint{SparseMatrixCSC}` and then uses
+# `generic_matmatmul!` which looks quite inefficient as it does not exploit the
+# sparsity of the result matrix and the rhs. The approach used here should be
+# more efficient as we redirect to a method that exploits the sparsity of the
+# rhs and `copyto!` should be faster to write the result matrix.
 function operate!(
     ::typeof(add_mul),
     output::_SparseMat{T},
@@ -109,6 +115,7 @@ function operate!(
     end
     return ret
 end
+
 function operate!(
     ::typeof(add_mul),
     ret::VecOrMat{T},
@@ -130,6 +137,7 @@ function operate!(
     end
     return ret
 end
+
 function operate!(
     ::typeof(add_mul),
     ret::Matrix{T},
@@ -182,9 +190,8 @@ function operate!(
 end
 
 # `_SparseMat`-`_SparseMat` matrix multiplication.
-# Inspired from `SparseArrays.spmatmul` which is
-# Gustavsen's matrix multiplication algorithm revisited so that row indices
-# are sorted.
+# Inspired from `SparseArrays.spmatmul` which is Gustavsen's matrix
+# multiplication algorithm revisited so that row indices are sorted.
 
 function promote_array_mul(
     ::Type{<:Union{_SparseMat{S,Ti},_TransposeOrAdjoint{S,_SparseMat{S,Ti}}}},
@@ -205,11 +212,10 @@ function operate!(
     nzvalA = SparseArrays.nonzeros(A)
     rowvalB = SparseArrays.rowvals(B)
     nzvalB = SparseArrays.nonzeros(B)
-    mA, nA = size(A)
+    mA, _ = size(A)
     nB = size(B, 2)
     nnz_ret = length(ret.rowval)
     @assert length(ret.nzval) == nnz_ret
-
     @inbounds begin
         ip = 1
         xb = fill(false, mA)
@@ -267,17 +273,17 @@ function operate!(
         end
         ret.colptr[nB+1] = ip
     end
-
     # This modification of Gustavson algorithm has sorted row indices
     resize!(ret.rowval, ip - 1)
     resize!(ret.nzval, ip - 1)
-
     return ret
 end
+
 # Taken from `SparseArrays.prefer_sort` added in Julia v1.1.
 function _prefer_sort(nz::Integer, m::Integer)
     return m > 6 && 3 * SparseArrays.ilog2(nz) * nz < m
 end
+
 function operate!(
     ::typeof(add_mul),
     ret::_SparseMat{T},
@@ -287,6 +293,7 @@ function operate!(
 ) where {T,N}
     return operate!(add_mul, ret, A, copy(B), α...)
 end
+
 function operate!(
     ::typeof(add_mul),
     ret::_SparseMat{T},
@@ -296,6 +303,7 @@ function operate!(
 ) where {T,N}
     return operate!(add_mul, ret, copy(A), B, α...)
 end
+
 function operate!(
     ::typeof(add_mul),
     ret::_SparseMat{T},
@@ -306,8 +314,8 @@ function operate!(
     return operate!(add_mul, ret, copy(A), B, α...)
 end
 
-# This `BroadcastStyle` is used when there is a mix of sparse arrays and dense arrays.
-# The result is a sparse array.
+# This `BroadcastStyle` is used when there is a mix of sparse arrays and dense
+# arrays. The result is a sparse array.
 function _broadcasted_type(
     ::SparseArrays.HigherOrderFns.PromoteToSparse,
     ::Base.HasShape{1},
@@ -315,6 +323,7 @@ function _broadcasted_type(
 ) where {Eltype}
     return SparseArrays.SparseVector{Eltype,Int}
 end
+
 function _broadcasted_type(
     ::SparseArrays.HigherOrderFns.PromoteToSparse,
     ::Base.HasShape{2},

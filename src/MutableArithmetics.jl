@@ -7,6 +7,7 @@
 module MutableArithmetics
 
 import LinearAlgebra
+import SparseArrays
 
 # Performance note:
 # We use `Vararg` instead of splatting `...` as using `where N` forces Julia to
@@ -67,18 +68,24 @@ include("shortcuts.jl")
 include("broadcast.jl")
 
 # Implementation of the interface for Base types
+
 const Scaling = Union{Number,LinearAlgebra.UniformScaling}
+
 scaling_to_number(x::Number) = x
 scaling_to_number(x::LinearAlgebra.UniformScaling) = x.λ
 scaling(x::Scaling) = x
 scaling_convert(T::Type, x) = convert(T, x)
-# `convert(::Type{<:UniformScaling}, ::UniformScaling)` is not defined in LinearAlgebra.
+
+# `convert(::Type{<:UniformScaling}, ::UniformScaling)` is not defined in
+# LinearAlgebra.
+
 function scaling_convert(
     ::Type{LinearAlgebra.UniformScaling{T}},
     x::LinearAlgebra.UniformScaling,
 ) where {T}
     return LinearAlgebra.UniformScaling(convert(T, x.λ))
 end
+
 function operate(
     ::typeof(convert),
     ::Type{LinearAlgebra.UniformScaling{T}},
@@ -86,18 +93,21 @@ function operate(
 ) where {T}
     return LinearAlgebra.UniformScaling(operate(convert, T, x.λ))
 end
+
 scaling_convert(T::Type, x::LinearAlgebra.UniformScaling) = convert(T, x.λ)
+
 function operate(::typeof(convert), T::Type, x::LinearAlgebra.UniformScaling)
     return operate(convert, T, x.λ)
 end
 
-include("bigint.jl")
-include("bigfloat.jl")
-include("rational.jl")
+include("implementations/BigInt.jl")
+include("implementations/BigFloat.jl")
+include("implementations/LinearAlgebra.jl")
+include("implementations/MutatingStepRange.jl")
+include("implementations/Rational.jl")
+include("implementations/SparseArrays.jl")
 
 include("reduce.jl")
-include("linear_algebra.jl")
-include("sparse_arrays.jl")
 
 """
     isequal_canonical(a, b)
@@ -114,6 +124,7 @@ the equality of the representation is equivalent to the equality of the objects
 begin represented.
 """
 isequal_canonical(a, b) = a == b
+
 function isequal_canonical(
     a::AT,
     b::AT,
@@ -129,18 +140,22 @@ function isequal_canonical(
         return isequal_canonical(elements...)
     end
 end
+
 function isequal_canonical(x::LinearAlgebra.Adjoint, y::LinearAlgebra.Adjoint)
     return isequal_canonical(parent(x), parent(y))
 end
+
 function isequal_canonical(
     x::LinearAlgebra.Transpose,
     y::LinearAlgebra.Transpose,
 )
     return isequal_canonical(parent(x), parent(y))
 end
+
 function isequal_canonical(x::LinearAlgebra.Diagonal, y::LinearAlgebra.Diagonal)
     return isequal_canonical(parent(x), parent(y))
 end
+
 function isequal_canonical(
     x::LinearAlgebra.Tridiagonal,
     y::LinearAlgebra.Tridiagonal,
@@ -149,6 +164,7 @@ function isequal_canonical(
            isequal_canonical(x.d, y.d) &&
            isequal_canonical(x.du, y.du)
 end
+
 function isequal_canonical(x::_SparseMat, y::_SparseMat)
     return x.m == y.m &&
            x.n == y.n &&
@@ -159,7 +175,6 @@ end
 
 include("rewrite.jl")
 include("dispatch.jl")
-include("range.jl")
 
 # Test that can be used to test an implementation of the interface
 include("Test/Test.jl")
