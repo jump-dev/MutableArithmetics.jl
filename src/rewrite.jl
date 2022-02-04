@@ -1,7 +1,3 @@
-# Heavily inspired from `JuMP/src/parse_expr.jl` code.
-
-export @rewrite
-
 """
     @rewrite(expr)
 
@@ -28,6 +24,7 @@ macro rewrite(expr)
 end
 
 struct Zero end
+
 ## We need to copy `x` as it will be used as might be given by the user and be
 ## given as first argument of `operate!!`.
 #Base.:(+)(zero::Zero, x) = copy_if_mutable(x)
@@ -36,15 +33,19 @@ struct Zero end
 function operate(::typeof(add_mul), ::Zero, args::Vararg{Any,N}) where {N}
     return operate(*, args...)
 end
+
 function operate(::typeof(sub_mul), ::Zero, x)
     # `operate(*, x)` would redirect to `copy_if_mutable(x)` which would be a
     # useless copy.
     return operate(-, x)
 end
+
 function operate(::typeof(sub_mul), ::Zero, x, y, args::Vararg{Any,N}) where {N}
     return operate(-, operate(*, x, y, args...))
 end
+
 broadcast!!(::Union{typeof(add_mul),typeof(+)}, ::Zero, x) = copy_if_mutable(x)
+
 broadcast!!(::typeof(add_mul), ::Zero, x, y) = x * y
 
 # Needed in `@rewrite(1 .+ sum(1 for i in 1:0) * 1^2)`
@@ -60,6 +61,7 @@ Base.:-(z::Zero, ::Zero) = z
 Base.:-(z::Zero) = z
 Base.:+(z::Zero) = z
 Base.:*(z::Zero) = z
+
 function Base.:/(z::Zero, x::Any)
     if iszero(x)
         throw(DivideError())
@@ -74,6 +76,7 @@ end
 _any_zero() = false
 _any_zero(::Any, args::Vararg{Any,N}) where {N} = _any_zero(args...)
 _any_zero(::Zero, ::Vararg{Any,N}) where {N} = true
+
 function operate!!(
     op::Union{typeof(add_mul),typeof(sub_mul)},
     x,
@@ -92,8 +95,6 @@ Base.ndims(::Type{Zero}) = 0
 Base.length(::Zero) = 1
 Base.iterate(z::Zero) = (z, nothing)
 Base.iterate(::Zero, ::Nothing) = nothing
-
-using Base.Meta
 
 # See `JuMP._try_parse_idx_set`
 function _try_parse_idx_set(arg::Expr)
@@ -114,10 +115,10 @@ end
 
 function _parse_idx_set(arg::Expr)
     parse_done, idxvar, idxset = _try_parse_idx_set(arg)
-    if parse_done
-        return idxvar, idxset
+    if !parse_done
+        error("Invalid syntax: $arg")
     end
-    return error("Invalid syntax: $arg")
+    return idxvar, idxset
 end
 
 """
@@ -143,8 +144,7 @@ function rewrite_generator(ex, inner)
     # `i + j for i in 1:2 for j in 1:2` is a `flatten` expression
     if isexpr(ex, :flatten)
         return rewrite_generator(ex.args[1], inner)
-    end
-    if !isexpr(ex, :generator)
+    elseif !isexpr(ex, :generator)
         return inner(ex)
     end
     # `i + j for i in 1:2, j in 1:2` is a `generator` expression
@@ -204,19 +204,18 @@ function _parse_generator(
     @assert isexpr(inner_factor.args[2], :generator) ||
             isexpr(inner_factor.args[2], :flatten)
     header = inner_factor.args[1]
-    if _is_sum(header)
-        _parse_generator_sum(
-            vectorized,
-            minus,
-            inner_factor.args[2],
-            current_sum,
-            left_factors,
-            right_factors,
-            new_var,
-        )
-    else
+    if !_is_sum(header)
         error("Expected `sum` outside generator expression; got `$header`.")
     end
+    return _parse_generator_sum(
+        vectorized,
+        minus,
+        inner_factor.args[2],
+        current_sum,
+        left_factors,
+        right_factors,
+        new_var,
+    )
 end
 
 function _parse_generator_sum(
@@ -252,6 +251,7 @@ function _parse_generator_sum(
 end
 
 _is_complex_expr(ex) = isa(ex, Expr) && !isexpr(ex, :ref)
+
 function _is_decomposable_with_factors(ex)
     # `.+` and `.-` do not support being decomposed if `left_factors` or
     # `right_factors` are not empty. Otherwise, for instance
@@ -265,7 +265,7 @@ end
     rewrite(x)
 
 Rewrite the expression `x` as specified in [`@rewrite`](@ref).
-Return a variable name as `Symbol` and the rewritten expression assigning the
+Returns a variable name as `Symbol` and the rewritten expression assigning the
 value of the expression `x` to the variable.
 """
 function rewrite(x)
@@ -302,9 +302,8 @@ function _is_comparison(ex::Expr)
         else
             return false
         end
-    else
-        return false
     end
+    return false
 end
 
 # `x[i = 1]` is a somewhat common user error. Catch it here.
@@ -315,6 +314,7 @@ function _has_assignment_in_ref(ex::Expr)
         return any(_has_assignment_in_ref, ex.args)
     end
 end
+
 _has_assignment_in_ref(other) = false
 
 function _rewrite_sum(
@@ -347,7 +347,7 @@ function _rewrite_sum(
     return output, block
 end
 
-function _start_summing(current_sum::Nothing, first_term::Function)
+function _start_summing(::Nothing, first_term::Function)
     variable = gensym()
     return Expr(
         :block,
@@ -355,6 +355,7 @@ function _start_summing(current_sum::Nothing, first_term::Function)
         first_term(variable),
     )
 end
+
 function _start_summing(current_sum::Symbol, first_term::Function)
     return first_term(current_sum)
 end
