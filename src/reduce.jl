@@ -23,7 +23,11 @@ map_op(::AddSubMul) = *
 map_op(::typeof(add_dot)) = LinearAlgebra.dot
 
 function promote_map_reduce(op::Function, args::Vararg{Any,N}) where {N}
-    return promote_operation(op, promote_operation(map_op(op), args...), args...)
+    return promote_operation(
+        op,
+        promote_operation(map_op(op), args...),
+        args...,
+    )
 end
 
 function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
@@ -42,7 +46,7 @@ function operate(::typeof(sum), a::AbstractArray)
     return mapreduce(
         identity,
         add!!,
-        a,
+        a;
         init = zero(promote_operation(+, eltype(a), eltype(a))),
     )
 end
