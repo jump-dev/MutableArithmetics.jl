@@ -1,3 +1,6 @@
+# This file provides a mutable broadcast interface for types that support
+# mutation.
+
 function _broadcasted_type(
     ::Broadcast.DefaultArrayStyle{N},
     ::Base.HasShape{N},
@@ -5,6 +8,7 @@ function _broadcasted_type(
 ) where {N,Eltype}
     return Array{Eltype,N}
 end
+
 function _broadcasted_type(
     ::Broadcast.DefaultArrayStyle{N},
     ::Base.HasShape{N},
@@ -15,10 +19,13 @@ end
 
 # Same as `Base.Broadcast._combine_styles` but with types as argument.
 _combine_styles() = Broadcast.DefaultArrayStyle{0}()
+
 _combine_styles(c::Type) = Broadcast.result_style(Broadcast.BroadcastStyle(c))
+
 function _combine_styles(c1::Type, c2::Type)
     return Broadcast.result_style(_combine_styles(c1), _combine_styles(c2))
 end
+
 @inline function _combine_styles(
     c1::Type,
     c2::Type,
@@ -31,24 +38,25 @@ end
 end
 
 _combine_shapes(s) = s
-function _combine_2_shapes(
-    s1::Base.HasShape{N},
-    s2::Base.HasShape{M},
-) where {N,M}
+
+function _combine_2_shapes(::Base.HasShape{N}, ::Base.HasShape{M}) where {N,M}
     return Base.HasShape{max(N, M)}()
 end
+
 function _combine_shapes(s1, s2, args::Vararg{Any,N}) where {N}
     return _combine_shapes(_combine_2_shapes(s1, s2), args...)
 end
+
 _shape(T) = Base.HasShape{ndims(T)}()
+
 function _combine_sizes(args::Vararg{Any,N}) where {N}
     return _combine_shapes(_shape.(args)...)
 end
 
 function promote_broadcast(op::F, args::Vararg{Any,N}) where {F<:Function,N}
-    # FIXME we could use `promote_operation` instead as
-    # `combine_eltypes` uses `return_type` hence it may return a non-concrete type
-    # and we do not handle that case.
+    # TODO: we could use `promote_operation` instead as `combine_eltypes` uses
+    # `return_type` hence it may return a non-concrete type and we do not handle
+    # that case.
     T = Base.Broadcast.combine_eltypes(op, args)
     return _broadcasted_type(
         _combine_styles(args...),
@@ -70,16 +78,21 @@ function broadcast_mutability(T::Type, op, args::Vararg{Type,N}) where {N}
         return IsNotMutable()
     end
 end
+
 function broadcast_mutability(x, op, args::Vararg{Any,N}) where {N}
     return broadcast_mutability(typeof(x), op, typeof.(args)...)
 end
+
 broadcast_mutability(::Type) = IsNotMutable()
 
 """
     broadcast!(op::Function, args...)
 
-Modify the value of `args[1]` to be equal to the value of `broadcast(op, args...)`. Can
-only be called if `mutability(args[1], op, args...)` returns [`IsMutable`](@ref).
+Modify the value of `args[1]` to be equal to the value of
+`broadcast(op, args...)`.
+
+This method can only be called if `mutability(args[1], op, args...)` returns
+[`IsMutable`](@ref).
 """
 function broadcast! end
 
@@ -90,8 +103,8 @@ function mutable_broadcasted(broadcasted::Broadcast.Broadcasted{S}) where {S}
     return Broadcast.Broadcasted{S}(f, broadcasted.args, broadcasted.axes)
 end
 
-# If A is `Symmetric`, we cannot do that as we might modify the same entry twice.
-# See https://github.com/jump-dev/JuMP.jl/issues/2102
+# If A is `Symmetric`, we cannot do a normal broadcast because we might modify
+# the same entry twice. See https://github.com/jump-dev/JuMP.jl/issues/2102
 function broadcast!(op::F, A::Array, args::Vararg{Any,N}) where {F<:Function,N}
     bc = Broadcast.broadcasted(op, A, args...)
     instantiated = Broadcast.instantiate(bc)
@@ -99,12 +112,14 @@ function broadcast!(op::F, A::Array, args::Vararg{Any,N}) where {F<:Function,N}
 end
 
 _any_uniform_scaling() = false
+
 function _any_uniform_scaling(
     ::LinearAlgebra.UniformScaling,
     args::Vararg{Any,N},
 ) where {N}
     return true
 end
+
 function _any_uniform_scaling(::Any, args::Vararg{Any,N}) where {N}
     return _any_uniform_scaling(args...)
 end
@@ -128,6 +143,7 @@ function broadcast!!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
         )
     end
 end
+
 function _broadcast_with_uniform_scaling!(
     op::F,
     args::Vararg{Any,N},
@@ -142,6 +158,7 @@ function broadcast_fallback!(
 ) where {F<:Function,N}
     return broadcast(op, args...)
 end
+
 function broadcast_fallback!(
     ::IsMutable,
     op::F,
