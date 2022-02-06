@@ -20,28 +20,22 @@ function promote_operation_fallback(
 end
 
 function promote_operation_fallback(
-    ::typeof(/),
+    op::Function,
     ::Type{S},
     ::Type{T},
 ) where {S,T}
-    return typeof(zero(S) / oneunit(T))
+    U = Base.promote_op(op, S, T)
+    return return U == Union{} ? typeof(op(oneunit(S), oneunit(T))) : U
 end
 
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
 function promote_operation_fallback(
     op::F,
-    ::Type{S},
-    ::Type{T},
-) where {F<:Function,S,T}
-    return typeof(op(zero(S), zero(T)))
-end
-
-function promote_operation_fallback(
-    op::F,
     args::Vararg{Type,N},
 ) where {F<:Function,N}
-    return typeof(op(zero.(args)...))
+    U = Base.promote_op(op, args...)
+    return return U == Union{} ? typeof(op(oneunit.(args)...)) : U
 end
 
 promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
