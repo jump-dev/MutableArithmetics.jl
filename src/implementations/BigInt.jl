@@ -41,6 +41,10 @@ function operate_to!(output::BigInt, ::typeof(-), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.sub!(output, a, b)
 end
 
+function operate_to!(output::BigInt, ::typeof(-), a::BigInt)
+    return Base.GMP.MPZ.neg!(output, a)
+end
+
 # *
 
 promote_operation(::typeof(*), ::Vararg{Type{BigInt},N}) where {N} = BigInt
