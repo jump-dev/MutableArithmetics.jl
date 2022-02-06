@@ -28,13 +28,28 @@ function operate!(::typeof(one), x::Rational)
 end
 
 # +
-
 function promote_operation(
-    ::typeof(+),
+    ::Union{typeof(+),typeof(-)},
     ::Type{Rational{S}},
-    ::Type{Rational{T}},
+    ::Type{Rational{T}}
 ) where {S,T}
     return Rational{promote_sum_mul(S, T)}
+end
+
+function promote_operation(
+    op::Union{typeof(+),typeof(-)},
+    ::Type{Rational{S}},
+    ::Type{I}
+) where {S,I<:Integer}
+    return promote_operation(op, Rational{S}, Rational{I})
+end
+
+function promote_operation(
+    op::Union{typeof(+),typeof(-)},
+    ::Type{I},
+    ::Type{Rational{S}}
+) where {S,I<:Integer}
+    return promote_operation(op, Rational{S}, Rational{I})
 end
 
 function operate_to!(output::Rational, ::typeof(+), x::Rational, y::Rational)
@@ -46,22 +61,48 @@ function operate_to!(output::Rational, ::typeof(+), x::Rational, y::Rational)
     return output
 end
 
-# -
-
-function promote_operation(
-    ::typeof(-),
-    ::Type{Rational{S}},
-    ::Type{Rational{T}},
-) where {S,T}
-    return Rational{promote_sum_mul(S, T)}
+function operate_to!(output::Rational, ::typeof(+), x::Rational, y::Integer)
+    # TODO Use `checked_mul` and `checked_add` like in Base
+    operate_to!(output.num, *, x.den, y)
+    operate!(+, output.num, x.num)
+    operate_to!(output.den, *, x.den, oftype(x.den, 1))
+    return output
 end
 
+function operate_to!(output::Rational, ::typeof(+), y::Integer, x::Rational)
+    return operate_to!(output, +, x, y)
+end
+
+# unary -
+function operate_to!(output::Rational, ::typeof(-), x::Rational)
+    operate_to!(output.num, -, x.num)
+    operate_to!(output.den, copy, x.den)
+    return output
+end
+
+# binary -
 function operate_to!(output::Rational, ::typeof(-), x::Rational, y::Rational)
     xd, yd = Base.divgcd(promote(x.den, y.den)...)
     # TODO: Use `checked_mul` and `checked_sub` like in Base
     operate_to!(output.num, *, x.num, yd)
     operate!(sub_mul, output.num, y.num, xd)
     operate_to!(output.den, *, x.den, yd)
+    return output
+end
+
+function operate_to!(output::Rational, ::typeof(-), x::Rational, y::Integer)
+    # TODO Use `checked_mul` and `checked_sub` like in Base
+    operate_to!(output.num, *, x.den, y)
+    operate!(-, output.num)
+    operate!(+, output.num, x.num)
+    operate_to!(output.den, copy, x.den)
+    return output
+end
+
+function operate_to!(output::Rational, ::typeof(-), y::Integer, x::Rational)
+    # TODO Use `checked_mul` and `checked_sub` like in Base
+    operate_to!(output, -, x, y)
+    operate_to!(output, -, output)
     return output
 end
 
@@ -75,11 +116,69 @@ function promote_operation(
     return Rational{promote_operation(*, S, T)}
 end
 
+function promote_operation(
+    ::typeof(*),
+    ::Type{Rational{S}},
+    ::Type{I}
+) where {S,I<:Integer}
+    return promote_operation(*, Rational{S}, Rational{I})
+end
+
+function promote_operation(
+    ::typeof(*),
+    ::Type{I},
+    ::Type{Rational{S}}
+) where {S,I<:Integer}
+    return promote_operation(*, Rational{S}, Rational{I})
+end
+
 function operate_to!(output::Rational, ::typeof(*), x::Rational, y::Rational)
     xn, yd = Base.divgcd(promote(x.num, y.den)...)
     xd, yn = Base.divgcd(promote(x.den, y.num)...)
     operate_to!(output.num, *, xn, yn)
     operate_to!(output.den, *, xd, yd)
+    return output
+end
+
+function operate_to!(output::Rational, ::typeof(*), x::Rational, y::Integer)
+    xn = x.num
+    xd, yn = Base.divgcd(promote(x.den, y)...)
+    operate_to!(output.num, *, xn, yn)
+    operate_to!(output.den, copy, x.den)
+    return output
+end
+
+function operate_to!(output::Rational, ::typeof(*), y::Integer, x::Rational)
+   return operate_to!(output, *, x, y)
+end
+
+# //
+function operate_to!(output::Rational, op::Union{typeof(/), typeof(//)}, x::Rational, y::Rational)
+    xn, yn = Base.divgcd(promote(x.num, y.num)...)
+    xd, yd = Base.divgcd(promote(x.den, y.den)...)
+    operate_to!(output.num, *, xn, yd)
+    operate_to!(output.den, *, xd, yn)
+    return output
+end
+
+function operate_to!(output::Rational, op::Union{typeof(/), typeof(//)}, x::Rational, y::Integer)
+    xn, yn = Base.divgcd(promote(x.num, y)...)
+    operate_to!(output.num, copy, xn)
+    operate_to!(output.den, *, x.den, yn)
+    return output
+end
+
+function operate_to!(output::Rational, op::Union{typeof(/), typeof(//)}, x::Integer, y::Rational)
+    xn, yd = Base.divgcd(promote(x, y.den)...)
+    operate_to!(output.num, *, xn, yd)
+    operate_to!(output.den, copy, y.num)
+    return output
+end
+
+function operate_to!(output::Rational, op::Union{typeof(/), typeof(//)}, x::Integer, y::Integer)
+    n, d = Base.divgcd(promote(x, y)...)
+    operate_to!(output.num, copy, n)
+    operate_to!(output.den, copy, d)
     return output
 end
 

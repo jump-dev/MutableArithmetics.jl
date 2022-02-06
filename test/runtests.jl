@@ -14,6 +14,11 @@ end
 @testset "BigInt" begin
     include("big.jl")
 end
+
+@testset "Rational" begin
+    include("rational.jl")
+end
+
 @testset "Broadcast" begin
     include("broadcast.jl")
 end
