@@ -26,6 +26,12 @@ promote_operation(::typeof(+), ::Vararg{Type{BigInt},N}) where {N} = BigInt
 function operate_to!(output::BigInt, ::typeof(+), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.add!(output, a, b)
 end
+function operate_to!(output::BigInt, ::typeof(copy), a::BigInt)
+   return Base.GMP.MPZ.set!(output, a)
+end
+function operate_to!(output::BigInt, ::typeof(copy), a::Int)
+   return Base.GMP.MPZ.set_si!(output, a)
+end
 
 # -
 
