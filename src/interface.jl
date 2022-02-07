@@ -14,9 +14,11 @@ function promote_operation_fallback(
     # `zero` is not defined for `AbstractArray` so the fallback would fail with a cryptic MethodError.
     # We replace it by a more helpful error here.
     return error(
-        "`promote_operation($op, $x, $y)` not implemented yet, please report this.",
+        "`promote_operation($op, $x, $y)` not implemented yet, please report " *
+        "this.",
     )
 end
+
 function promote_operation_fallback(
     ::typeof(/),
     ::Type{S},
@@ -24,6 +26,7 @@ function promote_operation_fallback(
 ) where {S,T}
     return typeof(zero(S) / oneunit(T))
 end
+
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
 function promote_operation_fallback(
@@ -33,13 +36,16 @@ function promote_operation_fallback(
 ) where {F<:Function,S,T}
     return typeof(op(zero(S), zero(T)))
 end
+
 function promote_operation_fallback(
     op::F,
     args::Vararg{Type,N},
 ) where {F<:Function,N}
     return typeof(op(zero.(args)...))
 end
+
 promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
+
 function promote_operation_fallback(
     ::typeof(*),
     ::Type{S},
@@ -50,10 +56,12 @@ function promote_operation_fallback(
     return promote_operation(*, promote_operation(*, S, T), U, args...)
 end
 
-# `Vararg` gives extra allocations on Julia v1.3, see https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
+# `Vararg` gives extra allocations on Julia v1.3, see
+# https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
 function promote_operation_fallback(op::AddSubMul, T::Type, x::Type, y::Type)
     return promote_operation(add_sub_op(op), T, promote_operation(*, x, y))
 end
+
 function promote_operation_fallback(
     op::AddSubMul,
     x::Type{<:AbstractArray},
@@ -61,6 +69,7 @@ function promote_operation_fallback(
 )
     return promote_operation(add_sub_op(op), x, y)
 end
+
 function promote_operation_fallback(
     op::Union{AddSubMul,typeof(add_dot)},
     T::Type,
@@ -90,7 +99,8 @@ function promote_operation(
     α::Type{<:Number},
 )
     return error(
-        "Operation `$op` between `$A` and `$α` is not allowed. You should use broadcast.",
+        "Operation `$op` between `$A` and `$α` is not allowed. You should " *
+        "use broadcast.",
     )
 end
 function promote_operation(
@@ -99,7 +109,8 @@ function promote_operation(
     A::Type{<:Array},
 )
     return error(
-        "Operation `$op` between `$α` and `$A` is not allowed. You should use broadcast.",
+        "Operation `$op` between `$α` and `$A` is not allowed. You should " *
+        "use broadcast.",
     )
 end
 
@@ -152,6 +163,7 @@ function operate end
 #     API without altering `x` and `y`. If it is not the case, implement a
 #     custom `operate` method.
 operate(::typeof(-), x) = -x
+
 function operate(
     op::Union{typeof(+),typeof(*),AddSubMul,typeof(add_dot)},
     x,
@@ -160,17 +172,21 @@ function operate(
 ) where {N}
     return op(x, y, args...)
 end
+
 operate(op::Union{typeof(-),typeof(/)}, x, y) where {N} = op(x, y)
+
 operate(::typeof(convert), ::Type{T}, x) where {T} = convert(T, x)
+
 operate(::typeof(convert), ::Type{T}, x::T) where {T} = copy_if_mutable(x)
 
 operate(::Union{typeof(+),typeof(*)}, x) = copy_if_mutable(x)
 
-# We could only give `typeof(x)` to `zero` and `one` to be sure that modifying the
-# returned object cannot alter `x` but for some objects, `one` and `zero` depends
-# on some values of the fields (e.g. square matrices), elements of the cyclic group
-# of order `n` (`n` is one of the field).
+# We could only give `typeof(x)` to `zero` and `one` to be sure that modifying
+# the returned object cannot alter `x` but for some objects, `one` and `zero`
+# depends on some values of the fields (e.g. square matrices), elements of the
+# cyclic group of order `n` (`n` is one of the field).
 operate(::typeof(zero), x) = zero(x)
+
 operate(::typeof(one), x) = one(x)
 
 # Define Traits
@@ -212,9 +228,11 @@ function mutability(T::Type, op, args::Vararg{Type,N}) where {N}
         return IsNotMutable()
     end
 end
+
 function mutability(x, op, args::Vararg{Any,N}) where {N}
     return mutability(typeof(x), op, typeof.(args)...)
 end
+
 mutability(::Type) = IsNotMutable()
 
 """
@@ -231,8 +249,11 @@ cannot be modified though the MultableArithmetics's API, however, it calls
 be mutated.
 """
 function mutable_copy end
+
 mutable_copy(A::AbstractArray) = mutable_copy.(A)
+
 copy_if_mutable_fallback(::IsNotMutable, x) = x
+
 copy_if_mutable_fallback(::IsMutable, x) = mutable_copy(x)
 
 """
@@ -249,7 +270,13 @@ copy_if_mutable(x) = copy_if_mutable_fallback(mutability(typeof(x)), x)
 function operate_to_fallback!(::IsNotMutable, output, op::Function, args...)
     throw(
         ArgumentError(
-            "Cannot call `operate_to!(::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(output))` cannot be modifed to equal the result of the operation. Use `operate_to!!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
+            "Cannot call `operate_to!(::$(typeof(output)), $op, " *
+            "::$(join(typeof.(args), ", ::")))` as objects of type " *
+            "`$(typeof(output))` cannot be modifed to equal the result of " *
+            "the operation. Use `operate_to!!` instead which returns the " *
+            "value of the result (possibly modifying the first argument) to " *
+            "write generic code that also works when the type cannot be " *
+            "modified.",
         ),
     )
 end
@@ -257,6 +284,7 @@ end
 function operate_to_fallback!(::IsMutable, output, op::AddSubMul, x, y)
     return operate_to!(output, add_sub_op(op), x, y)
 end
+
 function operate_to_fallback!(::IsMutable, output, op::Function, args...)
     return error(
         "`operate_to!(::$(typeof(output)), $op, ::",
@@ -291,9 +319,14 @@ function operate_to!(output, op::F, args::Vararg{Any,N}) where {F<:Function,N}
 end
 
 function operate_fallback!(::IsNotMutable, op::Function, args...)
-    throw(
+    return throw(
         ArgumentError(
-            "Cannot call `operate!($op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `operate!!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
+            "Cannot call `operate!($op, ::$(join(typeof.(args), ", ::")))` " *
+            "as objects of type `$(typeof(args[1]))` cannot be modifed to " *
+            "equal the result of the operation. Use `operate!!` instead " *
+            "which returns the value of the result (possibly modifying the " *
+            "first argument) to write generic code that also works when the " *
+            "type cannot be modified.",
         ),
     )
 end
@@ -301,6 +334,7 @@ end
 function operate_fallback!(::IsMutable, op::AddSubMul, x, y)
     return operate!(add_sub_op(op), x, y)
 end
+
 function operate_fallback!(::IsMutable, op::Function, args...)
     return error(
         "`operate!($op, ::",
@@ -313,7 +347,8 @@ end
     operate!(op::Function, args...)
 
 Modify the value of `args[1]` to be equal to the value of `op(args...)`. Can
-only be called if `mutability(args[1], op, args...)` returns [`IsMutable`](@ref).
+only be called if `mutability(args[1], op, args...)` returns
+[`IsMutable`](@ref).
 """
 function operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return operate_fallback!(mutability(args[1], op, args...), op, args...)
@@ -330,7 +365,13 @@ function buffered_operate_to_fallback!(
 )
     throw(
         ArgumentError(
-            "Cannot call `buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(output))` cannot be modifed to equal the result of the operation. Use `buffered_operate_to!!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
+            "Cannot call `buffered_operate_to!(::$(typeof(buffer)), " *
+            "::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` " *
+            "as objects of type `$(typeof(output))` cannot be modifed to " *
+            "equal the result of the operation. Use `buffered_operate_to!!` " *
+            "instead which returns the value of the result (possibly " *
+            "modifying the first argument) to write generic code that also " *
+            "works when the type cannot be modified.",
         ),
     )
 end
@@ -343,9 +384,8 @@ function buffered_operate_to_fallback!(
     args...,
 )
     return error(
-        "`buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), $op, ::",
-        join(typeof.(args), ", ::"),
-        ")` is not implemented.",
+        "`buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), " *
+        "$op, ::$(join(typeof.(args), "::")))` is not implemented.",
     )
 end
 
@@ -397,7 +437,13 @@ function buffered_operate_fallback!(
 )
     throw(
         ArgumentError(
-            "Cannot call `buffered_operate!(::$(typeof(buffer)), $op, ::$(join(typeof.(args), ", ::")))` as objects of type `$(typeof(args[1]))` cannot be modifed to equal the result of the operation. Use `buffered_operate!!` instead which returns the value of the result (possibly modifying the first argument) to write generic code that also works when the type cannot be modified.",
+            "Cannot call `buffered_operate!(::$(typeof(buffer)), $op, " *
+            "::$(join(typeof.(args), ", ::")))` as objects of type " *
+            "`$(typeof(args[1]))` cannot be modifed to equal the result of " *
+            "the operation. Use `buffered_operate!!` instead which returns " *
+            "the value of the result (possibly modifying the first argument) " *
+            "to write generic code that also works when the type cannot be " *
+            "modified.",
         ),
     )
 end
@@ -439,6 +485,7 @@ possibly modifying `buffer`. Can only be called if
 `mutability(args[1], op, args...)` returns [`IsMutable`](@ref).
 """
 function buffered_operate! end
+
 function buffered_operate!(
     buffer,
     op::F,
@@ -469,6 +516,7 @@ function operate_to_fallback!!(
 ) where {F<:Function,N}
     return operate(op, args...)
 end
+
 function operate_to_fallback!!(
     ::IsMutable,
     output,
@@ -494,6 +542,7 @@ function operate_fallback!!(
 ) where {F<:Function,N}
     return operate(op, args...)
 end
+
 function operate_fallback!!(
     ::IsMutable,
     op::F,
@@ -531,6 +580,7 @@ function buffered_operate_to_fallback!!(
 ) where {F<:Function,N}
     return operate(op, args...)
 end
+
 function buffered_operate_to_fallback!!(
     ::IsMutable,
     buffer,
@@ -567,6 +617,7 @@ function buffered_operate_fallback!!(
 ) where {F<:Function,N}
     return operate(op, args...)
 end
+
 function buffered_operate_fallback!!(
     ::IsMutable,
     buffer,
@@ -578,6 +629,7 @@ end
 
 # For most types, `dot(b, c) = adjoint(b) * c`.
 promote_operation_fallback(::typeof(adjoint), a::Type) = a
+
 function promote_operation_fallback(
     ::typeof(LinearAlgebra.dot),
     b::Type,
@@ -585,9 +637,11 @@ function promote_operation_fallback(
 )
     return promote_operation(*, promote_operation(adjoint, b), c)
 end
+
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
     return buffer_for(add_mul, a, promote_operation(adjoint, b), c)
 end
+
 function operate_to_fallback!(
     ::IsMutable,
     output,
@@ -595,12 +649,14 @@ function operate_to_fallback!(
     a,
     b,
     c,
-) where {N}
+)
     return operate_to!(output, add_mul, a, adjoint(b), c)
 end
-function operate_fallback!(::IsMutable, ::typeof(add_dot), a, b, c) where {N}
+
+function operate_fallback!(::IsMutable, ::typeof(add_dot), a, b, c)
     return operate!(add_mul, a, adjoint(b), c)
 end
+
 function buffered_operate_to_fallback!(
     ::IsMutable,
     buffer,
@@ -612,6 +668,7 @@ function buffered_operate_to_fallback!(
 )
     return buffered_operate_to!(buffer, output, add_mul, a, adjoint(b), c)
 end
+
 function buffered_operate_fallback!(
     ::IsMutable,
     buffer,
