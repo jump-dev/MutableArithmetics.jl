@@ -296,3 +296,23 @@ end
     MA.operate!!(MA.add_mul, x, A, y)
     @test x == [13, 13]
 end
+
+struct Issue65Matrix <: AbstractMatrix{Float64}
+    x::Matrix{Float64}
+end
+
+struct Issue65OneTo
+    N::Int
+end
+
+Base.size(x::Issue65Matrix) = size(x.x)
+Base.getindex(x::Issue65Matrix, args...) = getindex(x.x, args...)
+Base.axes(x::Issue65Matrix, n) = Issue65OneTo(size(x.x, n))
+Base.convert(::Type{Base.OneTo}, x::Issue65OneTo) = Base.OneTo(x.N)
+
+@testset "Issue #65" begin
+    x = [1.0 2.0; 3.0 4.0]
+    A = Issue65Matrix(x)
+    @test MA.operate(*, A, x[:, 1]) == x * x[:, 1]
+    @test MA.operate(*, A, x) == x * x
+end
