@@ -385,7 +385,7 @@ function buffered_operate_to_fallback!(
 )
     return error(
         "`buffered_operate_to!(::$(typeof(buffer)), ::$(typeof(output)), " *
-        "$op, ::$(join(typeof.(args), "::")))` is not implemented.",
+        "$op, ::$(join(typeof.(args), ", ::")))` is not implemented.",
     )
 end
 
@@ -642,14 +642,7 @@ function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
     return buffer_for(add_mul, a, promote_operation(adjoint, b), c)
 end
 
-function operate_to_fallback!(
-    ::IsMutable,
-    output,
-    ::typeof(add_dot),
-    a,
-    b,
-    c,
-)
+function operate_to_fallback!(::IsMutable, output, ::typeof(add_dot), a, b, c)
     return operate_to!(output, add_mul, a, adjoint(b), c)
 end
 
