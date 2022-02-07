@@ -112,11 +112,7 @@ function promote_operation(op::F, args::Vararg{Type,N}) where {F<:Function,N}
     return promote_operation_fallback(op, args...)
 end
 
-function promote_operation(
-    op::F,
-    ::Type{A},
-    ::Type{B},
-) where {F<:Function,A,B}
+function promote_operation(op::F, ::Type{A}, ::Type{B}) where {F<:Function,A,B}
     return promote_operation_fallback(op, A, B)
 end
 # ==============================================================================
