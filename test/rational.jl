@@ -15,7 +15,7 @@ for op in (+, -, *, //)
 end
 
 op = //
-for (a,b) in ((2, 3), (big(2), 3), (2, big(3)))
-    @test MA.operate_to!!(MA.copy_if_mutable(op(a,b)), op, a, b) == op(a,b)
-    @test MA.operate_to!!(MA.copy_if_mutable(op(b,a)), op, b, a) == op(b,a)
+for (a, b) in ((2, 3), (big(2), 3), (2, big(3)))
+    @test MA.operate_to!!(MA.copy_if_mutable(op(a, b)), op, a, b) == op(a, b)
+    @test MA.operate_to!!(MA.copy_if_mutable(op(b, a)), op, b, a) == op(b, a)
 end
