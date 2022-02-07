@@ -8,66 +8,63 @@
 [![version][version-img]][version-url]
 [![pkgeval][pkgeval-img]][pkgeval-url]
 
-**MutableArithmetics** (MA for short) is a [Julia](http://julialang.org) package which allows:
-*   for mutable types to implement mutable arithmetics;
-*   for algorithms that could exploit mutable arithmetics to exploit them while still being completely generic.
+**MutableArithmetics** (MA for short) is a [Julia](http://julialang.org) package
+which allows:
+ * for mutable types to implement mutable arithmetics
+ * for algorithms that could exploit mutable arithmetics to exploit them while
+   still being completely generic.
 
 While in some cases, similar features have been included in packages
-idiosyncratically, the goal of this package is to provide a generic interface to
-allow anyone to make use of mutability when desired.
+idiosyncratically, the goal of MutableArithmetics is to provide a generic
+interface to allow anyone to make use of mutability when desired.
 
-The package allows a given type to declare itself mutable through the
-`MA.mutability` trait.
-Then the user can use the `MA.operate!!` function to write generic code
+The package allows a type to declare itself mutable through the `MA.mutability`
+trait. Then the user can use the `MA.operate!!` function to write generic code
 that works for arbitrary type while exploiting mutability of the type
 if possible. More precisely:
+ * The `MA.operate!!(op::Function, x, args...)` redirects to `op(x, args...)`
+   if `x` is not mutable or if the result of the operation cannot be stored in
+   `x`. Otherwise, it redirects to `MA.operate!(op, x, args...)`.
+ * `MA.operate!(op::Function, x, args...)` stores the result of the operation in
+   `x`. It is a `MethodError` if `x` is not mutable or if the result of the
+   operation cannot be stored in `x`.
 
-* The `MA.operate!!(op::Function, x, args...)` redirects to `op(x, args...)`
-  if `x` is not mutable or if the result of the operation cannot be stored in `x`.
-  Otherwise, it redirects to `MA.operate!(op, x, args...)`.
-* `MA.operate!(op::Function, x, args...)` stores the result of the
-  operation in `x`. It is a `MethodError` if `x` is not mutable or if the
-  result of the operation cannot be stored in `x`.
+So from a generic code perspective, `MA.operate!!` can be used when the value of
+`x` is not used anywhere else. This allows the code to both work for mutable and
+for non-mutable type.
 
-So from a generic code, `MA.operate!!` can be used when the value of `x` is not
-used anywhere else to recycle it if possible. This allows the code to both
-work for mutable and for non-mutable type.
+When the type is known to be mutable, `MA.operate!` can be used to make sure the
+operation is done in-place. If it is not possible, the `MethodError` allows one
+to easily fix the issue while `MA.operate!!` would have silently fallen back to
+the non-mutating function.
 
-When the type is known to be mutable, `MA.operate!` can be used to make
-sure the operation is done in-place. If it is not possible, the `MethodError`
-allows to easily fix the issue while `MA.operate!!` would have silently fallen
-back to the non-mutating function.
+In conclusion, the distinction between `MA.operate!!` and `MA.operate!` covers
+all use case while having an universal convention accross all operations.
 
-In conclusion, the distinction between `MA.operate!!` and `MA.operate!`
-allows to cover all use case while having an universal convention accross all
-operations.
+## Implementations
 
-The following types implement the MutableArithmetics API:
-* The API is implemented for `Base.BigInt` in `src/bigint.jl`.
-* The API is implemented for `Base.BigFloat` in `src/bigfloat.jl`.
-* The API is implemented for `Base.Array` in `src/linear_algebra.jl`.
-* The `Polynomial` type of [Polynomials.jl](https://github.com/JuliaMath/Polynomials.jl).
-* The interface for multivariate polynomials [MultivariatePolynomials](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl)
-  as well as its two implementations [DynamicPolynomials](https://github.com/JuliaAlgebra/DynamicPolynomials.jl)
-  and [TypedPolynomials](https://github.com/JuliaAlgebra/TypedPolynomials.jl).
-* The scalar and quadratic functions used to define an Optimization Program in
-  [MathOptInterface](https://github.com/jump-dev/MathOptInterface.jl).
-* The scalar and quadratic expressions used to model optimization in
-  [JuMP](https://github.com/jump-dev/JuMP.jl).
+The following types and packages implement the MutableArithmetics API:
 
-The algorithms from the following libraries use the MutableArithmetics API
-to exploit the mutability of the type when possible:
-* The multivariate polynomials implemented in [MultivariatePolynomials](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl),
-  [DynamicPolynomials](https://github.com/JuliaAlgebra/DynamicPolynomials.jl)
-  and [TypedPolynomials](https://github.com/JuliaAlgebra/TypedPolynomials.jl)
-  work with any type and exploit the mutability of the type through the MA API.
+ * `Base.BigInt` in `src/interfaces/BigInt.jl`.
+ * `Base.BigFloat` in `src/interfaces/BigFloat.jl`.
+ * `Base.Array` in `src/interfaces/LinearAlgebra.jl`.
+ * [Polynomials.jl](https://github.com/JuliaMath/Polynomials.jl) uses MA for its
+   `Polynomial` type
+ * [MultivariatePolynomials](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl)
+   uses MA for its multivariate polynomials, as well as its two implementations
+   in [DynamicPolynomials](https://github.com/JuliaAlgebra/DynamicPolynomials.jl)
+   and [TypedPolynomials](https://github.com/JuliaAlgebra/TypedPolynomials.jl)
+ * [JuMP](https://github.com/jump-dev/JuMP.jl) and
+   [MathOptInterface](https://github.com/jump-dev/MathOptInterface.jl) use
+   MA for the scalar and quadratic functions used to define an optimization
+   program
 
-In addition, the implementation of the following functionalities available from
-`Base` are reimplemented on top of the MA API:
-* Matrix-matrix, matrix-vector and array-scalar multiplication including
-  `SparseArrays.AbstractSparseArray`, `LinearAlgebra.Adjoint`,
-  `LinearAlgebra.Transpose`, `LinearAlgebra.Symmetric`.
-* `Base.sum`, `LinearAlgebra.dot` and `LinearAlgebra.diagm`.
+In addition, the implementation of the following `Base` functionalities are
+reimplemented using the MA API:
+ * Matrix-matrix, matrix-vector and array-scalar multiplication including
+   `SparseArrays.AbstractSparseArray`, `LinearAlgebra.Adjoint`,
+   `LinearAlgebra.Transpose`, `LinearAlgebra.Symmetric`.
+ * `Base.sum`, `LinearAlgebra.dot` and `LinearAlgebra.diagm`.
 
 These methods are reimplemented in this package for several reasons:
 * The implementation in `Base` does not exploit the mutability of the type
@@ -89,11 +86,6 @@ for instance, polynomial variables and the decision variable of an optimization
 model are subtypes of `MA.AbstractMutable` but are not mutable.
 The only purpose of this abstract type is to have `Base` methods to be dispatched
 to the implementations of this package. See `src/dispatch.jl` for more details.
-
-## Documentation
-
-- [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
-- [**LATEST**][docs-dev-url] &mdash; *in-development version of the documentation.*
 
 ## Quick Example & Benchmark
 
@@ -183,8 +175,6 @@ BenchmarkTools.Trial: 4910 samples with 1 evaluation.
  Memory estimate: 0 bytes, allocs estimate: 0.
 ```
 Note that there are now 0 allocations.
-
-> This package started out as a GSoC '19 project.
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
