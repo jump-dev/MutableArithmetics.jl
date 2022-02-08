@@ -357,6 +357,13 @@ function undef_array(::Type{Array{T,N}}, axes::Vararg{Base.OneTo,N}) where {T,N}
     return Array{T,N}(undef, length.(axes))
 end
 
+# This method is for things like StaticArrays which return something other than
+# Base.OneTo for their axes. It isn't typed because there can be a mix of axes
+# in the call.
+function undef_array(::Type{T}, axes...) where {T}
+    return undef_array(T, convert.(Base.OneTo, axes)...)
+end
+
 # Does what `LinearAlgebra/src/matmul.jl` does for abstract matrices and
 # vectors: estimate the resulting element type, allocate the resulting array but
 # it redirects to `mul_to!` instead of `LinearAlgebra.mul!`.
