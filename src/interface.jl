@@ -58,8 +58,15 @@ end
 
 # `Vararg` gives extra allocations on Julia v1.3, see
 # https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
-function promote_operation_fallback(op::AddSubMul, T::Type, x::Type, y::Type)
-    return promote_operation(add_sub_op(op), T, promote_operation(*, x, y))
+function promote_operation_fallback(
+    op::AddSubMul,
+    ::Type{T},
+    ::Type{x},
+    ::Type{y},
+) where {T,x,y}
+    new_op = add_sub_op(op)
+    z = promote_operation(*, x, y)
+    return promote_operation(new_op, T, z)
 end
 
 function promote_operation_fallback(
@@ -632,10 +639,10 @@ promote_operation_fallback(::typeof(adjoint), a::Type) = a
 
 function promote_operation_fallback(
     ::typeof(LinearAlgebra.dot),
-    b::Type,
-    c::Type,
-)
-    return promote_operation(*, promote_operation(adjoint, b), c)
+    ::Type{A},
+    ::Type{B},
+) where {A,B}
+    return promote_operation(*, promote_operation(adjoint, A), B)
 end
 
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
