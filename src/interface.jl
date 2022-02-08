@@ -58,7 +58,12 @@ end
 
 # `Vararg` gives extra allocations on Julia v1.3, see
 # https://travis-ci.com/jump-dev/MutableArithmetics.jl/jobs/260666164#L215-L238
-function promote_operation_fallback(op::AddSubMul, T::Type, x::Type, y::Type)
+function promote_operation_fallback(
+    op::AddSubMul,
+    ::Type{T},
+    ::Type{x},
+    ::Type{y},
+) where {T,x,y}
     return promote_operation(add_sub_op(op), T, promote_operation(*, x, y))
 end
 
@@ -274,7 +279,7 @@ function mutability(x, op, args::Vararg{Any,N}) where {N}
     return mutability(typeof(x), op, typeof.(args)...)
 end
 
-mutability(::Type) = IsNotMutable()
+mutability(::Type{T}) where {T} = IsNotMutable()
 
 """
     mutable_copy(x)
