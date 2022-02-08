@@ -180,7 +180,7 @@ function operate(
     return op(x, y, args...)
 end
 
-operate(op::Union{typeof(-),typeof(/)}, x, y) where {N} = op(x, y)
+operate(op::Union{typeof(-),typeof(/)}, x, y) = op(x, y)
 
 operate(::typeof(convert), ::Type{T}, x) where {T} = convert(T, x)
 
