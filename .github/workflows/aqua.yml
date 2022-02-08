@@ -20,4 +20,5 @@ jobs:
           Pkg.add(PackageSpec(name="Aqua"))
           Pkg.develop(PackageSpec(path=pwd()))
           using MutableArithmetics, Aqua
-          Aqua.test_all(MutableArithmetics)
+          # Skip ambiguity test for now
+          Aqua.test_all(MutableArithmetics; ambiguities = false)
