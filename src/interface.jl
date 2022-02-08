@@ -64,7 +64,9 @@ function promote_operation_fallback(
     ::Type{x},
     ::Type{y},
 ) where {T,x,y}
-    return promote_operation(add_sub_op(op), T, promote_operation(*, x, y))
+    new_op = add_sub_op(op)
+    z = promote_operation(*, x, y)
+    return promote_operation(new_op, T, z)
 end
 
 function promote_operation_fallback(
@@ -75,38 +77,18 @@ function promote_operation_fallback(
     return promote_operation(add_sub_op(op), x, y)
 end
 
-# ==============================================================================
-# The compiler in Julia 1.6 doesn't like `Vararg{Type,N}` so for performance
-# reasons we add an explicit method for the 2-argument case.
 function promote_operation_fallback(
     op::Union{AddSubMul,typeof(add_dot)},
-    ::Type{T},
-    ::Type{A},
-    ::Type{B},
-) where {T,A,B}
-    return promote_operation(
-        reduce_op(op),
-        T,
-        promote_operation(map_op(op), A, B),
-    )
-end
-
-function promote_operation_fallback(
-    op::Union{AddSubMul,typeof(add_dot)},
-    ::Type{T},
+    T::Type,
     args::Vararg{Type,N},
-) where {T,N}
+) where {N}
     return promote_operation(
         reduce_op(op),
         T,
         promote_operation(map_op(op), args...),
     )
 end
-# ==============================================================================
 
-# ==============================================================================
-# The compiler in Julia 1.6 doesn't like `Vararg{Type,N}` so for performance
-# reasons we add an explicit method for the 2-argument case.
 """
     promote_operation(op::Function, ArgsTypes::Type...)
 
@@ -116,11 +98,6 @@ the arguments `args` are `ArgsTypes`.
 function promote_operation(op::F, args::Vararg{Type,N}) where {F<:Function,N}
     return promote_operation_fallback(op, args...)
 end
-
-function promote_operation(op::F, ::Type{A}, ::Type{B}) where {F<:Function,A,B}
-    return promote_operation_fallback(op, A, B)
-end
-# ==============================================================================
 
 # Helpful error for common mistake
 function promote_operation(
@@ -245,9 +222,6 @@ type cannot be mutated to equal the result of the operation.
 """
 struct IsNotMutable <: MutableTrait end
 
-# ==============================================================================
-# The compiler in Julia 1.6 doesn't like `Vararg{Type,N}` so for performance
-# reasons we add an explicit method for the 2-argument case.
 """
     mutability(T::Type, ::typeof(op), args::Type...)::MutableTrait
 
@@ -262,20 +236,11 @@ function mutability(T::Type, op, args::Vararg{Type,N}) where {N}
     end
 end
 
-function mutability(::Type{T}, op::F, ::Type{A}, ::Type{B}) where {T,F,A,B}
-    if mutability(T) isa IsMutable && promote_operation(op, A, B) == T
-        return IsMutable()
-    else
-        return IsNotMutable()
-    end
-end
-# ==============================================================================
-
 function mutability(x, op, args::Vararg{Any,N}) where {N}
     return mutability(typeof(x), op, typeof.(args)...)
 end
 
-mutability(::Type{T}) where {T} = IsNotMutable()
+mutability(::Type) = IsNotMutable()
 
 """
     mutable_copy(x)
