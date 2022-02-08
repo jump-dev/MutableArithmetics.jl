@@ -20,4 +20,4 @@ jobs:
           Pkg.add(PackageSpec(name="Aqua"))
           Pkg.develop(PackageSpec(path=pwd()))
           using MutableArithmetics, Aqua
-          Aqua.test_all(MutableArithmetics; ambiguities = false)
+          Aqua.test_all(MutableArithmetics)
