@@ -63,7 +63,7 @@ const EXPECTED_ERROR = string(
     "`Matrix{NoProdMutable}` because the sum of the product of a ",
     "`NoProdMutable` and a `NoProdMutable` could not be inferred so a ",
     "`Matrix{Union{}}` allocated to store the output of the ",
-    "multiplication instead of a `Matrix{Int64}`.",
+    "multiplication instead of a `Matrix{$(Int)}`.",
 )
 
 struct NoProdMutable <: MA.AbstractMutable end
