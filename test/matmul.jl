@@ -67,17 +67,12 @@ const EXPECTED_ERROR = string(
 )
 
 struct NoProdMutable <: MA.AbstractMutable end
-@static if VERSION < v"1.6"
-    # Hack for making the test work on old Julia versions
-    Base.:*(::NoProdMutable, ::NoProdMutable) = error(EXPECTED_ERROR)
-else
-    function MA.promote_operation(
-        ::typeof(*),
-        ::Type{NoProdMutable},
-        ::Type{NoProdMutable},
-    )
-        return Int # Dummy result just to test error message
-    end
+function MA.promote_operation(
+    ::typeof(*),
+    ::Type{NoProdMutable},
+    ::Type{NoProdMutable},
+)
+    return Int # Dummy result just to test error message
 end
 
 function unsupported_product()
@@ -99,14 +94,9 @@ end
     @testset "Dimension mismatch" begin
         A = zeros(1, 1)
         B = zeros(2, 2)
-        # Changed by https://github.com/JuliaLang/julia/pull/33567
-        if VERSION >= v"1.4.0-DEV.307"
-            err = DimensionMismatch(
-                "dimensions must match: a has dims (Base.OneTo(1), Base.OneTo(1)), b has dims (Base.OneTo(2), Base.OneTo(2)), mismatch at 1",
-            )
-        else
-            err = DimensionMismatch("dimensions must match")
-        end
+        err = DimensionMismatch(
+            "dimensions must match: a has dims (Base.OneTo(1), Base.OneTo(1)), b has dims (Base.OneTo(2), Base.OneTo(2)), mismatch at 1",
+        )
         @test_throws err MA.@rewrite A + B
         x = ones(1)
         y = ones(2)

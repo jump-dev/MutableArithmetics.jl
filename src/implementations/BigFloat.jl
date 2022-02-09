@@ -11,11 +11,7 @@ function mutable_copy(x::BigFloat)
     return Base.MPFR._BigFloat(x.prec, x.sign, x.exp, d′)
 end
 
-@static if VERSION >= v"1.1.0-DEV.683"
-    const _MPFRRoundingMode = Base.MPFR.MPFRRoundingMode
-else
-    const _MPFRRoundingMode = Int32
-end
+const _MPFRRoundingMode = Base.MPFR.MPFRRoundingMode
 
 # zero
 
