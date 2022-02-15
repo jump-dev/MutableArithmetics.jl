@@ -26,25 +26,23 @@ end
 
 # TODO: LinearAlgebra should have a documented function so that we don't have to
 # overload an internal function
-if VERSION >= v"1.5.0-rc1.23"
-    function LinearAlgebra._dot_nonrecursive(
-        lhs::AbstractArray{<:AbstractMutable},
-        rhs::AbstractArray,
-    )
-        return fused_map_reduce(add_mul, lhs, rhs)
-    end
-    function LinearAlgebra._dot_nonrecursive(
-        lhs::AbstractArray,
-        rhs::AbstractArray{<:AbstractMutable},
-    )
-        return fused_map_reduce(add_mul, lhs, rhs)
-    end
-    function LinearAlgebra._dot_nonrecursive(
-        lhs::AbstractArray{<:AbstractMutable},
-        rhs::AbstractArray{<:AbstractMutable},
-    )
-        return fused_map_reduce(add_mul, lhs, rhs)
-    end
+function LinearAlgebra._dot_nonrecursive(
+    lhs::AbstractArray{<:AbstractMutable},
+    rhs::AbstractArray,
+)
+    return fused_map_reduce(add_mul, lhs, rhs)
+end
+function LinearAlgebra._dot_nonrecursive(
+    lhs::AbstractArray,
+    rhs::AbstractArray{<:AbstractMutable},
+)
+    return fused_map_reduce(add_mul, lhs, rhs)
+end
+function LinearAlgebra._dot_nonrecursive(
+    lhs::AbstractArray{<:AbstractMutable},
+    rhs::AbstractArray{<:AbstractMutable},
+)
+    return fused_map_reduce(add_mul, lhs, rhs)
 end
 
 function LinearAlgebra.dot(
@@ -72,24 +70,13 @@ end
 # fill!(::Array{AbstractVariableRef}, zero(GenericAffExpr{Float64,eltype(x)}))
 _one_indexed(A) = all(x -> isa(x, Base.OneTo), axes(A))
 
-if VERSION <= v"1.2"
-    function LinearAlgebra.diagm_container(
-        kv::Pair{<:Integer,<:AbstractVector{<:AbstractMutable}}...,
-    )
-        T = promote_type(map(x -> eltype(x.second), kv)...)
-        U = promote_type(T, promote_operation(zero, T))
-        n = mapreduce(x -> length(x.second) + abs(x.first), max, kv)
-        return zeros(U, n, n)
-    end
-else
-    function LinearAlgebra.diagm_container(
-        size,
-        kv::Pair{<:Integer,<:AbstractVector{<:AbstractMutable}}...,
-    )
-        T = promote_type(map(x -> promote_type(eltype(x.second)), kv)...)
-        U = promote_type(T, promote_operation(zero, T))
-        return zeros(U, LinearAlgebra.diagm_size(size, kv...)...)
-    end
+function LinearAlgebra.diagm_container(
+    size,
+    kv::Pair{<:Integer,<:AbstractVector{<:AbstractMutable}}...,
+)
+    T = promote_type(map(x -> promote_type(eltype(x.second)), kv)...)
+    U = promote_type(T, promote_operation(zero, T))
+    return zeros(U, LinearAlgebra.diagm_size(size, kv...)...)
 end
 
 function LinearAlgebra.diagm(x::AbstractVector{<:AbstractMutable})

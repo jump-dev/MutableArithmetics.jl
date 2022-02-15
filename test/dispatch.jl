@@ -20,9 +20,7 @@ end
 
 @testset "Dispatch tests" begin
     dispatch_tests(BigInt)
-    if VERSION >= v"1.5"
-        # On `DummyBigInt` allocates more on previous releases of Julia
-        # as it's dynamically allocated
-        dispatch_tests(DummyBigInt)
-    end
+    # On `DummyBigInt` allocates more on previous releases of Julia
+    # as it's dynamically allocated
+    dispatch_tests(DummyBigInt)
 end

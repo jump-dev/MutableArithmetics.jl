@@ -268,9 +268,7 @@ function non_array_test(x, x2)
                 @test_throws AssertionError diagm(x2)
             else
                 @test MA.isequal_canonical(diagm(0 => x), diagm(0 => x2))
-                if VERSION >= v"1.2"
-                    @test MA.isequal_canonical(diagm(x), diagm(x2))
-                end
+                @test MA.isequal_canonical(diagm(x), diagm(x2))
             end
         end
     end
@@ -295,10 +293,8 @@ function dot_test(x)
     @test_rewrite dot(A, x)
     @test_rewrite dot(x, A)
 
-    if VERSION >= v"1.1"
-        y = repeat(x, outer = (one.(size(x))..., size(x, 1)))
-        @test_rewrite dot(x, _constant(x)) - dot(y, _constant(y))
-    end
+    y = repeat(x, outer = (one.(size(x))..., size(x, 1)))
+    @test_rewrite dot(x, _constant(x)) - dot(y, _constant(y))
 end
 
 function sum_test(matrix)
