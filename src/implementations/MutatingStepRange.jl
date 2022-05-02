@@ -1,3 +1,9 @@
+# Copyright (c) 2019 MutableArithmetics.jl contributors
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
+# one at http://mozilla.org/MPL/2.0/.
+
 # This file contains methods to implement the MutableArithmetics API for a new
 # MutatingStepRange type. This feature was originally designed because of a
 # discussion in the julialang/julia issue #39008:

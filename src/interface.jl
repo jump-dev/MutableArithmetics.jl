@@ -1,3 +1,9 @@
+# Copyright (c) 2019 MutableArithmetics.jl contributors
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
+# one at http://mozilla.org/MPL/2.0/.
+
 # Example of mutable types that can implement this API: BigInt, Array, JuMP.AffExpr, MultivariatePolynomials.AbstractPolynomial
 # `operate!(add_mul, ...)` is similar to `JuMP.add_to_expression(...)`
 # `operate!!(add_mul, ...)` is similar to `JuMP.destructive_add(...)`

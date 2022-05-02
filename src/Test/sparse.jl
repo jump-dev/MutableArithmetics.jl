@@ -1,3 +1,9 @@
+# Copyright (c) 2019 MutableArithmetics.jl contributors
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
+# one at http://mozilla.org/MPL/2.0/.
+
 function _mat_mat_test(A, B)
     @test _matrix_equal(copy(transpose(A)) * B, A' * B)
     @test _matrix_equal(A * copy(transpose(B)), A * B')

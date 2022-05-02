@@ -1,3 +1,9 @@
+# Copyright (c) 2019 MutableArithmetics.jl contributors
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
+# one at http://mozilla.org/MPL/2.0/.
+
 # TODO: this file contains a large number of method specializations to intercept
 # "externally owned" method calls by dispatching on type parameters (rather than
 # outermost wrapper type). This is generally bad practice, but refactoring this
