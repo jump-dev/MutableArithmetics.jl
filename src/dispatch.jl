@@ -168,6 +168,14 @@ function LinearAlgebra.mul!(
 end
 
 function LinearAlgebra.mul!(
+    ret::AbstractVector{<:AbstractMutable},
+    A::LinearAlgebra.AbstractTriangular,
+    B::AbstractVector
+)
+    return _mul!(ret, A, B)
+end
+
+function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
     B::AbstractMatrix,
@@ -179,6 +187,14 @@ function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
     B::AbstractMatrix,
+)
+    return _mul!(ret, A, B)
+end
+
+function LinearAlgebra.mul!(
+    ret::AbstractVector{<:AbstractMutable},
+    A::LinearAlgebra.AbstractTriangular,
+    B::AbstractMatrix
 )
     return _mul!(ret, A, B)
 end
