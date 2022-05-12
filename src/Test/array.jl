@@ -575,6 +575,9 @@ function triangular_test(x)
             @test MA.iszero!!(y[i, j])
         end
     end
+    v = rand(size(ut, 2))
+    @test MA.isequal_canonical(ut * v, y * v)
+
     lt = LinearAlgebra.LowerTriangular(x)
     add_test(lt, lt)
     z = Matrix(lt)
@@ -584,6 +587,8 @@ function triangular_test(x)
             @test MA.iszero!!(z[i, j])
         end
     end
+    v = rand(size(lt, 2))
+    @test MA.isequal_canonical(lt * v, z * v)
 end
 
 function diagonal_test(x)
