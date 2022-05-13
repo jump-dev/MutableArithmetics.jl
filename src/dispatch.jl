@@ -192,7 +192,7 @@ function LinearAlgebra.mul!(
 end
 
 function LinearAlgebra.mul!(
-    ret::AbstractVector{<:AbstractMutable},
+    ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.AbstractTriangular,
     B::AbstractMatrix
 )

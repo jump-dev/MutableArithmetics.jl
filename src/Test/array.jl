@@ -575,8 +575,6 @@ function triangular_test(x)
             @test MA.iszero!!(y[i, j])
         end
     end
-    v = rand(size(ut, 2))
-    @test MA.isequal_canonical(ut * v, y * v)
 
     lt = LinearAlgebra.LowerTriangular(x)
     add_test(lt, lt)
@@ -587,8 +585,16 @@ function triangular_test(x)
             @test MA.iszero!!(z[i, j])
         end
     end
-    v = rand(size(lt, 2))
-    @test MA.isequal_canonical(lt * v, z * v)
+
+    v = deepcopy(x[:, 2])
+    m = deepcopy(x)
+    @test MA.isequal_canonical(mul!(deepcopy(v), ut, v), mul!(deepcopy(v), Matrix(ut), v))
+    @test MA.isequal_canonical(mul!(deepcopy(m), ut, m), mul!(deepcopy(m), Matrix(ut), m))
+
+    v = deepcopy(lt[:, 1])
+    m = deepcopy(x)
+    @test MA.isequal_canonical(mul!(deepcopy(v), lt, v), mul!(deepcopy(v), Matrix(lt), v))
+    @test MA.isequal_canonical(mul!(deepcopy(m), lt, m), mul!(deepcopy(m), Matrix(lt), m))
 end
 
 function diagonal_test(x)
