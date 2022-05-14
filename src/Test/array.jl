@@ -575,7 +575,6 @@ function triangular_test(x)
             @test MA.iszero!!(y[i, j])
         end
     end
-
     lt = LinearAlgebra.LowerTriangular(x)
     add_test(lt, lt)
     z = Matrix(lt)
