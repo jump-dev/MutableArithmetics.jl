@@ -194,7 +194,7 @@ end
 function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::LinearAlgebra.AbstractTriangular,
-    B::AbstractMatrix
+    B::AbstractMatrix,
 )
     return _mul!(ret, A, B)
 end
