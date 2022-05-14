@@ -170,7 +170,7 @@ end
 function LinearAlgebra.mul!(
     ret::AbstractVector{<:AbstractMutable},
     A::LinearAlgebra.AbstractTriangular,
-    B::AbstractVector
+    B::AbstractVector,
 )
     return _mul!(ret, A, B)
 end
