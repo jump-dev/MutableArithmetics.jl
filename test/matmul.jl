@@ -319,3 +319,19 @@ end
     MA.operate!!(MA.add_mul, X, c, c')
     @test X == [26 32; 33 40]
 end
+
+@testset "Issue 153-vector" begin
+    A = big.([1 2; 3 4])
+    b = big.([5, 6])
+    ret = big.([0, 0])
+    LinearAlgebra.mul!(ret, A, b)
+    @test ret == A * b
+end
+
+@testset "Issue 153-matrix" begin
+    A = big.([1 2; 3 4])
+    B = big.([5 6; 7 8])
+    ret = big.([0 0; 0 0])
+    LinearAlgebra.mul!(ret, A, b)
+    @test ret == A * B
+end
