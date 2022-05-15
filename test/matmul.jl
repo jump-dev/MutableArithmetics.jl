@@ -312,3 +312,10 @@ Base.convert(::Type{Base.OneTo}, x::Issue65OneTo) = Base.OneTo(x.N)
     @test MA.operate(*, A, x[:, 1]) == x * x[:, 1]
     @test MA.operate(*, A, x) == x * x
 end
+
+@testset "Issue 154" begin
+    X = big.([1 2; 3 4])
+    c = big.([5, 6])
+    MA.operate!!(MA.add_mul, X, c, c')
+    @test X == [26 32; 33 40]
+end
