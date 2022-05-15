@@ -332,6 +332,6 @@ end
     A = big.([1 2; 3 4])
     B = big.([5 6; 7 8])
     ret = big.([0 0; 0 0])
-    LinearAlgebra.mul!(ret, A, b)
+    LinearAlgebra.mul!(ret, A, B)
     @test ret == A * B
 end
