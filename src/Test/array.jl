@@ -590,26 +590,6 @@ function triangular_test(x)
             @test MA.iszero!!(z[i, j])
         end
     end
-    v = deepcopy(x[:, 2])
-    m = deepcopy(x)
-    @test MA.isequal_canonical(
-        mul!(deepcopy(v), ut, v),
-        mul!(deepcopy(v), Matrix(ut), v),
-    )
-    @test MA.isequal_canonical(
-        mul!(deepcopy(m), ut, m),
-        mul!(deepcopy(m), Matrix(ut), m),
-    )
-    v = deepcopy(lt[:, 1])
-    m = deepcopy(x)
-    @test MA.isequal_canonical(
-        mul!(deepcopy(v), lt, v),
-        mul!(deepcopy(v), Matrix(lt), v),
-    )
-    @test MA.isequal_canonical(
-        mul!(deepcopy(m), lt, m),
-        mul!(deepcopy(m), Matrix(lt), m),
-    )
     return
 end
 
