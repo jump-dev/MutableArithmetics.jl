@@ -935,7 +935,7 @@ to\hsize{\if@nfeven\else\hfil\fi\box\@tempboxa\if@nfeven\hfil\fi}
 %%\usepackage{microtype}
 \renewcommand{\ttdefault}{cmtt}
 
-\usepackage{jlcode}
+\usepackage[charsperline=60]{jlcode}
 
 \usepackage{authblk}
 
