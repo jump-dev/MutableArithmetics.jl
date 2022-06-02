@@ -19,6 +19,7 @@ const MA = MutableArithmetics
     alloc_test(() -> MA.broadcast!!(+, a, b), 0)
     alloc_test(() -> MA.broadcast!!(+, a, c), 0)
 end
+
 @testset "BigInt" begin
     x = BigInt(1)
     y = BigInt(2)
@@ -33,4 +34,14 @@ end
     #       240 come from.
     alloc_test(() -> MA.broadcast!!(+, a, b), 30 * sizeof(Int))
     alloc_test(() -> MA.broadcast!!(+, a, c), 0)
+end
+
+@testset "broadcast_issue_158" begin
+    x, y = BigInt[2 3], BigInt[2 3; 3 4]
+    @test MA.@rewrite(x .+ y) == x .+ y
+    @test MA.@rewrite(x .- y) == x .- y
+    @test MA.@rewrite(y .+ x) == y .+ x
+    @test MA.@rewrite(y .- x) == y .- x
+    @test MA.@rewrite(y .* x) == y .* x
+    @test MA.@rewrite(x .* y) == x .* y
 end
