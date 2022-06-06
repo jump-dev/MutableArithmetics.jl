@@ -89,6 +89,31 @@ function broadcast_mutability(x, op, args::Vararg{Any,N}) where {N}
     return broadcast_mutability(typeof(x), op, typeof.(args)...)
 end
 
+_checked_size(s, x::AbstractArray) = size(x) == s
+_checked_size(::Any, ::Any) = true
+_checked_size(::Any, ::Tuple{}) = true
+function _checked_size(s, x::Tuple)
+    return _checked_size(s, x[1]) && _checked_size(s, Base.tail(x))
+end
+
+# This method is a slightly tricky one:
+#
+# If the elements in the broadcast are different sized arrays, weird things can
+# happen during broadcasting since we'll either need to return a different size
+# to `x`, or multiple copies of an argument will be used for different parts of
+# `x`. To simplify, let's just return `IsNotMutable` if the sizes are different,
+# which will be slower but correct.
+function broadcast_mutability(
+    x::AbstractArray,
+    op,
+    args::Vararg{Any,N},
+) where {N}
+    if !_checked_size(size(x), args)::Bool
+        return IsNotMutable()
+    end
+    return broadcast_mutability(typeof(x), op, typeof.(args)...)
+end
+
 broadcast_mutability(::Type) = IsNotMutable()
 
 """
