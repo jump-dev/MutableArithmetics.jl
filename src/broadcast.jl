@@ -89,7 +89,7 @@ function broadcast_mutability(x, op, args::Vararg{Any,N}) where {N}
     return broadcast_mutability(typeof(x), op, typeof.(args)...)
 end
 
-_checked_size(s, x::AbstractArray) = length(x) == s
+_checked_size(s, x::AbstractArray) = size(x) == s
 _checked_size(::Any, ::Any) = true
 _checked_size(::Any, ::Tuple{}) = true
 function _checked_size(s, x::Tuple)
@@ -110,7 +110,7 @@ function broadcast_mutability(
     op,
     args::Vararg{Any,N},
 ) where {N}
-    if !_checked_size(length(x), args)::Bool
+    if !_checked_size(size(x), args)::Bool
         return IsNotMutable()
     end
     return broadcast_mutability(typeof(x), op, typeof.(args)...)
