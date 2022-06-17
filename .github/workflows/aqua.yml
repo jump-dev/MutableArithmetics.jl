@@ -25,8 +25,12 @@ jobs:
             MutableArithmetics;
             ambiguities = (
               exclude = [
+                # TODO(odow): These ones are suspect, and may be bugs.
                 MutableArithmetics.LinearAlgebra.mul!,
+                # These ones are probably safe to ignore because there are
+                # only called internally.
                 MutableArithmetics.buffered_operate_fallback!,
+                MutableArithmetics.buffered_operate_to_fallback!,
                 MutableArithmetics.promote_operation_fallback,
               ],
             ),
