@@ -105,6 +105,8 @@ function promote_operation(op::F, args::Vararg{Type,N}) where {F<:Function,N}
     return promote_operation_fallback(op, args...)
 end
 
+promote_operation(::F) where {F} = Any
+
 # Helpful error for common mistake
 function promote_operation(
     op::Union{typeof(+),typeof(-),AddSubMul},
@@ -367,6 +369,7 @@ function operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
 end
 
 buffer_for(::F, args::Vararg{Type,N}) where {F<:Function,N} = nothing
+buffer_for(::F) where {F<:Function} = nothing
 
 function buffered_operate_to_fallback!(
     ::IsNotMutable,

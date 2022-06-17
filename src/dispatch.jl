@@ -576,7 +576,10 @@ end
 # non-`<:Number` scalar elements, so we define some of these for
 # `<:AbstractMutable` scalar elements here.
 
-function Base.:*(A::Scaling, B::_SparseMat{<:AbstractMutable})
+function Base.:*(
+    A::LinearAlgebra.UniformScaling,
+    B::_SparseMat{<:AbstractMutable},
+)
     return _SparseMat(
         B.m,
         B.n,
@@ -597,7 +600,10 @@ function Base.:*(A::Number, B::_SparseMat{<:AbstractMutable})
     )
 end
 
-function Base.:*(A::_SparseMat{<:AbstractMutable}, B::Scaling)
+function Base.:*(
+    A::_SparseMat{<:AbstractMutable},
+    B::LinearAlgebra.UniformScaling,
+)
     return _SparseMat(
         A.m,
         A.n,
@@ -638,7 +644,20 @@ function Base.:*(A::_SparseMat, B::AbstractMutable)
     )
 end
 
-function Base.:/(A::_SparseMat{<:AbstractMutable}, B::Scaling)
+function Base.:/(
+    A::_SparseMat{<:AbstractMutable},
+    B::LinearAlgebra.UniformScaling,
+)
+    return _SparseMat(
+        A.m,
+        A.n,
+        copy(A.colptr),
+        copy(SparseArrays.rowvals(A)),
+        SparseArrays.nonzeros(A) ./ B,
+    )
+end
+
+function Base.:/(A::_SparseMat{<:AbstractMutable}, B::Number)
     return _SparseMat(
         A.m,
         A.n,

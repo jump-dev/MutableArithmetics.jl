@@ -21,4 +21,13 @@ jobs:
           Pkg.develop(PackageSpec(path=pwd()))
           using MutableArithmetics, Aqua
           # Skip ambiguity test for now
-          Aqua.test_all(MutableArithmetics; ambiguities = false)
+          Aqua.test_all(
+            MutableArithmetics;
+            ambiguities = (
+              exclude = [
+                MutableArithmetics.LinearAlgebra.mul!,
+                MutableArithmetics.buffered_operate_fallback!,
+                MutableArithmetics.promote_operation_fallback,
+              ],
+            ),
+          )
