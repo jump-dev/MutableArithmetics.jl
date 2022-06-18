@@ -105,6 +105,11 @@ function promote_operation(op::F, args::Vararg{Type,N}) where {F<:Function,N}
     return promote_operation_fallback(op, args...)
 end
 
+# Fix ambiguities identified by Aqua.jl
+promote_operation(::typeof(-)) = Any
+promote_operation(::typeof(+)) = Any
+promote_operation(::typeof(*)) = Any
+
 # Helpful error for common mistake
 function promote_operation(
     op::Union{typeof(+),typeof(-),AddSubMul},
@@ -367,6 +372,9 @@ function operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
 end
 
 buffer_for(::F, args::Vararg{Type,N}) where {F<:Function,N} = nothing
+
+# Fix ambiguity identified by Aqua.jl
+buffer_for(::AddSubMul) = nothing
 
 function buffered_operate_to_fallback!(
     ::IsNotMutable,
