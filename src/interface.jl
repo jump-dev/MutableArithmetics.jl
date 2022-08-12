@@ -30,7 +30,7 @@ _instantiate_oneunit(::Type{S}) where {S} = oneunit(S)
 
 # a helper function for promotion
 # the specific return value doesn't matter
-_instantiate(::Type{T}) where {T <: Irrational} = π
+_instantiate(::Type{T}) where {T<:Irrational} = π
 _instantiate_zero(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
 _instantiate_oneunit(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
 
