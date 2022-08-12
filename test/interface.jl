@@ -31,6 +31,18 @@ MA.mutability(::Type{DummyMutable}) = MA.IsMutable()
     @test MA.promote_operation(/, Rational{Int}, Rational{Int}) == Rational{Int}
     @test MA.promote_operation(-, DummyMutable, DummyMutable) == DummyMutable
     @test MA.promote_operation(/, DummyMutable, DummyMutable) == DummyMutable
+    @testset "Issue #164" begin
+        iπ() = MA.promote_operation(+, Int, typeof(π))
+        @test iπ() == Float64
+        alloc_test(iπ, 0)
+        ℯbf() = MA.promote_operation(+, typeof(ℯ), BigFloat)
+        @test ℯbf() == BigFloat
+        # TODO this allocates as it creates the `BigFloat`
+        #alloc_test(ℯbf, 0)
+        bγ() = MA.promote_operation(/, Bool, typeof(Base.MathConstants.eulergamma))
+        @test bγ() == Float64
+        alloc_test(bγ, 0)
+    end
 end
 
 @testset "Errors" begin
