@@ -39,9 +39,12 @@ MA.mutability(::Type{DummyMutable}) = MA.IsMutable()
         @test ℯbf() == BigFloat
         # TODO this allocates as it creates the `BigFloat`
         #alloc_test(ℯbf, 0)
-        bγ() = MA.promote_operation(/, Bool, typeof(Base.MathConstants.eulergamma))
+        bγ() = MA.promote_operation(/, Bool, typeof(Base.MathConstants.γ))
         @test bγ() == Float64
         alloc_test(bγ, 0)
+        φf32() = MA.promote_operation(*, typeof(Base.MathConstants.φ), Float32)
+        @test φf32() == Float32
+        alloc_test(φf32, 0)
     end
 end
 

@@ -27,15 +27,13 @@ end
 
 _instantiate_zero(::Type{S}) where {S} = zero(S)
 _instantiate_oneunit(::Type{S}) where {S} = oneunit(S)
-# This would allocate:
-# `_instantiate_(::Type{Irrational{S}}) where {S} = eval(S)`
-# so we could use a generated function:
-# `@generated _instantiate(::Type{Irrational{S}}) where {S} = S`
-# but this wouldn't work with
-# `Base.MathConstants.eulergamma<:Irrational{:γ}`.
-_instantiate(::Type{Irrational{:π}}) = π
-_instantiate(::Type{Irrational{:ℯ}}) = ℯ
-_instantiate(::Type{Irrational{:γ}}) = Base.MathConstants.eulergamma
+# This would allocate in addition to not working for constants defined outside Base:
+# `_instantiate_(::Type{Irrational{S}}) where {S} = eval(Expr(:., Base.MathConstants, QuoteNode(S)))`
+# so we do
+_instantiate(::Type{Irrational{:π}}) = Base.MathConstants.π
+_instantiate(::Type{Irrational{:φ}}) = Base.MathConstants.φ
+_instantiate(::Type{Irrational{:γ}}) = Base.MathConstants.γ
+_instantiate(::Type{Irrational{:ℯ}}) = Base.MathConstants.ℯ
 _instantiate_zero(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
 _instantiate_oneunit(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
 
