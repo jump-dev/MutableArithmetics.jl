@@ -51,6 +51,11 @@ Base.@irrational theodorus 1.73205080756887729353 sqrt(big(3))
         i_theodorus() = MA.promote_operation(+, Int, typeof(theodorus))
         @test i_theodorus() == Float64
         alloc_test(i_theodorus, 0)
+        # test _instantiate(::Type{S}) where {S<:Irrational} return value
+        @test MA._instantiate(typeof(π)) == π
+        @test MA._instantiate(typeof(MathConstants.catalan)) ==
+              MathConstants.catalan
+        @test MA._instantiate(typeof(theodorus)) == theodorus
     end
 end
 
