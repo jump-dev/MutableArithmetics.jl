@@ -27,6 +27,8 @@ function MA.promote_operation(
 end
 MA.mutability(::Type{DummyMutable}) = MA.IsMutable()
 
+# Theodorus' constant √3 (deined in global scope due to const)
+Base.@irrational theodorus 1.73205080756887729353 sqrt(big(3))
 @testset "promote_operation" begin
     @test MA.promote_operation(/, Rational{Int}, Rational{Int}) == Rational{Int}
     @test MA.promote_operation(-, DummyMutable, DummyMutable) == DummyMutable
@@ -45,6 +47,15 @@ MA.mutability(::Type{DummyMutable}) = MA.IsMutable()
         φf32() = MA.promote_operation(*, typeof(Base.MathConstants.φ), Float32)
         @test φf32() == Float32
         alloc_test(φf32, 0)
+        # test user-defined Irrational
+        i_theodorus() = MA.promote_operation(+, Int, typeof(theodorus))
+        @test i_theodorus() == Float64
+        alloc_test(i_theodorus, 0)
+        # test _instantiate(::Type{S}) where {S<:Irrational} return value
+        @test MA._instantiate(typeof(π)) == π
+        @test MA._instantiate(typeof(MathConstants.catalan)) ==
+              MathConstants.catalan
+        @test MA._instantiate(typeof(theodorus)) == theodorus
     end
 end
 
