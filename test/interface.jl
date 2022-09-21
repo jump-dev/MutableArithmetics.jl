@@ -27,10 +27,36 @@ function MA.promote_operation(
 end
 MA.mutability(::Type{DummyMutable}) = MA.IsMutable()
 
+# Theodorus' constant √3 (deined in global scope due to const)
+Base.@irrational theodorus 1.73205080756887729353 sqrt(big(3))
 @testset "promote_operation" begin
     @test MA.promote_operation(/, Rational{Int}, Rational{Int}) == Rational{Int}
     @test MA.promote_operation(-, DummyMutable, DummyMutable) == DummyMutable
     @test MA.promote_operation(/, DummyMutable, DummyMutable) == DummyMutable
+    @testset "Issue #164" begin
+        iπ() = MA.promote_operation(+, Int, typeof(π))
+        @test iπ() == Float64
+        alloc_test(iπ, 0)
+        ℯbf() = MA.promote_operation(+, typeof(ℯ), BigFloat)
+        @test ℯbf() == BigFloat
+        # TODO this allocates as it creates the `BigFloat`
+        #alloc_test(ℯbf, 0)
+        bγ() = MA.promote_operation(/, Bool, typeof(Base.MathConstants.γ))
+        @test bγ() == Float64
+        alloc_test(bγ, 0)
+        φf32() = MA.promote_operation(*, typeof(Base.MathConstants.φ), Float32)
+        @test φf32() == Float32
+        alloc_test(φf32, 0)
+        # test user-defined Irrational
+        i_theodorus() = MA.promote_operation(+, Int, typeof(theodorus))
+        @test i_theodorus() == Float64
+        alloc_test(i_theodorus, 0)
+        # test _instantiate(::Type{S}) where {S<:Irrational} return value
+        @test MA._instantiate(typeof(π)) == π
+        @test MA._instantiate(typeof(MathConstants.catalan)) ==
+              MathConstants.catalan
+        @test MA._instantiate(typeof(theodorus)) == theodorus
+    end
 end
 
 @testset "Errors" begin

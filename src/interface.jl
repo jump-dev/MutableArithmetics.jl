@@ -25,12 +25,20 @@ function promote_operation_fallback(
     )
 end
 
+_instantiate_zero(::Type{S}) where {S} = zero(S)
+_instantiate_oneunit(::Type{S}) where {S} = oneunit(S)
+
+# this is valid because Irrational numbers are defined in global scope as const
+_instantiate(::Type{S}) where {S<:Irrational} = S()
+_instantiate_zero(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
+_instantiate_oneunit(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
+
 function promote_operation_fallback(
     ::typeof(/),
     ::Type{S},
     ::Type{T},
 ) where {S,T}
-    return typeof(zero(S) / oneunit(T))
+    return typeof(_instantiate_zero(S) / _instantiate_oneunit(T))
 end
 
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
@@ -40,14 +48,14 @@ function promote_operation_fallback(
     ::Type{S},
     ::Type{T},
 ) where {F<:Function,S,T}
-    return typeof(op(zero(S), zero(T)))
+    return typeof(op(_instantiate_zero(S), _instantiate_zero(T)))
 end
 
 function promote_operation_fallback(
     op::F,
     args::Vararg{Type,N},
 ) where {F<:Function,N}
-    return typeof(op(zero.(args)...))
+    return typeof(op(_instantiate_zero.(args)...))
 end
 
 promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
