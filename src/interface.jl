@@ -61,13 +61,13 @@ end
 promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
 
 function promote_operation_fallback(
-    ::typeof(*),
+    op::Union{typeof(*),typeof(+),typeof(gcd),typeof(lcm)},
     ::Type{S},
     ::Type{T},
     ::Type{U},
     args::Vararg{Type,N},
 ) where {S,T,U,N}
-    return promote_operation(*, promote_operation(*, S, T), U, args...)
+    return promote_operation(op, promote_operation(op, S, T), U, args...)
 end
 
 # `Vararg` gives extra allocations on Julia v1.3, see

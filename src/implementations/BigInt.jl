@@ -27,7 +27,7 @@ operate!(::typeof(one), x::BigInt) = Base.GMP.MPZ.set_si!(x, 1)
 
 # +
 
-promote_operation(::typeof(+), ::Vararg{Type{BigInt},N}) where {N} = BigInt
+promote_operation(::typeof(+), ::Type{BigInt}, ::Type{BigInt}) = BigInt
 
 function operate_to!(output::BigInt, ::typeof(+), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.add!(output, a, b)
@@ -43,18 +43,25 @@ end
 
 # *
 
-promote_operation(::typeof(*), ::Vararg{Type{BigInt},N}) where {N} = BigInt
+promote_operation(::typeof(*), ::Type{BigInt}, ::Type{BigInt}) = BigInt
 
 function operate_to!(output::BigInt, ::typeof(*), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.mul!(output, a, b)
+end
+
+promote_operation(::typeof(div), ::Type{BigInt}, ::Type{BigInt}) = BigInt
+
+function operate_to!(output::BigInt, ::typeof(div), a::BigInt, b::BigInt)
+    return Base.GMP.MPZ.tdiv_q!(output, a, b)
 end
 
 # gcd
 
 function promote_operation(
     ::Union{typeof(gcd),typeof(lcm)},
-    ::Vararg{Type{BigInt},N},
-) where {N}
+    ::Type{BigInt},
+    ::Type{BigInt},
+)
     return BigInt
 end
 
