@@ -9,7 +9,7 @@ function allocation_test(op, T, short, short_to, n; a = T(2), b = T(3), c = T(4)
     alloc_test(() -> promote_operation(op, T, T), 0)
     if op != div && op != -
         @test MA.promote_operation(op, T, T, T) == T
-        alloc_test(() -> promote_operation(op, T, T, T), 0)
+        alloc_test(() -> MA.promote_operation(op, T, T, T), 0)
     end
     g = op(a, b)
     @test c === short_to(c, a, b)
