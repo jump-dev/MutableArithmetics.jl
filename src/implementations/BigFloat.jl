@@ -44,7 +44,9 @@ operate!(::typeof(one), x::BigFloat) = _set_si!(x, 1)
 
 # +
 
-promote_operation(::typeof(+), ::Vararg{Type{BigFloat},N}) where {N} = BigFloat
+function promote_operation(::typeof(+), ::Type{BigFloat}, ::Type{BigFloat})
+    return BigFloat
+end
 
 function operate_to!(output::BigFloat, ::typeof(+), a::BigFloat, b::BigFloat)
     ccall(
@@ -78,7 +80,7 @@ end
 
 # *
 
-promote_operation(::typeof(*), ::Vararg{Type{BigFloat},N}) where {N} = BigFloat
+promote_operation(::typeof(*), ::Type{BigFloat}, ::Type{BigFloat}) = BigFloat
 
 function operate_to!(output::BigFloat, ::typeof(*), a::BigFloat, b::BigFloat)
     ccall(

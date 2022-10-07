@@ -43,12 +43,22 @@ function promote_operation(
     return Rational{promote_sum_mul(S, T)}
 end
 
+function _buffered_simplify(buffer, x::Rational)
+    operate_to!(buffer, gcd, x.num, x.den)
+    if !isone(buffer)
+        operate!(div, x.num, buffer)
+        operate!(div, x.den, buffer)
+    end
+end
+
 function operate_to!(output::Rational, ::typeof(+), x::Rational, y::Rational)
     xd, yd = Base.divgcd(promote(x.den, y.den)...)
     # TODO: Use `checked_mul` and `checked_add` like in Base
     operate_to!(output.num, *, x.num, yd)
     operate!(add_mul, output.num, y.num, xd)
     operate_to!(output.den, *, x.den, yd)
+    # Reuse `xd` as it is a local copy created by this method
+    _buffered_simplify(xd, output)
     return output
 end
 
@@ -68,6 +78,8 @@ function operate_to!(output::Rational, ::typeof(-), x::Rational, y::Rational)
     operate_to!(output.num, *, x.num, yd)
     operate!(sub_mul, output.num, y.num, xd)
     operate_to!(output.den, *, x.den, yd)
+    # Reuse `xd` as it is a local copy created by this method
+    _buffered_simplify(xd, output)
     return output
 end
 

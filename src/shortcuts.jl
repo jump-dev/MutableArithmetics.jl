@@ -58,6 +58,22 @@ Shortcut for `operate(*, a, b, ...)`, see [`operate`](@ref).
 mul(args::Vararg{Any,N}) where {N} = operate(*, args...)
 
 """
+    div_to!!(output, a, b)
+
+Return `div(a, b)` possibly modifying `output`.
+"""
+function div_to!!(output, a, b)
+    return operate_to!!(output, div, a, b)
+end
+
+"""
+    div!!(a, b)
+
+Return `div(a, b)` possibly modifying `a`.
+"""
+div!!(a, b) = operate!!(div, a, b)
+
+"""
     gcd_to!!(a, b, c, ...)
 
 Return the `gcd` of `b`, `c`, ..., possibly modifying `a`.
