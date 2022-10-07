@@ -44,7 +44,13 @@ operate!(::typeof(one), x::BigFloat) = _set_si!(x, 1)
 
 # +
 
-promote_operation(::typeof(+), ::Type{BigFloat}, ::Type{BigFloat}) where {N} = BigFloat
+function promote_operation(
+    ::typeof(+),
+    ::Type{BigFloat},
+    ::Type{BigFloat},
+) where {N}
+    return BigFloat
+end
 
 function operate_to!(output::BigFloat, ::typeof(+), a::BigFloat, b::BigFloat)
     ccall(
