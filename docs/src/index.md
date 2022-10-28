@@ -13,3 +13,7 @@ end
 ```@autodocs
 Modules = [MutableArithmetics]
 ```
+
+```@autodocs
+Modules = [MutableArithmetics.MutableArithmetics2]
+```
