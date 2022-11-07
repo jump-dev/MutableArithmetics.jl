@@ -26,6 +26,7 @@ end
 include("matmul.jl")
 include("dispatch.jl")
 include("rewrite.jl")
+include("rewrite_generic.jl")
 
 # It is easy to introduce macro scoping issues into MutableArithmetics,
 # particularly ones that rely on `MA` or `MutableArithmetics` being present in
