@@ -22,24 +22,17 @@ reduce_op(op::AddSubMul) = add_sub_op(op)
 
 reduce_op(::typeof(add_dot)) = +
 
-neutral_element(::typeof(+), T::Type) = zero(T)
-
 map_op(::AddSubMul) = *
 
 map_op(::typeof(add_dot)) = LinearAlgebra.dot
 
-function promote_map_reduce(op::Function, args::Vararg{Any,N}) where {N}
-    return promote_operation(
-        op,
-        promote_operation(map_op(op), args...),
-        args...,
-    )
-end
-
 function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     _check_same_length(args...)
-    T = promote_map_reduce(op, eltype.(args)...)
-    accumulator = neutral_element(reduce_op(op), T)
+    if length(args[1]) == 0
+        return map_op(op)(zero.(eltype.(args))...)
+    end
+    accumulator = map_op(op)(zero.(first.(args))...)
+    T = typeof(accumulator)
     buffer = buffer_for(op, T, eltype.(args)...)
     for I in zip(eachindex.(args)...)
         accumulator =
