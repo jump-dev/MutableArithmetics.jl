@@ -10,6 +10,10 @@ import ..MutableArithmetics
 
 const MA = MutableArithmetics
 
+# We need these two methods because we're changing how * is re-written.
+MA.operate!(::typeof(*), x::AbstractArray{T}, y::T) where {T} = (x .*= y)
+MA.operate!(::typeof(*), x::AbstractArray, y) = (x .= MA.operate(*, x, y))
+
 """
     @rewrite(expr)
 
