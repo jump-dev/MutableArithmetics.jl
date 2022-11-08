@@ -140,7 +140,9 @@ function _rewrite(stack::Expr, expr::Expr)
         end
         root = gensym()
         push!(stack.args, Expr(:(=), root, result))
-        return root, true
+        # This value isn't safe to mutate, because it might be a reference to
+        # another object.
+        return root, false
     end
 end
 

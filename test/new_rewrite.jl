@@ -156,6 +156,23 @@ function test_rewrite_generator()
     return
 end
 
+function test_rewrite_linear_algebra()
+    @test_rewrite [1 2; 3 4] * [5.0, 6.0]
+    @test_rewrite [1 2; 3 4] * [5, 6]
+    @test_rewrite [1 2; 3 4] * [1 2; 3 4]
+    @test_rewrite [1 2; 3 4] * Float64[1 2; 3 4]
+    @test_rewrite [5, 6]' * [1 2; 3 4] * [5, 6]
+    @test_rewrite 2 * [1 2; 3 4]
+    @test_rewrite [1 2; 3 4] * 2
+    @test_rewrite [1, 2] * 2.0
+    @test_rewrite 2.0 * [1, 2]
+    x = [1, 2]
+    A = [1 2; 3 4]
+    y = reshape(x, (1, length(x))) * A * x .- 1
+    @test MA2.@rewrite(reshape(x, (1, length(x))) * A * x .- 1) == y
+    return
+end
+
 end  # module
 
 TestMutableArithmetics2.runtests()
