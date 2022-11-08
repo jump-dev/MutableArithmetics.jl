@@ -122,3 +122,48 @@ Return the rewritten expression returning the result.
 function rewrite_and_return(x)
     return MutableArithmetics2.rewrite_and_return(x)
 end
+
+"""
+    rewrite_generator(expr::Expr, inner::Function)
+
+Rewrites the generator statements `expr` and returns a properly nested for loop
+with nested filters as specified.
+
+# Examples
+
+```jldoctest
+julia> using MutableArithmetics
+
+julia> MutableArithmetics.rewrite_generator(:(i for i in 1:2 if isodd(i)), i -> :(\$i + 1))
+:(for \$(Expr(:escape, :(i = 1:2)))
+      if \$(Expr(:escape, :(isodd(i))))
+          i + 1
+      end
+  end)
+```
+"""
+function rewrite_generator(ex, inner)
+    _iter_sets(sets::Expr) = sets
+    _iter_sets(sets) = length(sets) == 1 ? sets[1] : Expr(:block, sets...)
+    if isexpr(ex, :flatten)
+        return rewrite_generator(ex.args[1], inner)
+    elseif !isexpr(ex, :generator)
+        return inner(ex)
+    elseif isexpr(ex.args[2], :filter)
+        return Expr(
+            :for,
+            esc(_iter_sets(ex.args[2].args[2:end])),
+            Expr(
+                :if,
+                esc(ex.args[2].args[1]),
+                rewrite_generator(ex.args[1], inner),
+            ),
+        )
+    else
+        return Expr(
+            :for,
+            esc(_iter_sets(ex.args[2:end])),
+            rewrite_generator(ex.args[1], inner),
+        )
+    end
+end
