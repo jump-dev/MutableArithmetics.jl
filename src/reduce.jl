@@ -37,7 +37,7 @@ end
 
 function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     _check_same_length(args...)
-    if length(args[1]) == 0
+    if isempty(args[1])
         # If there are no arguments, we need to use the eltype of each vector to
         # infer the result type.
         return _accumulator(eltype, op, args...)
