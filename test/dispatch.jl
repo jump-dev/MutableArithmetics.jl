@@ -9,16 +9,18 @@ using LinearAlgebra
 # Tests that the calls are correctly redirected to the mutable calls
 # by checking allocations
 function dispatch_tests(::Type{T}) where {T}
+    buffer = zero(T)
+    a = one(T)
+    b = one(T)
+    c = one(T)
     x = convert.(T, [1, 2, 3])
-    # Need to allocate 1 BigInt for the result and one for the buffer, plus two
-    # zero(T) for determining the eltype of the result.
-    cost = Sys.WORD_SIZE == 64 ? (2 * 48 + 2 * 40) : (2 * 24 + 2 * 20)
-    alloc_test(() -> MA.fused_map_reduce(MA.add_mul, x, x), cost)
-    alloc_test(() -> MA.fused_map_reduce(MA.add_dot, x, x), cost)
+    # Need to allocate 1 BigInt for the result and one for the buffer
+    alloc_test(() -> MA.fused_map_reduce(MA.add_mul, x, x), 2BIGINT_ALLOC)
+    alloc_test(() -> MA.fused_map_reduce(MA.add_dot, x, x), 2BIGINT_ALLOC)
     if T <: MA.AbstractMutable
-        alloc_test(() -> x'x, cost)
-        alloc_test(() -> transpose(x) * x, cost)
-        alloc_test(() -> LinearAlgebra.dot(x, x), cost)
+        alloc_test(() -> x'x, 2BIGINT_ALLOC)
+        alloc_test(() -> transpose(x) * x, 2BIGINT_ALLOC)
+        alloc_test(() -> LinearAlgebra.dot(x, x), 2BIGINT_ALLOC)
     end
 end
 

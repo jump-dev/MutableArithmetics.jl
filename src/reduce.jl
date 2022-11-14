@@ -22,32 +22,26 @@ reduce_op(op::AddSubMul) = add_sub_op(op)
 
 reduce_op(::typeof(add_dot)) = +
 
+neutral_element(::typeof(+), T::Type) = zero(T)
+
 map_op(::AddSubMul) = *
 
 map_op(::typeof(add_dot)) = LinearAlgebra.dot
 
-# We need a generated function here to help with type stability.
-@generated function _accumulator(f::F, op::O, args::Vararg{Any,N}) where {F,O,N}
-    expr = Expr(:call, :(map_op(op)))
-    for i in 1:N
-        push!(expr.args, :(zero(f(args[$i]))))
-    end
-    return expr
+function promote_map_reduce(op::Function, args::Vararg{Any,N}) where {N}
+    return promote_operation(
+        op,
+        promote_operation(map_op(op), args...),
+        args...,
+    )
 end
+
+_concrete_eltype(x) = isempty(x) ? eltype(x) : typeof(first(x))
 
 function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     _check_same_length(args...)
-    if isempty(args[1])
-        # If there are no arguments, we need to use the eltype of each vector to
-        # infer the result type.
-        return _accumulator(eltype, op, args...)
-    end
-    # If there are arguments, we use the first element. We don't use the eltype
-    # because non-concrete vectors might have an eltype that isn't amenable to
-    # zero(T). Ideally, this would be an error. But LinearAlgebra.dot supports
-    # it so we do too.
-    accumulator = _accumulator(first, op, args...)
-    T = typeof(accumulator)
+    T = promote_map_reduce(op, _concrete_eltype.(args)...)
+    accumulator = neutral_element(reduce_op(op), T)
     buffer = buffer_for(op, T, eltype.(args)...)
     for I in zip(eachindex.(args)...)
         accumulator =
