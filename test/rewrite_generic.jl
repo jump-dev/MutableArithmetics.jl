@@ -248,6 +248,9 @@ end
 function test_rewrite_sum_function()
     @test_rewrite sum(i -> i^2, 1:2)
     @test_rewrite sum(i -> i^2, 1:2; init = 3)
+    f(x) = x^2
+    y = 1:2
+    @test MA.@rewrite(sum(f, y), move_factors_into_sums = false) == sum(f, y)
     return
 end
 
