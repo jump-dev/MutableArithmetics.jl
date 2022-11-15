@@ -240,6 +240,8 @@ end
 function test_rewrite_kwarg()
     f(; x) = x^2
     @test MA.@rewrite(f(; x = 2), move_factors_into_sums = false) == 4
+    g(x; y) = x + y^2
+    @test MA.@rewrite(g(2; y = 2), move_factors_into_sums = false) == 6
     return
 end
 

@@ -39,15 +39,6 @@ This most commonly happens in situations like `x^2`.
 """
 _rewrite_generic(::Expr, x::Number) = x, true
 
-function _is_summation(expr)
-    ret = Meta.isexpr(expr, :call, 2) || Meta.isexpr(expr, :call, 3)
-    ret &= expr.args[1] in (:sum, :Σ, :∑)
-    ret &= Meta.isexpr(expr.args[2], :generator) ||
-           Meta.isexpr(expr.args[2], :flatten) ||
-           Meta.isexpr(expr.args[2], :parameters)
-    return
-end
-
 function _is_generator(expr)
     return Meta.isexpr(expr, :call, 2) && Meta.isexpr(expr.args[2], :generator)
 end
@@ -84,9 +75,9 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         # come in two forms: `sum(i for i=I, j=J)` or `sum(i for i=I for j=J)`.
         # The latter is a `:flatten` expression and needs additional handling,
         # but we delay this complexity for _rewrite_generic_generator.
-        if Meta.isexpr(expr.args[2], :parameters, 1)
-            Meta.isexpr(expr.args[2].args[1], :kw, 2) &&
-            expr.args[2].args[1].args[1] == :init
+        if Meta.isexpr(expr.args[2], :parameters, 1) &&
+           Meta.isexpr(expr.args[2].args[1], :kw, 2) &&
+           expr.args[2].args[1].args[1] == :init
             # sum(iter ; init) form!
             root = gensym()
             init, _ = _rewrite_generic(stack, expr.args[2].args[1].args[2])
