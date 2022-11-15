@@ -666,6 +666,15 @@ function promote_operation_fallback(
     return promote_operation(*, promote_operation(adjoint, A), B)
 end
 
+function promote_operation_fallback(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{<:AbstractArray{A}},
+    ::Type{<:AbstractArray{B}},
+) where {A,B}
+    C = promote_operation(*, A, B)
+    return promote_operation(+, C, C)
+end
+
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
     return buffer_for(add_mul, a, promote_operation(adjoint, b), c)
 end
