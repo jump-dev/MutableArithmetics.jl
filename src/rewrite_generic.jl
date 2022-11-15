@@ -39,6 +39,27 @@ This most commonly happens in situations like `x^2`.
 """
 _rewrite_generic(::Expr, x::Number) = x, true
 
+function _is_summation(expr)
+    ret = Meta.isexpr(expr, :call, 2) || Meta.isexpr(expr, :call, 3)
+    ret &= expr.args[1] in (:sum, :Σ, :∑)
+    ret &= Meta.isexpr(expr.args[2], :generator) ||
+           Meta.isexpr(expr.args[2], :flatten) ||
+           Meta.isexpr(expr.args[2], :parameters)
+    return
+end
+
+function _is_generator(expr)
+    return Meta.isexpr(expr, :call, 2) && Meta.isexpr(expr.args[2], :generator)
+end
+
+function _is_flatten(expr)
+    return Meta.isexpr(expr, :call, 2) && Meta.isexpr(expr.args[2], :flatten)
+end
+
+function _is_parameters(expr)
+    return Meta.isexpr(expr, :call, 3) && Meta.isexpr(expr.args[2], :parameters)
+end
+
 """
     _rewrite_generic(stack::Expr, expr::Expr)
 
@@ -53,21 +74,28 @@ function _rewrite_generic(stack::Expr, expr::Expr)
     elseif Meta.isexpr(expr, :call, 1)
         # A zero-argument function
         return esc(expr), false
-    elseif Meta.isexpr(expr, :call, 2) && (
-        Meta.isexpr(expr.args[2], :generator) ||
-        Meta.isexpr(expr.args[2], :flatten)
-    )
+    elseif _is_generator(expr) || _is_flatten(expr) || _is_parameters(expr)
+        if !(expr.args[1] in (:sum, :Σ, :∑))
+            # We don't know what this is. Return the expression and don't let
+            # future callers mutate.
+            return esc(expr), false
+        end
         # This is a generator expression like `sum(i for i in args)`. Generators
         # come in two forms: `sum(i for i=I, j=J)` or `sum(i for i=I for j=J)`.
         # The latter is a `:flatten` expression and needs additional handling,
         # but we delay this complexity for _rewrite_generic_generator.
-        if expr.args[1] in (:sum, :Σ, :∑)
+        if Meta.isexpr(expr.args[2], :parameters, 1)
+            Meta.isexpr(expr.args[2].args[1], :kw, 2) &&
+            expr.args[2].args[1].args[1] == :init
+            # sum(iter ; init) form!
+            root = gensym()
+            init, _ = _rewrite_generic(stack, expr.args[2].args[1].args[2])
+            push!(stack.args, :($root = $init))
+            return _rewrite_generic_generator(stack, :+, expr.args[3], root)
+        else
             # Summations use :+ as the reduction operator.
             return _rewrite_generic_generator(stack, :+, expr.args[2])
         end
-        # We don't know what this is. Return the expression and don't let
-        # future callers mutate.
-        return esc(expr), false
     end
     # At this point, we have an expression like `op(args...)`. We can either
     # choose to convert the operation to it's mutable equivalent, or return the

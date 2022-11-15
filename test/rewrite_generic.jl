@@ -231,6 +231,15 @@ end
 function test_rewrite_sums_init()
     @test_rewrite sum(i for i in 1:2; init = 2)
     @test_rewrite sum(i * j for i in 1:2 for j in 1:3; init = -1)
+    @test_rewrite sum(i for i in 1:2; init = 2)
+    @test_rewrite sum(i * j for i in 1:2 for j in 1:3; init = 2 * 3)
+    @test_rewrite sum(i * j for i in 1:2 for j in i:3; init = 2 * 3)
+    return
+end
+
+function test_rewrite_kwarg()
+    f(; x) = x^2
+    @test MA.@rewrite(f(; x = 2), move_factors_into_sums = false) == 4
     return
 end
 
