@@ -5,7 +5,7 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 """
-    @rewrite(expr; assume_sums_are_linear = false)
+    @rewrite(expr; move_factors_into_sums = false)
 
 Return the value of `expr`, exploiting the mutability of the temporary
 expressions created for the computation of the result.
@@ -17,11 +17,11 @@ See [`rewrite`](@ref) for an explanation of the keyword argument.
 macro rewrite(args...)
     @assert 1 <= length(args) <= 2
     if length(args) == 1
-        return rewrite_and_return(args[1]; assume_sums_are_linear = true)
+        return rewrite_and_return(args[1]; move_factors_into_sums = true)
     end
     @assert Meta.isexpr(args[2], :(=), 2) &&
-            args[2].args[1] == :assume_sums_are_linear
-    return rewrite_and_return(args[1]; assume_sums_are_linear = args[2].args[2])
+            args[2].args[1] == :move_factors_into_sums
+    return rewrite_and_return(args[1]; move_factors_into_sums = args[2].args[2])
 end
 
 struct Zero end
@@ -263,19 +263,19 @@ function _is_decomposable_with_factors(ex)
 end
 
 """
-    rewrite(expr; assume_sums_are_linear::Bool = true) -> Tuple{Symbol,Expr}
+    rewrite(expr; move_factors_into_sums::Bool = true) -> Tuple{Symbol,Expr}
 
 Rewrites the expression `expr` to use mutable arithmetics.
 
 Returns `(variable, code)` comprised of a `gensym`'d variable equivalent to
 `expr` and the code necessary to create the variable.
 
-## `assume_sums_are_linear`
+## `move_factors_into_sums`
 
-If `assume_sums_are_linear = true`, some terms are rewritten based on the
+If `move_factors_into_sums = true`, some terms are rewritten based on the
 assumption that summations produce a linear function.
 
-For example, if `assume_sums_are_linear = true`, then
+For example, if `move_factors_into_sums = true`, then
 `y * sum(x[i] for i in 1:2)` is rewritten to:
 ```julia
 variable = MA.Zero()
@@ -284,7 +284,7 @@ for i in 1:2
 end
 ```
 
-If `assume_sums_are_linear = false`, it is rewritten to:
+If `move_factors_into_sums = false`, it is rewritten to:
 ```julia
 term = MA.Zero()
 for i in 1:2
@@ -303,15 +303,15 @@ function rewrite(x; kwargs...)
 end
 
 """
-    rewrite_and_return(expr; assume_sums_are_linear::Bool = true) -> Expr
+    rewrite_and_return(expr; move_factors_into_sums::Bool = true) -> Expr
 
 Rewrite the expression `expr` using mutable arithmetics and return an expression
 in which the last statement is equivalent to `expr`.
 
 See [`rewrite`](@ref) for an explanation of the keyword argument.
 """
-function rewrite_and_return(expr; assume_sums_are_linear::Bool = true)
-    if assume_sums_are_linear
+function rewrite_and_return(expr; move_factors_into_sums::Bool = true)
+    if move_factors_into_sums
         root, stack = _rewrite(false, false, expr, nothing, [], [])
     else
         stack = quote end

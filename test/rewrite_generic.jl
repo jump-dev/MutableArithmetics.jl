@@ -27,7 +27,7 @@ macro test_rewrite(expr)
     return quote
         esc(
             @test MA.isequal_canonical(
-                MA.@rewrite($expr, assume_sums_are_linear = false),
+                MA.@rewrite($expr, move_factors_into_sums = false),
                 $expr,
             )
         )
@@ -35,7 +35,7 @@ macro test_rewrite(expr)
 end
 
 function test_rewrite()
-    x, expr = MA.rewrite(1 + 1, assume_sums_are_linear = false)
+    x, expr = MA.rewrite(1 + 1, move_factors_into_sums = false)
     @test x isa Symbol
     @test Meta.isexpr(expr, :(=), 2)
     return
@@ -56,7 +56,7 @@ end
 function test_rewrite_not_call()
     x = [1, 2, 3]
     for i in 1:3
-        @test MA.@rewrite(x[i], assume_sums_are_linear = false) == i
+        @test MA.@rewrite(x[i], move_factors_into_sums = false) == i
     end
     return
 end
@@ -70,10 +70,10 @@ function test_rewrite_sum_to_add_mul()
     @test_rewrite +1
     @test_rewrite +(-2)
     x = [1.2]
-    @test MA.@rewrite(+x, assume_sums_are_linear = false) == x
-    @test MA.@rewrite(x + x, assume_sums_are_linear = false) == 2 * x
-    @test MA.@rewrite(+(x, x, x), assume_sums_are_linear = false) == 3 * x
-    @test MA.@rewrite(+(x, x, x, x), assume_sums_are_linear = false) == 4 * x
+    @test MA.@rewrite(+x, move_factors_into_sums = false) == x
+    @test MA.@rewrite(x + x, move_factors_into_sums = false) == 2 * x
+    @test MA.@rewrite(+(x, x, x), move_factors_into_sums = false) == 3 * x
+    @test MA.@rewrite(+(x, x, x, x), move_factors_into_sums = false) == 4 * x
     return
 end
 
@@ -82,17 +82,17 @@ function test_rewrite_prod_to_add_mul()
     @test_rewrite 2 * -2
     A = [1.0 2.0; 3.0 4.0]
     x = [5.0, 6.0]
-    @test MA.@rewrite(A * x, assume_sums_are_linear = false) == A * x
+    @test MA.@rewrite(A * x, move_factors_into_sums = false) == A * x
     return
 end
 
 function test_rewrite_nonconcrete_vector()
     x = [5.0, 6.0]
     y = Vector{Union{Float64,String}}(x)
-    @test MA.@rewrite(x' * y, assume_sums_are_linear = false) == x' * y
-    @test MA.@rewrite(x .+ y, assume_sums_are_linear = false) == x .+ y
+    @test MA.@rewrite(x' * y, move_factors_into_sums = false) == x' * y
+    @test MA.@rewrite(x .+ y, move_factors_into_sums = false) == x .+ y
     # Reproducing buggy behavior in MA.@rewrite.
-    @test_broken MA.@rewrite(x + y, assume_sums_are_linear = false) == x + x
+    @test_broken MA.@rewrite(x + y, move_factors_into_sums = false) == x + x
     return
 end
 
@@ -101,15 +101,15 @@ function test_rewrite_minus_to_add_mul()
     @test_rewrite -(+2)
     @test_rewrite -(-2)
     x = [1.2]
-    @test MA.@rewrite(-x, assume_sums_are_linear = false) == -x
-    @test MA.@rewrite(x - x, assume_sums_are_linear = false) == [0.0]
-    @test MA.@rewrite(-(x, x, x), assume_sums_are_linear = false) == -1 * x
-    @test MA.@rewrite(-(x, x, x, x), assume_sums_are_linear = false) == -2 * x
+    @test MA.@rewrite(-x, move_factors_into_sums = false) == -x
+    @test MA.@rewrite(x - x, move_factors_into_sums = false) == [0.0]
+    @test MA.@rewrite(-(x, x, x), move_factors_into_sums = false) == -1 * x
+    @test MA.@rewrite(-(x, x, x, x), move_factors_into_sums = false) == -2 * x
     return
 end
 
 function test_rewrite_sum()
-    @test MA.@rewrite(sum(i for i in 1:0), assume_sums_are_linear = false) ==
+    @test MA.@rewrite(sum(i for i in 1:0), move_factors_into_sums = false) ==
           MA.Zero()
     @test_rewrite sum(i for i in 1:10)
     @test_rewrite sum(i + i^2 for i in 1:10)
@@ -141,11 +141,11 @@ function test_rewrite_generator()
     # This syntax is unsupported by Julia!
     @test MA.@rewrite(
         sum(i + j^2 for i in 1:2, j in i:3),
-        assume_sums_are_linear = false,
+        move_factors_into_sums = false,
     ) == 34
     @test MA.@rewrite(
         sum(i + j^2 for i in 1:2, j in 2:3, k in i:j),
-        assume_sums_are_linear = false,
+        move_factors_into_sums = false,
     ) == 68
     # Unnivariate generators with an if statement
     @test_rewrite sum(i for i in 1:2 if i >= 1)
@@ -182,7 +182,7 @@ function test_rewrite_linear_algebra()
     y = reshape(x, (1, length(x))) * A * x .- 1
     @test MA.@rewrite(
         reshape(x, (1, length(x))) * A * x .- 1,
-        assume_sums_are_linear = false,
+        move_factors_into_sums = false,
     ) == y
     return
 end
