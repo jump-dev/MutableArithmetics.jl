@@ -228,6 +228,18 @@ function test_multi_prod()
     return
 end
 
+function test_rewrite_sums_init()
+    @test_rewrite sum(i for i in 1:2; init = 2)
+    @test_rewrite sum(i * j for i in 1:2 for j in 1:3; init = -1)
+    return
+end
+
+function test_rewrite_sum_function()
+    @test_rewrite sum(i -> i^2, 1:2)
+    @test_rewrite sum(i -> i^2, 1:2; init = 3)
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
