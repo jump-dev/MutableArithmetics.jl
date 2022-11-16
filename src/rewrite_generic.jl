@@ -113,7 +113,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         rhs = if is_mutable
             Expr(:call, operate!!, *, arg1, arg2)
         else
-            Expr(:call, *, arg1, arg2)
+            Expr(:call, operate, *, arg1, arg2)
         end
         root = gensym()
         push!(stack.args, :($root = $rhs))
@@ -122,7 +122,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
             rhs = if is_mutable
                 Expr(:call, operate!!, *, root, arg)
             else
-                Expr(:call, *, root, arg)
+                Expr(:call, operate, *, root, arg)
             end
             root = gensym()
             push!(stack.args, :($root = $rhs))

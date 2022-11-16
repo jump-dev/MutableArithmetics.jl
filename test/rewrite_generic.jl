@@ -254,6 +254,18 @@ function test_rewrite_sum_function()
     return
 end
 
+struct NoProduct <: MA.AbstractMutable
+    x::Int
+end
+
+MA.operate(::typeof(*), x::NoProduct, y::NoProduct) = NoProduct(x.x * y.x)
+
+function test_no_product()
+    x, y = NoProduct(2), NoProduct(3)
+    @test MA.@rewrite(x * y, move_factors_into_sums = false) == NoProduct(6)
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
