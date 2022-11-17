@@ -382,7 +382,7 @@ end
     # Test that we don't initialize the output with zero(Int), either by taking
     # the first available type in the union, or by looking at the first element
     # in the array.
-    T  = Union{Int,Float64}
+    T = Union{Int,Float64}
     x, x12, x22 = T[1, 2.5], T[1 2.5], T[1 2.5; 3.5 4]
     @test MA.operate(*, x, x') == x * x'
     @test MA.operate(*, x', x) == x' * x
