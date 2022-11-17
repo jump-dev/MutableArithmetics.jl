@@ -367,14 +367,15 @@ end
         y = LinearAlgebra.LowerTriangular([1.1 1.2; 1.3 1.4])
         @test MA.operate(*, x22, y) ≈ x22 * y
         @test MA.operate(*, y, x22) ≈ y * x22
-        # These tests are broken because `Base` is also broken
-        @test_broken MA.operate(*, x22, x) ≈ x22 * x
-        @test_broken MA.operate(*, x', x22) ≈ x' * x22
-        @test_broken MA.operate(*, x12, x22) ≈ x12 * x22
-        @test_broken MA.operate(*, y, x) ≈ y * x
-        @test_broken MA.operate(*, x', y) ≈ x' * y
-        @test_broken MA.operate(*, y, x12') ≈ y * x12'
-        @test_broken MA.operate(*, x12, y) ≈ x12 * y
+        # TODO(odow): These tests are broken because `Base` is also broken.
+        # Although it fixed y * x12' in Julia v1.9.0.
+        # @test_broken MA.operate(*, x22, x) ≈ x22 * x
+        # @test_broken MA.operate(*, x', x22) ≈ x' * x22
+        # @test_broken MA.operate(*, x12, x22) ≈ x12 * x22
+        # @test_broken MA.operate(*, y, x) ≈ y * x
+        # @test_broken MA.operate(*, x', y) ≈ x' * y
+        # @test_broken MA.operate(*, y, x12') ≈ y * x12'
+        # @test_broken MA.operate(*, x12, y) ≈ x12 * y
     end
 end
 
