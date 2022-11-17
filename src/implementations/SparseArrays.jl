@@ -213,6 +213,7 @@ function operate!(
     B::_SparseMat,
     α::Vararg{Union{T,Scaling},N},
 ) where {T,N}
+    rhs_constants = prod(α)
     _dim_check(ret, A, B)
     rowvalA = SparseArrays.rowvals(A)
     nzvalA = SparseArrays.nonzeros(A)
@@ -234,7 +235,7 @@ function operate!(
             ret.colptr[i] = ip0 = ip
             k0 = ip - 1
             for jp in SparseArrays.nzrange(B, i)
-                nzB = nzvalB[jp]
+                nzB = nzvalB[jp] * rhs_constants
                 j = rowvalB[jp]
                 for kp in SparseArrays.nzrange(A, j)
                     k = rowvalA[kp]

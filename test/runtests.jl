@@ -27,6 +27,8 @@ include("matmul.jl")
 include("dispatch.jl")
 include("rewrite.jl")
 
+include("SparseArrays.jl")
+
 # It is easy to introduce macro scoping issues into MutableArithmetics,
 # particularly ones that rely on `MA` or `MutableArithmetics` being present in
 # the current scope. To work around that, include the "hygiene" script in a
