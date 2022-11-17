@@ -28,6 +28,31 @@ end
 _instantiate_zero(::Type{S}) where {S} = zero(S)
 _instantiate_oneunit(::Type{S}) where {S} = oneunit(S)
 
+# !!! warning
+#     It is baaaaaad form to write methods with ::Union as a type argument, but
+#     I don't know how else to achieve this. Users might give a Union type like
+#     Union{Int,String} and we need to infer that they mean `0` since
+#     zero(String) isn't defined.
+#
+#     The one helpful thing is that this should affect only non-concrete types,
+#     which are already in trouble with type stability, so the runtime hit of
+#     hasmethod shouldn't be too bad.
+
+function _instantiate_zero(T::Union)
+    if hasmethod(zero, (T.a,))
+        return _instantiate_zero(T.a)
+    end
+    return _instantiate_zero(T.b)
+end
+
+
+function _instantiate_oneunit(S::Union)
+    if hasmethod(oneunit, (S,))
+        return _instantiate_oneunit(S.a)
+    end
+    return _instantiate_oneunit(S.b)
+end
+
 # this is valid because Irrational numbers are defined in global scope as const
 _instantiate(::Type{S}) where {S<:Irrational} = S()
 _instantiate_zero(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)

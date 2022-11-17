@@ -37,6 +37,16 @@ end
         @test MA.operate(*, x', y) == x' * y
     end
 
+    @testset "mult non-concrete vector" begin
+        A = [1 2; 3 4]
+        x = Vector{Union{Float64,String}}([5.0, 6.0])
+        y = Vector{Union{String,Float64}}([5.0, 6.0])
+        @test MA.operate(*, A, x) == A * x
+        @test MA.operate(*, x', A) == x' * A
+        @test MA.operate(*, A, y) == A * y
+        @test MA.operate(*, y', A) == y' * A
+    end
+
     @testset "dot vector of vectors" begin
         x = [5.0, 6.0]
         z = [x, x]
