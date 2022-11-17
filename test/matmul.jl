@@ -335,3 +335,47 @@ end
     LinearAlgebra.mul!(ret, A, B)
     @test ret == A * B
 end
+
+@testset "Abstract eltype in matmul" begin
+    # Test that we don't initialize the output with zero(T), which might not
+    # exist.
+    for T in (Any, Union{String,Int})
+        x, x12, x22 = T[1, 2], T[1 2], T[1 2; 3 4]
+        @test MA.operate(*, x, x') == x * x'
+        @test MA.operate(*, x', x) == x' * x
+        @test MA.operate(*, x12, x) == x12 * x
+        @test MA.operate(*, x22, x) == x22 * x
+        @test MA.operate(*, x', x22) == x' * x22
+        @test MA.operate(*, x12, x22) == x12 * x22
+        @test MA.operate(*, x22, x22) == x22 * x22
+        y = [1.1 1.2; 1.3 1.4]
+        @test MA.operate(*, y, x) == y * x
+        @test MA.operate(*, x', y) == x' * y
+        @test MA.operate(*, y, x12') == y * x12'
+        @test MA.operate(*, x12, y) == x12 * y
+        @test MA.operate(*, x22, y) == x22 * y
+        @test MA.operate(*, y, x22) == y * x22
+    end
+end
+
+@testset "Union{Int,Float64} eltype in matmul" begin
+    # Test that we don't initialize the output with zero(Int), either by taking
+    # the first available type in the union, or by looking at the first element
+    # in the array.
+    T  = Union{Int,Float64}
+    x, x12, x22 = T[1, 2.5], T[1 2.5], T[1 2.5; 3.5 4]
+    @test MA.operate(*, x, x') == x * x'
+    @test MA.operate(*, x', x) == x' * x
+    @test MA.operate(*, x12, x) == x12 * x
+    @test MA.operate(*, x22, x) == x22 * x
+    @test MA.operate(*, x', x22) == x' * x22
+    @test MA.operate(*, x12, x22) == x12 * x22
+    @test MA.operate(*, x22, x22) == x22 * x22
+    y = [1.1 1.2; 1.3 1.4]
+    @test MA.operate(*, y, x) == y * x
+    @test MA.operate(*, x', y) == x' * y
+    @test MA.operate(*, y, x12') == y * x12'
+    @test MA.operate(*, x12, y) == x12 * y
+    @test MA.operate(*, x22, y) == x22 * y
+    @test MA.operate(*, y, x22) == y * x22
+end
