@@ -690,17 +690,6 @@ end
 # +(::SparseMatrixCSC) is not defined for generic types in Base.
 Base.:+(A::AbstractArray{<:AbstractMutable}) = A
 
-# Fix https://github.com/JuliaLang/julia/issues/32374 as done in
-# https://github.com/JuliaLang/julia/pull/32375. This hack should
-# be removed once we drop Julia v1.0.
-function Base.:-(A::LinearAlgebra.Symmetric{<:AbstractMutable})
-    return LinearAlgebra.Symmetric(-parent(A), LinearAlgebra.sym_uplo(A.uplo))
-end
-
-function Base.:-(A::LinearAlgebra.Hermitian{<:AbstractMutable})
-    return LinearAlgebra.Hermitian(-parent(A), LinearAlgebra.sym_uplo(A.uplo))
-end
-
 Base.:*(α::AbstractMutable, A::AbstractArray) = α .* A
 
 Base.:*(A::AbstractArray, α::AbstractMutable) = A .* α
