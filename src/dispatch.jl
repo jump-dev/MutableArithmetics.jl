@@ -576,72 +576,31 @@ end
 # non-`<:Number` scalar elements, so we define some of these for
 # `<:AbstractMutable` scalar elements here.
 
-function Base.:*(
-    A::LinearAlgebra.UniformScaling,
-    B::_SparseMat{<:AbstractMutable},
-)
-    return _SparseMat(
-        B.m,
-        B.n,
-        copy(B.colptr),
-        copy(SparseArrays.rowvals(B)),
-        A .* SparseArrays.nonzeros(B),
-    )
-end
-
-# This method is needed to fix any ambiguity with the Base method
-function Base.:*(A::Number, B::_SparseMat{<:AbstractMutable})
-    return _SparseMat(
-        B.m,
-        B.n,
-        copy(B.colptr),
-        copy(SparseArrays.rowvals(B)),
-        A .* SparseArrays.nonzeros(B),
-    )
-end
-
-function Base.:*(
-    A::_SparseMat{<:AbstractMutable},
-    B::LinearAlgebra.UniformScaling,
-)
-    return _SparseMat(
-        A.m,
-        A.n,
-        copy(A.colptr),
-        copy(SparseArrays.rowvals(A)),
-        SparseArrays.nonzeros(A) .* B,
-    )
-end
-
-# This method is needed to fix any ambiguity with the Base method
-function Base.:*(A::_SparseMat{<:AbstractMutable}, B::Number)
-    return _SparseMat(
-        A.m,
-        A.n,
-        copy(A.colptr),
-        copy(SparseArrays.rowvals(A)),
-        SparseArrays.nonzeros(A) .* B,
-    )
-end
-
-function Base.:*(A::AbstractMutable, B::_SparseMat)
-    return _SparseMat(
-        B.m,
-        B.n,
-        copy(B.colptr),
-        copy(SparseArrays.rowvals(B)),
-        A .* SparseArrays.nonzeros(B),
-    )
-end
-
-function Base.:*(A::_SparseMat, B::AbstractMutable)
-    return _SparseMat(
-        A.m,
-        A.n,
-        copy(A.colptr),
-        copy(SparseArrays.rowvals(A)),
-        SparseArrays.nonzeros(A) .* B,
-    )
+for (S, T) in [
+    (LinearAlgebra.UniformScaling, AbstractMutable),
+    (Number, AbstractMutable),
+    (AbstractMutable, Any),
+]
+    @eval begin
+        function Base.:*(A::$S, B::_SparseMat{<:$T})
+            return _SparseMat(
+                B.m,
+                B.n,
+                copy(B.colptr),
+                copy(SparseArrays.rowvals(B)),
+                A .* SparseArrays.nonzeros(B),
+            )
+        end
+        function Base.:*(B::_SparseMat{<:$T}, A::$S)
+            return _SparseMat(
+                B.m,
+                B.n,
+                copy(B.colptr),
+                copy(SparseArrays.rowvals(B)),
+                SparseArrays.nonzeros(B) .* A,
+            )
+        end
+    end
 end
 
 function Base.:/(
