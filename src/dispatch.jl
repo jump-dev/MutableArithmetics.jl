@@ -358,7 +358,7 @@ const _LinearAlgebraWrappers = (
 
 const _MatrixLike = vcat(
     Any[T -> LA{<:T,<:_SparseMat} for LA in _LinearAlgebraWrappers],
-    Any[T -> _SparseMat{<:T}, T -> StridedMatrix{<:T}],
+    Any[T->_SparseMat{<:T}, T->StridedMatrix{<:T}],
 )
 
 for f_A in _MatrixLike, f_B in vcat(_MatrixLike, T -> StridedVector{<:T})
