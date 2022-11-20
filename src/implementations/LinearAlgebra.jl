@@ -377,17 +377,6 @@ function undef_array(::Type{T}, axes...) where {T}
     return undef_array(T, convert.(Base.OneTo, axes)...)
 end
 
-# A lot of the MA.operate_to! methods require a concrete eltype for inference to
-# work correctly. We can check the eltype is concrete by:
-#  1) checking that there are some elements
-#  2) checking that the type of the first element is _exactly_ the eltype of the
-#     array.
-# If the array is something like Vector{Union{Int,Float64}}, then _is_concrete
-# will return `false` because `Int !== Union{Int,Float64}`.
-function _is_concrete(x::AbstractArray{T}) where {T}
-    return !isempty(x) && typeof(first(x)) === T
-end
-
 # Does what `LinearAlgebra/src/matmul.jl` does for abstract matrices and
 # vectors: estimate the resulting element type, allocate the resulting array but
 # it redirects to `mul_to!` instead of `LinearAlgebra.mul!`.
@@ -399,7 +388,7 @@ function operate(
     # Only use the efficient in-place operate_to! if both arrays are
     # concrete. Bad things can happen if S or T is abstract and we pick the
     # wrong type for C.
-    if !(_is_concrete(A) && _is_concrete(B))
+    if !(isconcretetype(A) && isconcretetype(B))
         return A * B
     end
     C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1))
@@ -414,7 +403,7 @@ function operate(
     # Only use the efficient in-place operate_to! if both arrays are
     # concrete. Bad things can happen if S or T is abstract and we pick the
     # wrong type for C.
-    if !(_is_concrete(A) && _is_concrete(B))
+    if !(isconcretetype(A) && isconcretetype(B))
         return A * B
     end
     C = undef_array(
