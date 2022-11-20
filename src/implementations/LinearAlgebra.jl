@@ -388,7 +388,7 @@ function operate(
     # Only use the efficient in-place operate_to! if both arrays are
     # concrete. Bad things can happen if S or T is abstract and we pick the
     # wrong type for C.
-    if !(isconcretetype(A) && isconcretetype(B))
+    if !(isconcretetype(S) && isconcretetype(T))
         return A * B
     end
     C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1))
@@ -403,7 +403,7 @@ function operate(
     # Only use the efficient in-place operate_to! if both arrays are
     # concrete. Bad things can happen if S or T is abstract and we pick the
     # wrong type for C.
-    if !(isconcretetype(A) && isconcretetype(B))
+    if !(isconcretetype(S) && isconcretetype(T))
         return A * B
     end
     C = undef_array(
