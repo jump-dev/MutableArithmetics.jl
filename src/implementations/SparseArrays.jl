@@ -42,30 +42,6 @@ function promote_operation(
     return Array{promote_operation(op, Tv, T),N}
 end
 
-function _operate!(
-    op::Union{typeof(+),typeof(-)},
-    A::Matrix,
-    B::_SparseMat,
-    left_factors::Tuple,
-    right_factors::Tuple,
-)
-    B_nonzeros = SparseArrays.nonzeros(B)
-    B_rowvals = SparseArrays.rowvals(B)
-    for col in 1:size(B, 2)
-        for k in SparseArrays.nzrange(B, col)
-            row = B_rowvals[k]
-            A[row, col] = operate!!(
-                mul_rhs(op),
-                A[row, col],
-                left_factors...,
-                B_nonzeros[k],
-                right_factors...,
-            )
-        end
-    end
-    return A
-end
-
 function similar_array_type(
     ::Type{SparseArrays.SparseVector{Tv,Ti}},
     ::Type{T},
@@ -94,7 +70,7 @@ function operate!(
 ) where {T}
     C = Matrix{T}(undef, size(output)...)
     operate_to!(C, *, A, B)
-    copyto!(output, C)
+    output .+= C
     return output
 end
 
