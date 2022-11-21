@@ -26,6 +26,7 @@ end
 include("matmul.jl")
 include("dispatch.jl")
 include("rewrite.jl")
+include("rewrite_generic.jl")
 
 include("SparseArrays.jl")
 

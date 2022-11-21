@@ -176,6 +176,7 @@ function isequal_canonical(x::_SparseMat, y::_SparseMat)
 end
 
 include("rewrite.jl")
+include("rewrite_generic.jl")
 include("dispatch.jl")
 
 # Test that can be used to test an implementation of the interface
