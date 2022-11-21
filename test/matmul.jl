@@ -103,9 +103,6 @@ end
         )
         @test_throws err MA.operate!(+, A, B)
     end
-    @testset "unsupported_product" begin
-        unsupported_product()
-    end
 end
 
 @testset "Matrix multiplication" begin
