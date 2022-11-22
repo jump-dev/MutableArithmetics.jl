@@ -65,6 +65,9 @@ function _rewrite_generic(stack::Expr, expr::Expr)
     elseif Meta.isexpr(expr, :call, 1)
         # A zero-argument function
         return esc(expr), false
+    elseif Meta.isexpr(expr.args[2], :(...))
+        # If the first argument is a splat.
+        return esc(expr), false
     elseif _is_generator(expr) || _is_flatten(expr) || _is_parameters(expr)
         if !(expr.args[1] in (:sum, :Σ, :∑))
             # We don't know what this is. Return the expression and don't let
