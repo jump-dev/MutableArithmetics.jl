@@ -266,6 +266,24 @@ function test_no_product()
     return
 end
 
+function test_splatting()
+    x = [1, 2, 3]
+    @test MA.@rewrite(+(x...), move_factors_into_sums = false) == 6
+    @test MA.@rewrite(+(4, x...), move_factors_into_sums = false) == 10
+    @test MA.@rewrite(+(x..., 4), move_factors_into_sums = false) == 10
+    @test MA.@rewrite(+(4, x..., 5), move_factors_into_sums = false) == 15
+    @test MA.@rewrite(*(x...), move_factors_into_sums = false) == 6
+    @test MA.@rewrite(*(4, x...), move_factors_into_sums = false) == 24
+    @test MA.@rewrite(*(x..., 4), move_factors_into_sums = false) == 24
+    @test MA.@rewrite(*(4, x..., 5), move_factors_into_sums = false) == 120
+    @test MA.@rewrite(
+        +(4, x..., *(4, x..., 5)),
+        move_factors_into_sums = false,
+    ) == 130
+    @test MA.@rewrite(vcat(x...), move_factors_into_sums = false) == x
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
