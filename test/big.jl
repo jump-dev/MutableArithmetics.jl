@@ -28,25 +28,19 @@ function allocation_test(
     @test g == A
     alloc_test_le(() -> short(A, b), n)
     alloc_test_le(() -> short_to(c, a, b), n)
-    @test g == buffered_operate!(nothing, op, MA.copy_if_mutable(a), b)
-    @test g == buffered_operate_to!(nothing, c, op, a, b)
-    buffer = buffer_for(op, typeof(a), typeof(b))
-    @test g == buffered_operate_to!(buffer, c, op, a, b)
-    alloc_test(() -> buffered_operate_to!(buffer, c, op, a, b), 0)
+    @test g == MA.buffered_operate!(nothing, op, MA.copy_if_mutable(a), b)
+    @test g == MA.buffered_operate_to!(nothing, c, op, a, b)
+    buffer = MA.buffer_for(op, typeof(a), typeof(b))
+    @test g == MA.buffered_operate_to!(buffer, c, op, a, b)
+    alloc_test(() -> MA.buffered_operate_to!(buffer, c, op, a, b), 0)
     return
 end
 
-function add_sub_mul_test(
-    op,
-    T;
-    a = T(2),
-    b = T(3),
-    c = T(4),
-)
+function add_sub_mul_test(op, T; a = T(2), b = T(3), c = T(4))
     g = op(a, b, c)
-    @test g == buffered_operate!(nothing, op, MA.copy_if_mutable(a), b, c)
-    buffer = buffer_for(op, typeof(a), typeof(b), typeof(c))
-    alloc_test(() -> buffered_operate!(buffer, op, a, b, c), 0)
+    @test g == MA.buffered_operate!(nothing, op, MA.copy_if_mutable(a), b, c)
+    buffer = MA.buffer_for(op, typeof(a), typeof(b), typeof(c))
+    return alloc_test(() -> MA.buffered_operate!(buffer, op, a, b, c), 0)
 end
 @testset "$T" for T in [BigInt, BigFloat, Rational{BigInt}]
     MA.Test.int_test(T)

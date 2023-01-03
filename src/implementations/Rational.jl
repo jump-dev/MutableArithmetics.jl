@@ -61,23 +61,50 @@ function promote_operation(
     return Rational{promote_sum_mul(S, T)}
 end
 
-function buffer_for(::Union{typeof(+),typeof(-)}, ::Type{Rational{S}}, ::Type{Rational{T}}) where {S,T}
+function buffer_for(
+    ::Union{typeof(+),typeof(-)},
+    ::Type{Rational{S}},
+    ::Type{Rational{T}},
+) where {S,T}
     U = promote_operation(gcd, S, T)
     return zero(U), zero(U), zero(U)
 end
 
-function buffered_operate_to!(buffer::Tuple, output::Rational, op::Union{typeof(-),typeof(+)}, x::Rational, y::Rational)
+function buffered_operate_to!(
+    buffer::Tuple,
+    output::Rational,
+    op::Union{typeof(-),typeof(+)},
+    x::Rational,
+    y::Rational,
+)
     _buffered_divgcd(buffer[1], x.den, buffer[2], y.den, buffer[3])
     # TODO: Use `checked_mul` and `checked_sub` like in Base
     operate_to!(output.num, *, x.num, buffer[3])
-    buffered_operate!(buffer[2], add_sub_mul_op(op), output.num, y.num, buffer[2])
+    buffered_operate!(
+        buffer[2],
+        add_sub_mul_op(op),
+        output.num,
+        y.num,
+        buffer[2],
+    )
     operate_to!(output.den, *, x.den, buffer[3])
     _buffered_simplify(buffer[1], output)
     return output
 end
 
-function operate_to!(output::Rational, op::Union{typeof(+),typeof(-)}, x::Rational, y::Rational)
-    return buffered_operate_to!(buffer_for(op, typeof(x), typeof(y)), output, op, x, y)
+function operate_to!(
+    output::Rational,
+    op::Union{typeof(+),typeof(-)},
+    x::Rational,
+    y::Rational,
+)
+    return buffered_operate_to!(
+        buffer_for(op, typeof(x), typeof(y)),
+        output,
+        op,
+        x,
+        y,
+    )
 end
 
 function operate_to!(output::Rational, ::typeof(+), x::Rational, y::Rational)
@@ -101,12 +128,22 @@ function promote_operation(
     return Rational{promote_operation(*, S, T)}
 end
 
-function buffer_for(::typeof(*), ::Type{Rational{S}}, ::Type{Rational{T}}) where {S,T}
+function buffer_for(
+    ::typeof(*),
+    ::Type{Rational{S}},
+    ::Type{Rational{T}},
+) where {S,T}
     U = promote_operation(gcd, S, T)
     return zero(Rational{S}), zero(Rational{T}), zero(U)
 end
 
-function buffered_operate_to!(buffer::Tuple, output::Rational, ::typeof(*), x::Rational, y::Rational)
+function buffered_operate_to!(
+    buffer::Tuple,
+    output::Rational,
+    ::typeof(*),
+    x::Rational,
+    y::Rational,
+)
     # Cannot use `output.num` and `output.den` as buffer as `output` might be an alias for `x`
     _buffered_divgcd(buffer[3], x.num, buffer[1].num, y.den, buffer[2].den)
     _buffered_divgcd(buffer[3], x.den, buffer[1].den, y.num, buffer[2].num)
@@ -116,7 +153,13 @@ function buffered_operate_to!(buffer::Tuple, output::Rational, ::typeof(*), x::R
 end
 
 function operate_to!(output::Rational, ::typeof(*), x::Rational, y::Rational)
-    return buffered_operate_to!(buffer_for(*, typeof(x), typeof(y)), output, *, x, y)
+    return buffered_operate_to!(
+        buffer_for(*, typeof(x), typeof(y)),
+        output,
+        *,
+        x,
+        y,
+    )
 end
 
 # gcd
@@ -161,7 +204,9 @@ end
 # Buffer to hold the product
 function buffer_for(op::AddSubMul, args::Vararg{Type{<:Rational},N}) where {N}
     U = promote_operation(*, args...)
-    return buffer_for(*, Base.tail(args)...), zero(U), buffer_for(add_sub_op(op), args[1], U)
+    return buffer_for(*, Base.tail(args)...),
+    zero(U),
+    buffer_for(add_sub_op(op), args[1], U)
 end
 
 function operate_to!(
