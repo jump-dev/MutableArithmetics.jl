@@ -76,7 +76,7 @@ function int_add_mul_test(::Type{T}) where {T}
         b = t(9)
         c = t(3)
         d = t(20)
-        buf = t(24)
+        buf = MA.buffer_for(MA.add_mul, typeof(a), typeof(b), typeof(c))
 
         @test MA.isequal_canonical(MA.add_mul_to!!(a, b, c, d), t(69))
         @test MA.isequal_canonical(a, t(69))
@@ -94,7 +94,6 @@ function int_add_mul_test(::Type{T}) where {T}
         b = t(16)
         c = t(17)
         d = t(42)
-        buf = t(56)
         @test MA.isequal_canonical(MA.add_mul!!(a, b, c), t(420))
         @test MA.isequal_canonical(a, t(420))
         a = t(148)

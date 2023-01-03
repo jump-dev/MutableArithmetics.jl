@@ -26,15 +26,30 @@ function allocation_test(
     @test a === short(a, b)
     @test g == a
     alloc_test_le(() -> short(a, b), n)
-    return alloc_test_le(() -> short_to(c, a, b), n)
+    alloc_test_le(() -> short_to(c, a, b), n)
+    buffer = buffer_for(op, typeof(a), typeof(b))
+    alloc_test(() -> buffered_operate_to!(buffer, c, op, a, b), 0)
+    return
 end
 
+function add_sub_mul_test(
+    op,
+    T;
+    a = T(2),
+    b = T(3),
+    c = T(4),
+)
+    buffer = buffer_for(op, typeof(a), typeof(b), typeof(c))
+    alloc_test(() -> buffered_operate!(buffer, op, a, b, c), 0)
+end
 @testset "$T" for T in [BigInt, BigFloat, Rational{BigInt}]
     MA.Test.int_test(T)
     @testset "Allocation" begin
         allocation_test(+, T, MA.add!!, MA.add_to!!, T <: Rational ? 168 : 0)
         allocation_test(-, T, MA.sub!!, MA.sub_to!!, T <: Rational ? 168 : 0)
         allocation_test(*, T, MA.mul!!, MA.mul_to!!, T <: Rational ? 240 : 0)
+        add_sub_mul_test(add_mul, T)
+        add_sub_mul_test(sub_mul, T)
         if T <: Rational # https://github.com/jump-dev/MutableArithmetics.jl/issues/167
             allocation_test(
                 +,
