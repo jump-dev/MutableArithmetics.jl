@@ -66,7 +66,7 @@ function buffer_for(::Union{typeof(+),typeof(-)}, ::Type{Rational{S}}, ::Type{Ra
     return zero(U), zero(U), zero(U)
 end
 
-function buffered_operate_to!(buffer, output::Rational, op::Union{typeof(-),typeof(+)}, x::Rational, y::Rational)
+function buffered_operate_to!(buffer::Tuple, output::Rational, op::Union{typeof(-),typeof(+)}, x::Rational, y::Rational)
     _buffered_divgcd(buffer[1], x.den, buffer[2], y.den, buffer[3])
     # TODO: Use `checked_mul` and `checked_sub` like in Base
     operate_to!(output.num, *, x.num, buffer[3])
@@ -106,7 +106,7 @@ function buffer_for(::typeof(*), ::Type{Rational{S}}, ::Type{Rational{T}}) where
     return zero(Rational{S}), zero(Rational{T}), zero(U)
 end
 
-function buffered_operate_to!(buffer, output::Rational, ::typeof(*), x::Rational, y::Rational)
+function buffered_operate_to!(buffer::Tuple, output::Rational, ::typeof(*), x::Rational, y::Rational)
     # Cannot use `output.num` and `output.den` as buffer as `output` might be an alias for `x`
     _buffered_divgcd(buffer[3], x.num, buffer[1].num, y.den, buffer[2].den)
     _buffered_divgcd(buffer[3], x.den, buffer[1].den, y.num, buffer[2].num)
@@ -177,7 +177,7 @@ function operate_to!(
 end
 
 function buffered_operate_to!(
-    buffer,
+    buffer::Tuple,
     output::Rational,
     op::AddSubMul,
     a::Rational,

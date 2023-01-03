@@ -23,11 +23,15 @@ function allocation_test(
     g = op(a, b)
     @test c === short_to(c, a, b)
     @test g == c
-    @test a === short(a, b)
-    @test g == a
-    alloc_test_le(() -> short(a, b), n)
+    A = MA.copy_if_mutable(a)
+    @test A === short(A, b)
+    @test g == A
+    alloc_test_le(() -> short(A, b), n)
     alloc_test_le(() -> short_to(c, a, b), n)
+    @test g == buffered_operate!(nothing, op, MA.copy_if_mutable(a), b)
+    @test g == buffered_operate_to!(nothing, c, op, a, b)
     buffer = buffer_for(op, typeof(a), typeof(b))
+    @test g == buffered_operate_to!(buffer, c, op, a, b)
     alloc_test(() -> buffered_operate_to!(buffer, c, op, a, b), 0)
     return
 end
@@ -39,6 +43,8 @@ function add_sub_mul_test(
     b = T(3),
     c = T(4),
 )
+    g = op(a, b, c)
+    @test g == buffered_operate!(nothing, op, MA.copy_if_mutable(a), b, c)
     buffer = buffer_for(op, typeof(a), typeof(b), typeof(c))
     alloc_test(() -> buffered_operate!(buffer, op, a, b, c), 0)
 end
