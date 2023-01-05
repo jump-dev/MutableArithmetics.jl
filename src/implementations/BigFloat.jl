@@ -85,7 +85,8 @@ function operate!(::typeof(-), x::BigFloat)
         (Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
         x,
         x,
-        Base.MPFR.ROUNDING_MODE[])
+        Base.MPFR.ROUNDING_MODE[],
+    )
     return x
 end
 
@@ -98,7 +99,8 @@ function operate!(::typeof(Base.abs), x::BigFloat)
         (Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
         x,
         x,
-        Base.MPFR.ROUNDING_MODE[])
+        Base.MPFR.ROUNDING_MODE[],
+    )
     return x
 end
 
