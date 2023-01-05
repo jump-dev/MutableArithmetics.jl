@@ -23,6 +23,9 @@ end
 @testset "BigFloat negation and absolute value" begin
     include("bigfloat_neg_abs.jl")
 end
+@testset "BigFloat dot" begin
+    include("bigfloat_dot.jl")
+end
 @testset "Broadcast" begin
     include("broadcast.jl")
 end

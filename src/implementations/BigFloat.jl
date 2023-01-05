@@ -213,3 +213,167 @@ function operate_to!(
 ) where {N}
     return operate_to!(output, add_sub_op(op), x, *(y, z, args...))
 end
+
+struct DotBuffer{F<:Real}
+    compensation::F
+    summation_temp::F
+    multiplication_temp::F
+    inner_temp::F
+
+    DotBuffer{F}() where {F<:Real} = new{F}(ntuple(i -> F(), Val{4}())...)
+end
+
+function buffer_for(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{V},
+    ::Type{V},
+) where {V<:AbstractVector{BigFloat}}
+    return DotBuffer{BigFloat}()
+end
+
+# Dot product using Kahan-Babuška-Neumaier compensated summation.
+#
+# Currently restricted to BigFloat, but easily extendable to other
+# similar types, if any such types appear in the ecosystem.
+#
+# Neumaier's 1974 paper is in German and not currently available from
+# Google Scholar, but a scanned version is here:
+# https://www.mat.univie.ac.at/~neum/scan/01.pdf
+#
+# Neumaier 1974:
+#   * Rundungsfehleranalyse einiger Verfahren zur Summation endlicher
+#     Summen
+#   * English name: Rounding Error Analysis of Some Methods for Summing
+#     Finite Sums
+#   * DOI: https://doi.org/10.1002%2Fzamm.19740540106
+#
+# The paper has the pseudocode on page two of the PDF, in section 2,
+# subsection "IV. Verbessertes Kahan-Babuška-Verfahren".
+#
+# Wikipedia page and section:
+# https://en.wikipedia.org/w/index.php?title=Kahan_summation_algorithm&oldid=1114844162#Further_enhancements
+#
+# TODO: further improvement: Ogita, Rump and Oishi have a compensated
+#       algorithm specifically tailored for dot product, so it would
+#       be better to use that (I found out only after writing the code
+#       here)
+#
+# Pseudocode as in Neumaier's 1974 paper:
+#
+#   s_0 := 0
+#
+#   # A running compensation for lost low-order bits.
+#   w_0 := 0
+#
+#   for m ∈ 1:n
+#     s_m := a_m + s_(m-1)
+#
+#     if abs(a_m) ≤ abs(s_(m-1))
+#       w_m := w_(m-1) + (a_m + (s_(m-1) - s_m))
+#     else
+#       w_m := w_(m-1) + (s_(m-1) + (a_m - s_m))
+#     end
+#   end
+#
+#   # The result, with the correction only applied once in the very
+#   # end.
+#   s := s_n + w_n
+#
+# Pseudocode as in the Wikipedia page on Kahan summation (equivalent to
+# Neumaier, but closer to the implementation):
+#
+#   function KahanBabushkaNeumaierSum(input)
+#       sum = 0.0
+#
+#       # A running compensation for lost low-order bits.
+#       c = 0.0
+#
+#       for i ∈ eachindex(input)
+#           t = sum + input[i]
+#
+#           if abs(input[i]) ≤ abs(sum)
+#               c += (sum - t) + input[i]
+#           else
+#               c += (input[i] - t) + sum
+#           end
+#
+#           sum = t
+#       end
+#
+#       # The result, with the correction only applied once in the very
+#       # end.
+#       sum + c
+#   end
+function buffered_operate_to!(
+    buf::DotBuffer{F},
+    sum::F,
+    ::typeof(LinearAlgebra.dot),
+    x::AbstractVector{F},
+    y::AbstractVector{F},
+) where {F<:BigFloat}
+    local set! = function (out::F, in::F)
+        ccall(
+            (:mpfr_set, :libmpfr),
+            Int32,
+            (Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
+            out,
+            in,
+            Base.MPFR.ROUNDING_MODE[],
+        )
+        return nothing
+    end
+
+    local swap! = function (x::BigFloat, y::BigFloat)
+        ccall((:mpfr_swap, :libmpfr), Cvoid, (Ref{BigFloat}, Ref{BigFloat}), x, y)
+        return nothing
+    end
+
+    # Returns abs(x) <= abs(y) without allocating.
+    local abs_lte_abs = function (x::F, y::F)
+        local x_is_neg = signbit(x)
+        local y_is_neg = signbit(y)
+
+        local x_neg = x_is_neg != y_is_neg
+
+        x_neg && operate!(-, x)
+
+        local ret = if y_is_neg
+            y <= x
+        else
+            x <= y
+        end
+
+        x_neg && operate!(-, x)
+
+        return ret
+    end
+
+    operate!(zero, sum)
+    operate!(zero, buf.compensation)
+
+    for i in 0:(length(x)-1)
+        set!(buf.multiplication_temp, x[begin+i])
+        operate!(*, buf.multiplication_temp, y[begin+i])
+
+        operate!(zero, buf.summation_temp)
+        operate_to!(buf.summation_temp, +, buf.multiplication_temp, sum)
+
+        if abs_lte_abs(buf.multiplication_temp, sum)
+            set!(buf.inner_temp, sum)
+            operate!(-, buf.inner_temp, buf.summation_temp)
+            operate!(+, buf.inner_temp, buf.multiplication_temp)
+        else
+            set!(buf.inner_temp, buf.multiplication_temp)
+            operate!(-, buf.inner_temp, buf.summation_temp)
+            operate!(+, buf.inner_temp, sum)
+        end
+
+        operate!(+, buf.compensation, buf.inner_temp)
+
+        swap!(sum, buf.summation_temp)
+    end
+
+    operate!(+, sum, buf.compensation)
+
+    return sum
+end
