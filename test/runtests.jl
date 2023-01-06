@@ -20,6 +20,9 @@ end
 @testset "BigInt" begin
     include("big.jl")
 end
+@testset "BigFloat negation and absolute value" begin
+    include("bigfloat_neg_abs.jl")
+end
 @testset "Broadcast" begin
     include("broadcast.jl")
 end
