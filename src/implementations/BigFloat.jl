@@ -79,28 +79,14 @@ function operate_to!(output::BigFloat, ::typeof(-), a::BigFloat, b::BigFloat)
 end
 
 function operate!(::typeof(-), x::BigFloat)
-    ccall(
-        (:mpfr_neg, :libmpfr),
-        Int32,
-        (Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
-        x,
-        x,
-        Base.MPFR.ROUNDING_MODE[],
-    )
+    x.sign = -x.sign
     return x
 end
 
 # Base.abs
 
 function operate!(::typeof(Base.abs), x::BigFloat)
-    ccall(
-        (:mpfr_abs, :libmpfr),
-        Int32,
-        (Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
-        x,
-        x,
-        Base.MPFR.ROUNDING_MODE[],
-    )
+    x.sign = abs(x.sign)
     return x
 end
 
