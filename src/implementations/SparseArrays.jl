@@ -264,7 +264,7 @@ end
 
 # Taken from the internal function `Base.top_set_bit`, added in
 # https://github.com/JuliaLang/julia/pull/47523
-_top_set_bit(x::Integer) = 8sizeof(x) - leading_zeros(x)
+_top_set_bit(x::Integer) = 8 * sizeof(x) - leading_zeros(x)
 
 # Taken from `SparseArrays.prefer_sort` added in Julia v1.1.
 function _prefer_sort(nz::Integer, m::Integer)
