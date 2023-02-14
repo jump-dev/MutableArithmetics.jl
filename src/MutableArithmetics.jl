@@ -50,6 +50,8 @@ end
 const AddSubMul = Union{typeof(add_mul),typeof(sub_mul)}
 add_sub_op(::typeof(add_mul)) = +
 add_sub_op(::typeof(sub_mul)) = -
+add_sub_mul_op(::typeof(+)) = add_mul
+add_sub_mul_op(::typeof(-)) = sub_mul
 
 """
     iszero!!(x)
