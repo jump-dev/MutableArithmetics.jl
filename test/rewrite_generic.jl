@@ -284,6 +284,21 @@ function test_splatting()
     return
 end
 
+struct _KwargRef{K,V}
+    data::Dict{K,V}
+end
+
+Base.getindex(x::_KwargRef; i) = x.data[i]
+
+function test_rewrite_kw_in_ref()
+    x = _KwargRef(Dict(i => i + 1 for i in 2:4))
+    @test MA.@rewrite(
+        sum(x[i = j] for j in 2:4),
+        move_factors_into_sums = false,
+    ) == 12
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
