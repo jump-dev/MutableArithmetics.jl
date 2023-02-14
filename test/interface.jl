@@ -94,3 +94,18 @@ end
     )
     @test_throws err MA.buffered_operate!(x, +, x, x)
 end
+
+@testset "operate" begin
+    @testset "$(typeof(x))" for x in [2, big(3)]
+        @testset "$op" for op in [+, *, gcd, lcm]
+            @test MA.operate(op, x) !== x
+        end
+        ops = [+, *, MA.add_mul, MA.sub_mul, MA.add_dot, gcd, lcm]
+        @testset "$op" for op in ops
+            @test MA.operate(op, x, x, x, x) !== op(x, x, x, x)
+        end
+        @testset "$op" for op in [-, /, div]
+            @test MA.operate(op, x, x) !== op(x, x)
+        end
+    end
+end
