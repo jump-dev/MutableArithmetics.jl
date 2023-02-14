@@ -212,7 +212,9 @@ operate(::typeof(convert), ::Type{T}, x) where {T} = convert(T, x)
 
 operate(::typeof(convert), ::Type{T}, x::T) where {T} = copy_if_mutable(x)
 
-operate(::Union{typeof(+),typeof(*),typeof(gcd),typeof(lcm)}, x) = copy_if_mutable(x)
+function operate(::Union{typeof(+),typeof(*),typeof(gcd),typeof(lcm)}, x)
+    return copy_if_mutable(x)
+end
 
 # We could only give `typeof(x)` to `zero` and `one` to be sure that modifying
 # the returned object cannot alter `x` but for some objects, `one` and `zero`

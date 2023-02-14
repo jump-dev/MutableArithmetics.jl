@@ -100,9 +100,10 @@ end
         @testset "$op" for op in [+, *, gcd, lcm]
             @test MA.operate(op, x) !== x
         end
-        @testset "$op" for op in [+, *, MA.add_mul, MA.sub_mul, MA.add_dot, gcd, lcm]
+        ops = [+, *, MA.add_mul, MA.sub_mul, MA.add_dot, gcd, lcm]
+        @testset "$op" for op in ops
             @test MA.operate(op, x, x, x, x) !== op(x, x, x, x)
-        end 
+        end
         @testset "$op" for op in [-, /, div]
             @test MA.operate(op, x, x) !== op(x, x)
         end
