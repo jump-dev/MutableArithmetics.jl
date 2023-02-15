@@ -340,17 +340,6 @@ function _is_comparison(ex::Expr)
     return false
 end
 
-# `x[i = 1]` is a somewhat common user error. Catch it here.
-function _has_assignment_in_ref(ex::Expr)
-    if isexpr(ex, :ref)
-        return any(x -> isexpr(x, :kw), ex.args)
-    else
-        return any(_has_assignment_in_ref, ex.args)
-    end
-end
-
-_has_assignment_in_ref(other) = false
-
 function _rewrite_sum(
     vectorized::Bool,
     minus::Bool,
@@ -702,8 +691,6 @@ function _rewrite(
         )
     elseif isa(inner_factor, Expr) && _is_comparison(inner_factor)
         error("Unexpected comparison in expression `$inner_factor`.")
-    elseif isa(inner_factor, Expr) && _has_assignment_in_ref(inner_factor)
-        error("Unexpected assignment in expression `$inner_factor`.")
     end
     # None of the special cases were hit! This probably means we are vectorized.
     code = _write_add_mul(

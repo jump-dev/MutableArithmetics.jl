@@ -42,11 +42,6 @@ function is_supported_test(T)
 end
 
 function error_test(x, y, z)
-    # $(:(y[j=1])) does not print the same on Julia v1.3 or Julia 1.4
-    err = ErrorException("Unexpected assignment in expression `$(:(y[j=1]))`.")
-    @test_macro_throws err MA.@rewrite y[j = 1]
-    err = ErrorException("Unexpected assignment in expression `$(:(x[i=1]))`.")
-    @test_macro_throws err MA.@rewrite y + x[i = 1] + z
     err = ErrorException(
         "The curly syntax (sum{},prod{},norm2{}) is no longer supported. Expression: `sum{(i for i = 1:2)}`.",
     )
@@ -162,4 +157,15 @@ end
         @test MA.@rewrite(X - Y) == X - Y
         @test MA.@rewrite(Y - X) == Y - X
     end
+end
+
+struct _KwargRef{K,V}
+    data::Dict{K,V}
+end
+
+Base.getindex(x::_KwargRef; i) = x.data[i]
+
+@testset "test_rewrite_kw_in_ref" begin
+    x = _KwargRef(Dict(i => i + 1 for i in 2:4))
+    @test MA.@rewrite(sum(x[i = j] for j in 2:4)) == 12
 end
