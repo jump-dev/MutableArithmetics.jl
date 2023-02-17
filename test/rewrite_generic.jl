@@ -8,9 +8,7 @@ module TestRewriteGeneric
 
 using Test
 
-import MutableArithmetics
-
-const MA = MutableArithmetics
+import MutableArithmetics as MA
 
 function runtests()
     for name in names(@__MODULE__; all = true)

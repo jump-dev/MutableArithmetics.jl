@@ -5,8 +5,7 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 using Test
-import MutableArithmetics
-const MA = MutableArithmetics
+import MutableArithmetics as MA
 
 @testset "promote_operation" begin
     @test MA.promote_operation(MA.zero, Int) == Int

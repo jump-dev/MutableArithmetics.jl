@@ -372,11 +372,7 @@ end
 
 function _start_summing(::Nothing, first_term::Function)
     variable = gensym()
-    return Expr(
-        :block,
-        :($variable = MutableArithmetics.Zero()),
-        first_term(variable),
-    )
+    return Expr(:block, Expr(:(=), variable, Zero()), first_term(variable))
 end
 
 function _start_summing(current_sum::Symbol, first_term::Function)
@@ -392,19 +388,13 @@ function _write_add_mul(
     right_factors,
     new_var::Symbol,
 )
-    if vectorized
-        f = :(MutableArithmetics.broadcast!!)
-    else
-        f = :(MutableArithmetics.operate!!)
-    end
-    op = minus ? :(MutableArithmetics.sub_mul) : :(MutableArithmetics.add_mul)
     return _start_summing(
         current_sum,
         current_sum -> begin
             call_expr = Expr(
                 :call,
-                f,
-                op,
+                vectorized ? broadcast!! : operate!!,
+                minus ? sub_mul : add_mul,
                 current_sum,
                 left_factors...,
                 inner_factors...,

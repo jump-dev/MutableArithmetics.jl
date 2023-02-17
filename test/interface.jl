@@ -5,8 +5,7 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 using Test
-import MutableArithmetics
-const MA = MutableArithmetics
+import MutableArithmetics as MA
 
 struct DummyMutable end
 

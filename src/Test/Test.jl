@@ -6,8 +6,7 @@
 
 module Test
 
-import MutableArithmetics
-const MA = MutableArithmetics
+import MutableArithmetics as MA
 
 using LinearAlgebra, SparseArrays, Test
 
