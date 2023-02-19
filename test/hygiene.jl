@@ -9,10 +9,12 @@
 
 module M
 using Test
-import MutableArithmetics
+# Import it as a different name so that we test whether MutableArithmetics is
+# needed in the current scope.
+import MutableArithmetics as NewSymbolMA
 
 macro _rewrite(expr)
-    variable, code = MutableArithmetics.rewrite(expr)
+    variable, code = NewSymbolMA.rewrite(expr)
     return quote
         $code
         $variable
@@ -20,23 +22,23 @@ macro _rewrite(expr)
 end
 
 # Don't include this in `@test` to make sure it is in global scope
-x = MutableArithmetics.@rewrite sum(i for i in 1:10)
+x = NewSymbolMA.@rewrite sum(i for i in 1:10)
 @test x == 55
 x = @_rewrite sum(i for i in 1:10)
 @test x == 55
 
-x = MutableArithmetics.@rewrite sum(i for i in 1:10 if isodd(i))
+x = NewSymbolMA.@rewrite sum(i for i in 1:10 if isodd(i))
 @test x == 25
 x = @_rewrite sum(i for i in 1:10 if isodd(i))
 @test x == 25
 
-x = MutableArithmetics.@rewrite sum(i * j for i in 1:4 for j ∈ 1:4 if i == j)
+x = NewSymbolMA.@rewrite sum(i * j for i in 1:4 for j ∈ 1:4 if i == j)
 @test x == 30
 x = @_rewrite sum(i * j for i in 1:4 for j ∈ 1:4 if i == j)
 @test x == 30
 
 x = big(1)
-y = MutableArithmetics.@rewrite(x + (x + 1)^1)
+y = NewSymbolMA.@rewrite(x + (x + 1)^1)
 @test y == 3
 
 end

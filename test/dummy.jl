@@ -5,8 +5,7 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 using LinearAlgebra
-import MutableArithmetics
-const MA = MutableArithmetics
+import MutableArithmetics as MA
 
 # It does not support operation with floats on purpose to test that
 # MutableArithmetics does not convert to float when it shouldn't.

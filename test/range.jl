@@ -5,8 +5,7 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 using Test
-import MutableArithmetics
-const MA = MutableArithmetics
+import MutableArithmetics as MA
 
 function mutating_step_range_test(::Type{T}) where {T}
     r = MA.MutatingStepRange(T(2), T(3), T(9))

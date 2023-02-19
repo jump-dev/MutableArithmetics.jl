@@ -9,11 +9,9 @@ module TestInterfaceSparseArrays
 using Test
 
 import LinearAlgebra
-import MutableArithmetics
+import MutableArithmetics as MA
 import Random
 import SparseArrays
-
-const MA = MutableArithmetics
 
 function runtests()
     for name in names(@__MODULE__; all = true)
