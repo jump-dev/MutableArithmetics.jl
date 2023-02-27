@@ -664,15 +664,15 @@ function buffered_operate_fallback!!(
     return buffered_operate!(buffer, op, args...)
 end
 
-# For most types, `dot(b, c) = transpose(b) * c`.
-promote_operation_fallback(::typeof(transpose), a::Type) = a
+# For most types, `dot(b, c) = adjoint(b) * c`.
+promote_operation_fallback(::typeof(adjoint), a::Type) = a
 
 function promote_operation_fallback(
     ::typeof(LinearAlgebra.dot),
     ::Type{A},
     ::Type{B},
 ) where {A,B}
-    return promote_operation(*, promote_operation(transpose, A), B)
+    return promote_operation(*, A, B)
 end
 
 function promote_operation_fallback(
@@ -685,15 +685,15 @@ function promote_operation_fallback(
 end
 
 function buffer_for(::typeof(add_dot), a::Type, b::Type, c::Type)
-    return buffer_for(add_mul, a, promote_operation(transpose, b), c)
+    return buffer_for(add_mul, a, b, c)
 end
 
 function operate_to_fallback!(::IsMutable, output, ::typeof(add_dot), a, b, c)
-    return operate_to!(output, add_mul, a, transpose(b), c)
+    return operate_to!(output, add_mul, a, b, c)
 end
 
 function operate_fallback!(::IsMutable, ::typeof(add_dot), a, b, c)
-    return operate!(add_mul, a, transpose(b), c)
+    return operate!(add_mul, a, b, c)
 end
 
 function buffered_operate_to_fallback!(
@@ -705,7 +705,7 @@ function buffered_operate_to_fallback!(
     b,
     c,
 )
-    return buffered_operate_to!(buffer, output, add_mul, a, transpose(b), c)
+    return buffered_operate_to!(buffer, output, add_mul, a, b, c)
 end
 
 function buffered_operate_fallback!(
@@ -716,5 +716,5 @@ function buffered_operate_fallback!(
     b,
     c,
 )
-    return buffered_operate!(buffer, add_mul, a, transpose(b), c)
+    return buffered_operate!(buffer, add_mul, a, b, c)
 end
