@@ -6,6 +6,7 @@
 
 using Test
 import MutableArithmetics as MA
+import LinearAlgebra
 
 struct DummyMutable end
 
@@ -141,4 +142,16 @@ end
 @testset "similar_array_type" begin
     @test MA.similar_array_type(BitArray{2}, Int) == Array{Int,2}
     @test MA.similar_array_type(BitArray{2}, Bool) == BitArray{2}
+end
+
+@testset "similar_array_type_Diagonal" begin
+    z = zeros(2, 2)
+    y = MA.operate!!(MA.add_mul, z, big(1), LinearAlgebra.I(2))
+    @test y == BigFloat[1 0; 0 1]
+    y = MA.operate!!(MA.add_mul, z, 2.4, LinearAlgebra.I(2))
+    @test y === z
+    @test y == Float64[2.4 0; 0 2.4]
+    z = zeros(2, 2)
+    y = MA.operate!!(MA.add_mul, z, 2.4, LinearAlgebra.Diagonal(1:2))
+    @test y == LinearAlgebra.Diagonal(2.4 * (1:2))
 end
