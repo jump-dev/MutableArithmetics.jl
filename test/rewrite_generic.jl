@@ -228,10 +228,37 @@ end
 
 function test_rewrite_sums_init()
     @test_rewrite sum(i for i in 1:2; init = 2)
+    @test_rewrite sum(i for i in 1:2; init = -1)
     @test_rewrite sum(i * j for i in 1:2 for j in 1:3; init = -1)
-    @test_rewrite sum(i for i in 1:2; init = 2)
     @test_rewrite sum(i * j for i in 1:2 for j in 1:3; init = 2 * 3)
     @test_rewrite sum(i * j for i in 1:2 for j in i:3; init = 2 * 3)
+    return
+end
+
+function test_rewrite_sums_init_positional()
+    # Needed so we don't replace `, init` with `; init`.
+    #! format:off
+    @test MA.@rewrite(
+        sum(i for i in 1:2, init = 2),
+        move_factors_into_sums = false,
+    ) == 5
+    @test MA.@rewrite(
+        sum(i for i in 1:2, init = -1),
+        move_factors_into_sums = false,
+    ) == 2
+    @test MA.@rewrite(
+        sum(i * j for i in 1:2 for j in 1:3, init = -1),
+        move_factors_into_sums = false,
+    ) == 17
+    @test MA.@rewrite(
+        sum(i * j for i in 1:2 for j in 1:3, init = 2 * 3),
+        move_factors_into_sums = false,
+    ) == 24
+    @test MA.@rewrite(
+        sum(i * j for i in 1:2 for j in i:3, init = 2 * 3),
+        move_factors_into_sums = false,
+    ) == 22
+    #! format:on
     return
 end
 
