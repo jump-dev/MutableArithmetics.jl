@@ -88,6 +88,28 @@ function _rewrite_generic(stack::Expr, expr::Expr)
             return _rewrite_generic_generator(stack, :+, expr.args[3], root)
         else
             # Summations use :+ as the reduction operator.
+            init_expr = expr.args[2].args[end]
+            if Meta.isexpr(init_expr, :(=)) && init_expr.args[1] == :init
+                # sum(iter, init) form!
+                root = gensym()
+                init, _ = _rewrite_generic(stack, init_expr.args[2])
+                push!(stack.args, :($root = $init))
+                new_expr = copy(expr.args[2])
+                pop!(new_expr.args)
+                return _rewrite_generic_generator(stack, :+, new_expr, root)
+            elseif Meta.isexpr(expr.args[2], :flatten)
+                # sum(iter for iter, init) form!
+                first_generator = expr.args[2].args[1].args[1]
+                init_expr = first_generator.args[end]
+                if Meta.isexpr(init_expr, :(=)) && init_expr.args[1] == :init
+                    root = gensym()
+                    init, _ = _rewrite_generic(stack, init_expr.args[2])
+                    push!(stack.args, :($root = $init))
+                    new_expr = copy(expr.args[2])
+                    pop!(new_expr.args[1].args[1].args)
+                    return _rewrite_generic_generator(stack, :+, new_expr, root)
+                end
+            end
             return _rewrite_generic_generator(stack, :+, expr.args[2])
         end
     end
