@@ -214,6 +214,16 @@ function operate_to!(
     return operate_to!(output, add_sub_op(op), x, *(y, z, args...))
 end
 
+# LinearAlgebra.dot
+
+function promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{V},
+    ::Type{V},
+) where {F<:BigFloat,V<:AbstractVector{F}}
+    return F
+end
+
 struct DotBuffer{F<:Real}
     compensation::F
     summation_temp::F
