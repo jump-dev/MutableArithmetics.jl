@@ -28,6 +28,9 @@ end
 @testset "BigFloat dot" begin
     include("bigfloat_dot.jl")
 end
+@testset "evalpoly" begin
+    include("evalpoly.jl")
+end
 @testset "Broadcast" begin
     include("broadcast.jl")
 end
