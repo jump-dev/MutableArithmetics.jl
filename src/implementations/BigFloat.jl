@@ -121,6 +121,66 @@ function operate_to!(output::BigFloat, ::typeof(*), a::BigFloat, b::BigFloat)
     return output
 end
 
+# Base.fma
+
+function promote_operation(
+    ::typeof(Base.fma),
+    ::Type{F},
+    ::Type{F},
+    ::Type{F},
+) where {F<:BigFloat}
+    return F
+end
+
+function operate_to!(
+    output::F,
+    ::typeof(Base.fma),
+    x::F,
+    y::F,
+    z::F,
+) where {F<:BigFloat}
+    ccall(
+        (:mpfr_fma, :libmpfr),
+        Int32,
+        (Ref{F}, Ref{F}, Ref{F}, Ref{F}, _MPFRRoundingMode),
+        output,
+        x,
+        y,
+        z,
+        Base.MPFR.ROUNDING_MODE[],
+    )
+    return output
+end
+
+function operate!(::typeof(Base.fma), x::F, y::F, z::F) where {F<:BigFloat}
+    return operate_to!(x, Base.fma, x, y, z)
+end
+
+# Base.muladd
+
+function promote_operation(
+    ::typeof(Base.muladd),
+    ::Type{F},
+    ::Type{F},
+    ::Type{F},
+) where {F<:BigFloat}
+    return F
+end
+
+function operate_to!(
+    output::F,
+    ::typeof(Base.muladd),
+    x::F,
+    y::F,
+    z::F,
+) where {F<:BigFloat}
+    return operate_to!(output, Base.fma, x, y, z)
+end
+
+function operate!(::typeof(Base.muladd), x::F, y::F, z::F) where {F<:BigFloat}
+    return operate!(Base.fma, x, y, z)
+end
+
 function operate_to!(
     output::BigFloat,
     op::Union{typeof(+),typeof(-),typeof(*)},
