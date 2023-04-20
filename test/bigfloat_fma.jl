@@ -10,7 +10,7 @@ function test_fma_output_values(x::F, y::F, z::F) where {F<:BigFloat}
     @test one_rounding_reference != two_roundings_reference
 
     @testset "fma $op output values" for op in (MA.operate!, MA.operate!!)
-        (a, b, c) = map(t -> t + zero(F), (x, y, z))  # copy
+        (a, b, c) = map(MA.copy_if_mutable, (x, y, z))
         @inferred op(fma, a, b, c)
         @test one_rounding_reference == a
         @test y == b
@@ -18,7 +18,7 @@ function test_fma_output_values(x::F, y::F, z::F) where {F<:BigFloat}
     end
 
     @testset "fma $op output values" for op in (MA.operate_to!, MA.operate_to!!)
-        (a, b, c) = map(t -> t + zero(F), (x, y, z))  # copy
+        (a, b, c) = map(MA.copy_if_mutable, (x, y, z))
         out = F()
         @inferred op(out, fma, a, b, c)
         @test one_rounding_reference == out

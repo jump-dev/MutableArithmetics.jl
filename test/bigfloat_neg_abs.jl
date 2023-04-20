@@ -5,7 +5,7 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 function neg_abs_test(f::F, x::BigFloat) where {F<:Function}
-    backup = x + 0
+    backup = MA.copy_if_mutable(x)
     output = MA.operate!(f, x)
     @test f(backup) == output == x
     return
