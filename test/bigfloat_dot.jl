@@ -4,7 +4,7 @@
 # v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
-backup_bigfloats(v::AbstractVector{BigFloat}) = map(x -> x + 0, v)
+backup_bigfloats(v::AbstractVector{BigFloat}) = map(MA.copy_if_mutable, v)
 
 absolute_error(accurate::Real, approximate::Real) = abs(accurate - approximate)
 
