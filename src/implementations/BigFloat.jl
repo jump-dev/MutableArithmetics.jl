@@ -437,3 +437,21 @@ function buffered_operate_to!(
 
     return sum
 end
+
+# Base.evalpoly
+
+function operate!(
+    op::typeof(Base.evalpoly),
+    out::F,
+    coefs::Union{Tuple,AbstractVector},
+) where {F<:BigFloat}
+    return operate_to!(out, op, mutable_copy(out), coefs)
+end
+
+function operate(
+    op::typeof(Base.evalpoly),
+    x::F,
+    coefs::Union{Tuple,AbstractVector},
+) where {F<:BigFloat}
+    return operate_to!(zero(x), op, x, coefs)
+end

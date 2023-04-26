@@ -111,6 +111,8 @@ include("implementations/MutatingStepRange.jl")
 include("implementations/Rational.jl")
 include("implementations/SparseArrays.jl")
 
+include("evalpoly.jl")
+
 include("reduce.jl")
 
 """

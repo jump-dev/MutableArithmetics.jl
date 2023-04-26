@@ -206,7 +206,13 @@ function operate(
     return op(x, y, args...)
 end
 
-operate(op::Union{typeof(-),typeof(/),typeof(div)}, x, y) = op(x, y)
+function operate(
+    op::Union{typeof(-),typeof(/),typeof(div),typeof(evalpoly)},
+    x,
+    y,
+)
+    return op(x, y)
+end
 
 operate(::typeof(convert), ::Type{T}, x) where {T} = convert(T, x)
 
