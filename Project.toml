@@ -1,7 +1,7 @@
 name = "MutableArithmetics"
 uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 authors = ["Gilles Peiffer", "Benoît Legat", "Sascha Timme"]
-version = "1.2.3"
+version = "1.2.4"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
