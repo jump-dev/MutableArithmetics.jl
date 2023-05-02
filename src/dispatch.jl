@@ -538,16 +538,11 @@ function Base.:*(
     return mul(A, B)
 end
 
-const StridedMaybeAdjOrTransMat{T} = Union{
-    StridedMatrix{T},
-    LinearAlgebra.Adjoint{T,<:StridedMatrix},
-    LinearAlgebra.Transpose{T,<:StridedMatrix},
-}
-
 # See https://github.com/JuliaLang/julia/pull/37898
 # The default fallback only used `promote_type` so it may get its wrong, e.g.,
 # for JuMP and MultivariatePolynomials.
 if VERSION >= v"1.7.0-DEV.1284"
+    using LinearAlgebra: StridedMaybeAdjOrTransMat
     _mat_mat_scalar(A, B, γ) = operate!!(*, operate(*, A, B), γ)
     function LinearAlgebra.mat_mat_scalar(
         A::StridedMaybeAdjOrTransMat{<:AbstractMutable},
