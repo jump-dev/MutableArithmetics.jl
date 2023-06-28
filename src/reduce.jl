@@ -38,16 +38,21 @@ end
 
 _concrete_eltype(x) = isempty(x) ? eltype(x) : typeof(first(x))
 
+
+function operate!(op::typeof(add_dot), output, args::Vararg{Any,N}) where {N}
+    T = promote_map_reduce(op, _concrete_eltype.(args)...)
+    buffer = buffer_for(op, T, eltype.(args)...)
+    for I in zip(eachindex.(args)...)
+        output = buffered_operate!!(buffer, op, output, getindex.(args, I)...)
+    end
+    return output
+end
+
 function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     _check_same_length(args...)
     T = promote_map_reduce(op, _concrete_eltype.(args)...)
     accumulator = neutral_element(reduce_op(op), T)
-    buffer = buffer_for(op, T, eltype.(args)...)
-    for I in zip(eachindex.(args)...)
-        accumulator =
-            buffered_operate!!(buffer, op, accumulator, getindex.(args, I)...)
-    end
-    return accumulator
+    return operate!(op, accumulator, args...)
 end
 
 function operate(::typeof(sum), a::AbstractArray)
