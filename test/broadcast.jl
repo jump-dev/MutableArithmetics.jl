@@ -44,3 +44,11 @@ end
     @test MA.@rewrite(y .* x) == y .* x
     @test MA.@rewrite(x .* y) == x .* y
 end
+
+struct Struct221 <: AbstractArray{Int,1} end
+struct BroadcastStyle221 <: Broadcast.BroadcastStyle end
+Base.BroadcastStyle(::Type{Struct221}) = BroadcastStyle221()
+
+@testset "promote_broadcast_for_new_style" begin
+    @test MA.promote_broadcast(MA.add_mul, Vector{Int}, Struct221) === Any
+end

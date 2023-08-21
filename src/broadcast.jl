@@ -23,6 +23,19 @@ function _broadcasted_type(
     return BitArray{N}
 end
 
+"""
+This method is a generic fallback for array types that are not
+`DefaultArrayStyle`. Because we can't tell the container from a generic
+broadcast style, we fallback to `Any`, which is always a valid super type (just
+not a helpful one).
+
+In MutableArithmetics, `_broadcasted_type` appears only in `promote_broadcast`,
+which itself appears only in `broadcast_mutability`, and so types hitting this
+method will fallback to the `IsNotMutable()` branch, which is the expected
+outcome.
+"""
+_broadcasted_type(::Broadcast.BroadcastStyle, ::Base.HasShape, ::Type) = Any
+
 # Same as `Base.Broadcast._combine_styles` but with types as argument.
 _combine_styles() = Broadcast.DefaultArrayStyle{0}()
 
