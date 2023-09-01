@@ -324,6 +324,18 @@ function test_rewrite_kw_in_ref()
     return
 end
 
+function test_rewrite_expression()
+    x = [1.2]
+    @test MA.@rewrite(x + 2 * x, move_factors_into_sums = false) == 3x
+    @test MA.@rewrite(x + *(2, x, 3), move_factors_into_sums = false) ==
+          x + *(2, x, 3)
+    y = 1.2
+    @test MA.@rewrite(y + 2 * y, move_factors_into_sums = false) == 3y
+    @test MA.@rewrite(y + *(2, y, 3), move_factors_into_sums = false) ==
+          y + *(2, y, 3)
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()

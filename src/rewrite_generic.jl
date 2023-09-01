@@ -124,14 +124,18 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         elseif length(expr.args) == 3 && _is_call(expr.args[3], :*)
             # +(x, *(y...)) => add_mul(x, y...)
             x, is_mutable = _rewrite_generic(stack, expr.args[2])
-            rhs = Expr(:call, operate!!, add_mul, x)
+            rhs = if is_mutable
+                Expr(:call, operate!!, add_mul, x)
+            else
+                Expr(:call, operate, add_mul, x)
+            end
             for i in 2:length(expr.args[3].args)
                 yi, _ = _rewrite_generic(stack, expr.args[3].args[i])
                 push!(rhs.args, yi)
             end
             root = gensym()
             push!(stack.args, :($root = $rhs))
-            return root, is_mutable
+            return root, true
         end
         return _rewrite_generic_to_nested_op(stack, expr, add_mul)
     elseif expr.args[1] == :-
