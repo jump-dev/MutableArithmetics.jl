@@ -330,6 +330,14 @@ function test_rewrite_expression()
     @test MA.@rewrite(x + *(2, x, 3), move_factors_into_sums = false) ==
           x + *(2, x, 3)
     y = 1.2
+    @test MA.@rewrite(
+        sum(y for i in 1:2) + 2y,
+        move_factors_into_sums = false
+    ) == 4y
+    @test MA.@rewrite(
+        sum(y for i in 1:2) + y * y,
+        move_factors_into_sums = false
+    ) == 2y + y^2
     @test MA.@rewrite(y + 2 * y, move_factors_into_sums = false) == 3y
     @test MA.@rewrite(y + *(2, y, 3), move_factors_into_sums = false) ==
           y + *(2, y, 3)
