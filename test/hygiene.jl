@@ -32,9 +32,9 @@ x = NewSymbolMA.@rewrite sum(i for i in 1:10 if isodd(i))
 x = @_rewrite sum(i for i in 1:10 if isodd(i))
 @test x == 25
 
-x = NewSymbolMA.@rewrite sum(i * j for i in 1:4 for j ∈ 1:4 if i == j)
+x = NewSymbolMA.@rewrite sum(i * j for i in 1:4 for j in 1:4 if i == j)
 @test x == 30
-x = @_rewrite sum(i * j for i in 1:4 for j ∈ 1:4 if i == j)
+x = @_rewrite sum(i * j for i in 1:4 for j in 1:4 if i == j)
 @test x == 30
 
 x = big(1)
