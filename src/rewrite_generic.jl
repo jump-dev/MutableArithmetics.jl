@@ -51,6 +51,10 @@ function _is_parameters(expr)
     return Meta.isexpr(expr, :call, 3) && Meta.isexpr(expr.args[2], :parameters)
 end
 
+function _is_kwarg(expr, kwarg::Symbol)
+    return Meta.isexpr(expr, :kw) && expr.args[1] == kwarg
+end
+
 """
     _rewrite_generic(stack::Expr, expr::Expr)
 
@@ -78,14 +82,20 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         # come in two forms: `sum(i for i=I, j=J)` or `sum(i for i=I for j=J)`.
         # The latter is a `:flatten` expression and needs additional handling,
         # but we delay this complexity for _rewrite_generic_generator.
-        if Meta.isexpr(expr.args[2], :parameters, 1) &&
-           Meta.isexpr(expr.args[2].args[1], :kw, 2) &&
-           expr.args[2].args[1].args[1] == :init
-            # sum(iter ; init) form!
-            root = gensym()
-            init, _ = _rewrite_generic(stack, expr.args[2].args[1].args[2])
-            push!(stack.args, :($root = $init))
-            return _rewrite_generic_generator(stack, :+, expr.args[3], root)
+        if Meta.isexpr(expr.args[2], :parameters)
+            # The summation has keyword arguments. We can deal with `init`, but
+            # not any of the others.
+            p = expr.args[2]
+            if length(p.args) == 1 && _is_kwarg(p.args[1], :init)
+                # sum(iter ; init) form!
+                root = gensym()
+                init, _ = _rewrite_generic(stack, p.args[1].args[2])
+                push!(stack.args, :($root = $init))
+                return _rewrite_generic_generator(stack, :+, expr.args[3], root)
+            else
+                # We don't know how to deal with this
+                return esc(expr), false
+            end
         else
             # Summations use :+ as the reduction operator.
             init_expr = expr.args[2].args[end]

@@ -344,6 +344,22 @@ function test_rewrite_expression()
     return
 end
 
+function test_rewrite_generic_sum_dims()
+    @test_rewrite sum([1 2; 3 4]; dims = 1)
+    @test_rewrite sum([1 2; 3 4]; dims = 2)
+    @test_rewrite sum([1 2; 3 4]; dims = 1, init = 0)
+    @test_rewrite sum([1 2; 3 4]; dims = 2, init = 0)
+    @test_rewrite sum([1 2; 3 4]; init = 0, dims = 1)
+    @test_rewrite sum([1 2; 3 4]; init = 0, dims = 2)
+    @test_rewrite sum([1 2; 3 4], dims = 1)
+    @test_rewrite sum([1 2; 3 4], dims = 2)
+    @test_rewrite sum([1 2; 3 4], dims = 1, init = 0)
+    @test_rewrite sum([1 2; 3 4], dims = 2, init = 0)
+    @test_rewrite sum([1 2; 3 4], init = 0, dims = 1)
+    @test_rewrite sum([1 2; 3 4], init = 0, dims = 2)
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
