@@ -345,55 +345,18 @@ function test_rewrite_expression()
 end
 
 function test_rewrite_generic_sum_dims()
-    x = [1 2; 3 4]
-    @test ==(
-        MA.@rewrite(sum(x; dims = 1), move_factors_into_sums = false),
-        [4 6],
-    )
-    @test ==(
-        MA.@rewrite(sum(x; dims = 2), move_factors_into_sums = false),
-        [3; 7;;],
-    )
-    @test ==(
-        MA.@rewrite(sum(x; dims = 1, init = 0), move_factors_into_sums = false),
-        [4 6],
-    )
-    @test ==(
-        MA.@rewrite(sum(x; dims = 2, init = 0), move_factors_into_sums = false),
-        [3; 7;;],
-    )
-    @test ==(
-        MA.@rewrite(sum(x; init = 0, dims = 1), move_factors_into_sums = false),
-        [4 6],
-    )
-    @test ==(
-        MA.@rewrite(sum(x; init = 0, dims = 2), move_factors_into_sums = false),
-        [3; 7;;],
-    )
-    @test ==(
-        MA.@rewrite(sum(x, dims = 1), move_factors_into_sums = false),
-        [4 6],
-    )
-    @test ==(
-        MA.@rewrite(sum(x, dims = 2), move_factors_into_sums = false),
-        [3; 7;;],
-    )
-    @test ==(
-        MA.@rewrite(sum(x, dims = 1, init = 0), move_factors_into_sums = false),
-        [4 6],
-    )
-    @test ==(
-        MA.@rewrite(sum(x, dims = 2, init = 0), move_factors_into_sums = false),
-        [3; 7;;],
-    )
-    @test ==(
-        MA.@rewrite(sum(x, init = 0, dims = 1), move_factors_into_sums = false),
-        [4 6],
-    )
-    @test ==(
-        MA.@rewrite(sum(x, init = 0, dims = 2), move_factors_into_sums = false),
-        [3; 7;;],
-    )
+    @test_rewrite sum([1 2; 3 4]; dims = 1)
+    @test_rewrite sum([1 2; 3 4]; dims = 2)
+    @test_rewrite sum([1 2; 3 4]; dims = 1, init = 0)
+    @test_rewrite sum([1 2; 3 4]; dims = 2, init = 0)
+    @test_rewrite sum([1 2; 3 4]; init = 0, dims = 1)
+    @test_rewrite sum([1 2; 3 4]; init = 0, dims = 2)
+    @test_rewrite sum([1 2; 3 4], dims = 1)
+    @test_rewrite sum([1 2; 3 4], dims = 2)
+    @test_rewrite sum([1 2; 3 4], dims = 1, init = 0)
+    @test_rewrite sum([1 2; 3 4], dims = 2, init = 0)
+    @test_rewrite sum([1 2; 3 4], init = 0, dims = 1)
+    @test_rewrite sum([1 2; 3 4], init = 0, dims = 2)
     return
 end
 
