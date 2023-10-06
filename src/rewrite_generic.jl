@@ -69,7 +69,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         # If the first argument is a splat.
         return esc(expr), false
     elseif _is_generator(expr) || _is_flatten(expr) || _is_parameters(expr)
-        if !(expr.args[1] in (:sum, :Σ, :∑))
+        if !_is_sum(expr.args[1])
             # We don't know what this is. Return the expression and don't let
             # future callers mutate.
             return esc(expr), false
