@@ -108,3 +108,16 @@ end
         end
     end
 end
+
+@testset "add_mul for BitArray" begin
+    x = BigInt[0, 0]
+    MA.operate!!(MA.add_mul, x, big(2), trues(2))
+    @test x == BigInt[2, 2]
+    MA.operate!!(MA.add_mul, x, big(3), BitVector([true, false]))
+    @test x == BigInt[5, 2]
+    x = BigInt[0 0; 0 0]
+    MA.operate!!(MA.add_mul, x, big(2), trues(2, 2))
+    @test x == BigInt[2 2; 2 2]
+    MA.operate!!(MA.add_mul, x, big(3), BitArray([true false; true true]))
+    @test x == BigInt[5 2; 5 5]
+end

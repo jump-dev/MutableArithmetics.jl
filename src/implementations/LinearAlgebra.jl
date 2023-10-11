@@ -157,6 +157,8 @@ end
 
 similar_array_type(::Type{Array{T,N}}, ::Type{S}) where {S,T,N} = Array{S,N}
 
+similar_array_type(::Type{BitArray{N}}, ::Type{S}) where {S,N} = Array{S,N}
+
 function promote_operation(
     op::typeof(*),
     A::Type{<:AbstractArray{T}},
