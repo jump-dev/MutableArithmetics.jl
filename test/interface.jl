@@ -123,6 +123,6 @@ end
 end
 
 @testset "similar_array_type" begin
-    @test MA.similar_array_type(BitArray{2}, Int) == Array{2,Int}
+    @test MA.similar_array_type(BitArray{2}, Int) == Array{Int,2}
     @test MA.similar_array_type(BitArray{2}, Bool) == BitArray{2}
 end
