@@ -121,3 +121,8 @@ end
     MA.operate!!(MA.add_mul, x, big(3), BitArray([true false; true true]))
     @test x == BigInt[5 2; 5 5]
 end
+
+@testset "similar_array_type" begin
+    MA.similar_array_type(BitArray{2}, Int) == Array{2,Int}
+    MA.similar_array_type(BitArray{2}, Bool) == BitArray{2}
+end
