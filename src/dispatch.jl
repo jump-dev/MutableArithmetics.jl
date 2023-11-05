@@ -51,7 +51,7 @@ function LinearAlgebra._dot_nonrecursive(
     return fused_map_reduce(add_mul, lhs, rhs)
 end
 
-for types in (Symmetric, Hermitian, AbstractArray)
+for types in (LinearAlgebra.Symmetric, LinearAlgebra.Hermitian, AbstractArray)
     type_pairs = (types, types{<:AbstractMutable})
     for T in type_pairs, S in type_pairs
         if T <: types{<:AbstractMutable} || S <: types{<:AbstractMutable}
