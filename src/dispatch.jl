@@ -51,25 +51,15 @@ function LinearAlgebra._dot_nonrecursive(
     return fused_map_reduce(add_mul, lhs, rhs)
 end
 
-function LinearAlgebra.dot(
-    lhs::AbstractArray{<:AbstractMutable},
-    rhs::AbstractArray,
-)
-    return operate(LinearAlgebra.dot, lhs, rhs)
-end
-
-function LinearAlgebra.dot(
-    lhs::AbstractArray,
-    rhs::AbstractArray{<:AbstractMutable},
-)
-    return operate(LinearAlgebra.dot, lhs, rhs)
-end
-
-function LinearAlgebra.dot(
-    lhs::AbstractArray{<:AbstractMutable},
-    rhs::AbstractArray{<:AbstractMutable},
-)
-    return operate(LinearAlgebra.dot, lhs, rhs)
+for types in (Symmetric, Hermitian, AbstractArray)
+    type_pairs = (types, types{<:AbstractMutable})
+    for T in type_pairs, S in type_pairs
+        if T <: types{<:AbstractMutable} || S <: types{<:AbstractMutable}
+            function LinearAlgebra.dot(lhs::T, rhs::S)
+                return operate(LinearAlgebra.dot, lhs, rhs)
+            end
+        end
+    end
 end
 
 # Special-case because the the base version wants to do
