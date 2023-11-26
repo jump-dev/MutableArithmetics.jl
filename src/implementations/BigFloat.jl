@@ -19,6 +19,24 @@ end
 
 const _MPFRRoundingMode = Base.MPFR.MPFRRoundingMode
 
+# copy
+
+promote_operation(::typeof(copy), ::Type{BigFloat}) = BigFloat
+
+function operate_to!(out::BigFloat, ::typeof(copy), in::BigFloat)
+    ccall(
+        (:mpfr_set, :libmpfr),
+        Int32,
+        (Ref{BigFloat}, Ref{BigFloat}, _MPFRRoundingMode),
+        out,
+        in,
+        Base.MPFR.ROUNDING_MODE[],
+    )
+    return out
+end
+
+operate!(::typeof(copy), x::BigFloat) = x
+
 # zero
 
 promote_operation(::typeof(zero), ::Type{BigFloat}) = BigFloat
@@ -371,17 +389,7 @@ function buffered_operate_to!(
     x::AbstractVector{F},
     y::AbstractVector{F},
 ) where {F<:BigFloat}
-    local set! = function (out::F, in::F)
-        ccall(
-            (:mpfr_set, :libmpfr),
-            Int32,
-            (Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
-            out,
-            in,
-            Base.MPFR.ROUNDING_MODE[],
-        )
-        return nothing
-    end
+    set! = (o, i) -> operate_to!(o, copy, i)
 
     local swap! = function (x::BigFloat, y::BigFloat)
         ccall((:mpfr_swap, :libmpfr), Cvoid, (Ref{BigFloat}, Ref{BigFloat}), x, y)

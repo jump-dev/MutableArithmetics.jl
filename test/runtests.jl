@@ -13,6 +13,8 @@ include("interface.jl")
 
 include("range.jl")
 
+include("copy.jl")
+
 @testset "Int" begin
     include("int.jl")
 end

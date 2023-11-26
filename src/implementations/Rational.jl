@@ -13,6 +13,18 @@ mutability(::Type{Rational{T}}) where {T} = mutability(T)
 
 mutable_copy(x::Rational) = Rational(mutable_copy(x.num), mutable_copy(x.den))
 
+# copy
+
+promote_operation(::typeof(copy), ::Type{Q}) where {Q<:Rational} = Q
+
+function operate_to!(out::Q, ::typeof(copy), in::Q) where {Q<:Rational}
+    operate_to!(out.num, copy, in.num)
+    operate_to!(out.den, copy, in.den)
+    return out
+end
+
+operate!(::typeof(copy), x::Rational) = x
+
 # zero
 
 promote_operation(::typeof(zero), ::Type{Rational{T}}) where {T} = Rational{T}
