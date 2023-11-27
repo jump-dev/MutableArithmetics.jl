@@ -95,35 +95,32 @@ end
 end
 
 @testset "operate" begin
-    Types = (Int, BigInt, Rational{Int})
-    type_is_mutable = function (op::F, ::Type{T}, ::V) where {F,T,V<:Val}
-        f = _ -> T
-        return MA.mutability(T, op, ntuple(f, V())...) == MA.IsMutable()
-    end
-    @testset "$T" for T in Types
-        arity_is_mutable = (op, n) -> type_is_mutable(op, T, Val(n))
+    @testset "$T" for T in (Int, BigInt, Rational{Int})
         x = T(7)
         @testset "1-ary $op" for op in [+, *, gcd, lcm]
             a = op(x)
             b = MA.operate(op, x)
-            is_mutable = arity_is_mutable(op, 1)
             @test a == b
-            is_mutable && (@test a !== b)
+            if MA.mutability(T, op, T) == MA.IsMutable()
+                @test a !== b
+            end
         end
         ops = [+, *, MA.add_mul, MA.sub_mul, MA.add_dot, gcd, lcm]
         @testset "4-ary $op" for op in ops
             a = op(x, x, x, x)
             b = MA.operate(op, x, x, x, x)
-            is_mutable = arity_is_mutable(op, 4)
             @test a == b
-            is_mutable && (@test a !== b)
+            if MA.mutability(T, op, T, T, T, T) == MA.IsMutable()
+                @test a !== b
+            end
         end
         @testset "2-ary $op" for op in [-, /, div]
             a = op(x, x)
             b = MA.operate(op, x, x)
-            is_mutable = arity_is_mutable(op, 2)
             @test a == b
-            is_mutable && (@test a !== b)
+            if MA.mutability(T, op, T, T) == MA.IsMutable()
+                @test a !== b
+            end
         end
     end
 end
