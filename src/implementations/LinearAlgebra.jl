@@ -162,7 +162,7 @@ function similar_array_type(
     return LinearAlgebra.Diagonal{S,similar_array_type(VT, S)}
 end
 
-similar_array_type(::Type{<:AbstractVector}, ::Type{T}} = Vector{T}
+similar_array_type(::Type{<:AbstractVector}, ::Type{T}) where {T} = Vector{T}
     
 similar_array_type(::Type{Array{T,N}}, ::Type{S}) where {S,T,N} = Array{S,N}
 
