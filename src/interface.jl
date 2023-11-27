@@ -190,6 +190,10 @@ function operate end
 #     custom `operate` method.
 operate(::typeof(-), x) = -x
 
+# This is not efficient, as it may make unnecessary intermediate copies,
+# but seems like the best way to write a generic implementation.
+operate(::typeof(abs), x) = abs(copy_if_mutable(x))
+
 function operate(
     op::Union{
         typeof(+),
