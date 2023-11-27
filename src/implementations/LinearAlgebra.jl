@@ -159,9 +159,11 @@ function similar_array_type(
     ::Type{LinearAlgebra.Diagonal{T,VT}},
     ::Type{S},
 ) where {S,T,VT<:AbstractVector{T}}
-    return LinearAlgebra.Diagonal{S,Vector{S}}
+    return LinearAlgebra.Diagonal{S,similar_array_type(VT, S)}
 end
 
+similar_array_type(::Type{<:AbstractVector}, ::Type{T}} = Vector{T}
+    
 similar_array_type(::Type{Array{T,N}}, ::Type{S}) where {S,T,N} = Array{S,N}
 
 similar_array_type(::Type{BitArray{N}}, ::Type{S}) where {S,N} = Array{S,N}
