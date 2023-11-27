@@ -95,16 +95,32 @@ end
 end
 
 @testset "operate" begin
-    @testset "$(typeof(x))" for x in [2, big(3)]
-        @testset "$op" for op in [+, *, gcd, lcm]
-            @test MA.operate(op, x) !== x
+    @testset "$T" for T in (Int, BigInt, Rational{Int})
+        x = T(7)
+        @testset "1-ary $op" for op in [+, *, gcd, lcm]
+            a = op(x)
+            b = MA.operate(op, x)
+            @test a == b
+            if MA.mutability(T, op, T) == MA.IsMutable()
+                @test a !== b
+            end
         end
         ops = [+, *, MA.add_mul, MA.sub_mul, MA.add_dot, gcd, lcm]
-        @testset "$op" for op in ops
-            @test MA.operate(op, x, x, x, x) !== op(x, x, x, x)
+        @testset "4-ary $op" for op in ops
+            a = op(x, x, x, x)
+            b = MA.operate(op, x, x, x, x)
+            @test a == b
+            if MA.mutability(T, op, T, T, T, T) == MA.IsMutable()
+                @test a !== b
+            end
         end
-        @testset "$op" for op in [-, /, div]
-            @test MA.operate(op, x, x) !== op(x, x)
+        @testset "2-ary $op" for op in [-, /, div]
+            a = op(x, x)
+            b = MA.operate(op, x, x)
+            @test a == b
+            if MA.mutability(T, op, T, T) == MA.IsMutable()
+                @test a !== b
+            end
         end
     end
 end
