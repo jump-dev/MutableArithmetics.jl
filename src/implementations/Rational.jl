@@ -51,6 +51,21 @@ end
 
 _buffered_simplify(buffer, x::Rational) = _buffered_divgcd(buffer, x.num, x.den)
 
+# abs
+
+promote_operation(::typeof(abs), ::Type{Q}) where {Q<:Rational} = Q
+
+function operate!(::typeof(abs), x::Rational)
+    operate!(abs, x.num)
+    return x
+end
+
+function operate_to!(o::Q, ::typeof(abs), x::Q) where {Q<:Rational}
+    operate_to!(o.num, abs, x.num)
+    operate_to!(o.den, copy, x.den)
+    return o
+end
+
 # + and -
 
 function promote_operation(

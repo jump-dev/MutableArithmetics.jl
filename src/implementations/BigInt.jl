@@ -25,6 +25,20 @@ promote_operation(::typeof(one), ::Type{BigInt}) = BigInt
 
 operate!(::typeof(one), x::BigInt) = Base.GMP.MPZ.set_si!(x, 1)
 
+# abs
+
+promote_operation(::typeof(abs), ::Type{BigInt}) = BigInt
+
+function operate!(::typeof(abs), n::BigInt)
+    n.size = abs(n.size)
+    return n
+end
+
+function operate_to!(o::BigInt, ::typeof(abs), n::BigInt)
+    operate_to!(o, copy, n)
+    return operate!(abs, o)
+end
+
 # +
 
 promote_operation(::typeof(+), ::Type{BigInt}, ::Type{BigInt}) = BigInt
