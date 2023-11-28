@@ -393,7 +393,7 @@ import LinearAlgebra
 The generic implementation in \ma{} exploits the mutability of the elements of \lstinline|c|.
 This provides a significant speedup and a drastic reduction of memory usage:
 \begin{jllisting}
-@benchmark add_mul!($c, $A, $b)
+@benchmark add_mul!!($c, $A, $b)
 
 # output
 
@@ -482,11 +482,13 @@ the mutability from the top layer to the bottom layer.
 Consider the following example using Polynomials~\cite{verzani2021polynomials}.
 \begin{jllisting}
 using Polynomials
+m = 100
+n = 10
 p(d) = Polynomial(big.(1:d))
 z(d) = Polynomial([zero(BigInt) for i in 1:d])
-A = [p(d) for i in 1:m, j in 1:n]
-b = [p(d) for i in 1:n]
-c = [z(2d - 1) for i in 1:m]
+A = [p(d) for d in 1:m, _ in 1:n]
+b = [p(d) for d in 1:n]
+c = [z(2d - 1) for d in 1:m]
 \end{jllisting}
 The arrays contain 3 layers of mutability:
 \lstinline|Array|, \lstinline|Polynomial| and \lstinline|BigInt|.
@@ -494,13 +496,13 @@ As shown in the benchmark below,
 impact on performance is amplified by the number of layers.
 \begin{jllisting}
 julia> @benchmark LinearAlgebra.mul!($c, $A, $b)
- Time  (median):     131.901 ms
- Time  (mean):       128.542 ms
- Memory: 38.02 MiB, allocs: 2032580.
+ Time  (median):     18.132 ms
+ Time  (mean):       46.276 ms
+ Memory: 30.12 MiB, allocs: 1560450.
 
-julia> @benchmark add_mul!($c, $A, $b)
- Time  (median):     7.633 ms
- Time  (mean):       7.687 ms
+julia> @benchmark add_mul!!($c, $A, $b)
+ Time  (median):     2.613 ms
+ Time  (mean):       2.789 ms
  Memory: 48 bytes, allocs: 3.
 
 julia> buf = buffer_for(
