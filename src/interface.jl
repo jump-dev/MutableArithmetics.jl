@@ -222,7 +222,10 @@ operate(::typeof(convert), ::Type{T}, x) where {T} = convert(T, x)
 
 operate(::typeof(convert), ::Type{T}, x::T) where {T} = copy_if_mutable(x)
 
-function operate(::Union{typeof(+),typeof(*),typeof(gcd),typeof(lcm)}, x)
+function operate(
+    ::Union{typeof(copy),typeof(+),typeof(*),typeof(gcd),typeof(lcm)},
+    x,
+)
     return copy_if_mutable(x)
 end
 

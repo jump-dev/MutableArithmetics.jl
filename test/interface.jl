@@ -98,7 +98,7 @@ end
 @testset "operate" begin
     @testset "$T" for T in (Int, BigInt, Rational{Int})
         x = T(7)
-        @testset "1-ary $op" for op in [+, *, gcd, lcm, abs]
+        @testset "1-ary $op" for op in [+, *, gcd, lcm, copy, abs]
             a = op(x)
             b = MA.operate(op, x)
             @test a == b
