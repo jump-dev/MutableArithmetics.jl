@@ -155,3 +155,26 @@ end
     y = MA.operate!!(MA.add_mul, z, 2.4, LinearAlgebra.Diagonal(1:2))
     @test y == LinearAlgebra.Diagonal(2.4 * (1:2))
 end
+
+@testset "unary op(::$T)" for T in (
+    Float64,
+    BigFloat,
+    Int,
+    BigInt,
+    Rational{Int},
+    Rational{BigInt},
+)
+    @test MA.operate!!(+, T(7)) == 7
+    @test MA.operate!!(*, T(7)) == 7
+    @test MA.operate!!(-, T(7)) == -7
+
+    @test MA.operate_to!!(T(6), +, T(7)) == 7
+    @test MA.operate_to!!(T(6), *, T(7)) == 7
+    @test MA.operate_to!!(T(6), -, T(7)) == -7
+
+    @test MA.operate!!(abs, T(7)) == 7
+    @test MA.operate!!(abs, T(-7)) == 7
+
+    @test MA.operate_to!!(T(6), abs, T(7)) == 7
+    @test MA.operate_to!!(T(6), abs, T(-7)) == 7
+end

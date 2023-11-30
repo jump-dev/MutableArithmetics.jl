@@ -79,6 +79,10 @@ function operate_to!(output::BigFloat, ::typeof(+), a::BigFloat, b::BigFloat)
     return output
 end
 
+operate_to!(out::BigFloat, ::typeof(+), a::BigFloat) = operate_to!(out, copy, a)
+
+operate!(::typeof(+), a::BigFloat) = a
+
 # -
 
 promote_operation(::typeof(-), ::Vararg{Type{BigFloat},N}) where {N} = BigFloat
@@ -101,11 +105,21 @@ function operate!(::typeof(-), x::BigFloat)
     return x
 end
 
+function operate_to!(o::BigFloat, ::typeof(-), x::BigFloat)
+    operate_to!(o, copy, x)
+    return operate!(-, o)
+end
+
 # Base.abs
 
 function operate!(::typeof(Base.abs), x::BigFloat)
     x.sign = abs(x.sign)
     return x
+end
+
+function operate_to!(o::BigFloat, ::typeof(abs), x::BigFloat)
+    operate_to!(o, copy, x)
+    return operate!(abs, o)
 end
 
 # *
@@ -124,6 +138,10 @@ function operate_to!(output::BigFloat, ::typeof(*), a::BigFloat, b::BigFloat)
     )
     return output
 end
+
+operate_to!(out::BigFloat, ::typeof(*), a::BigFloat) = operate_to!(out, copy, a)
+
+operate!(::typeof(*), a::BigFloat) = a
 
 # Base.fma
 

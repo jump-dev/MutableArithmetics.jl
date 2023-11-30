@@ -130,6 +130,38 @@ function operate_to!(output::Rational, ::typeof(+), x::Rational, y::Rational)
     return output
 end
 
+function operate_to!(out::Q, ::typeof(+), x::Q) where {Q<:Rational}
+    return operate_to!(out, copy, x)
+end
+
+operate!(::typeof(+), x::Rational) = x
+
+function operate_to!(out::Q, ::typeof(-), x::Q) where {Q<:Rational}
+    operate_to!(out.num, -, x.num)
+    operate_to!(out.den, copy, x.den)
+    return out
+end
+
+function operate!(::typeof(-), x::Rational)
+    operate!(-, x.num)
+    return x
+end
+
+# abs
+
+promote_operation(::typeof(abs), ::Type{Q}) where {Q<:Rational} = Q
+
+function operate!(::typeof(abs), x::Rational)
+    operate!(abs, x.num)
+    return x
+end
+
+function operate_to!(o::Q, ::typeof(abs), x::Q) where {Q<:Rational}
+    operate_to!(o.num, abs, x.num)
+    operate_to!(o.den, copy, x.den)
+    return o
+end
+
 # *
 
 function promote_operation(
@@ -173,6 +205,12 @@ function operate_to!(output::Rational, ::typeof(*), x::Rational, y::Rational)
         y,
     )
 end
+
+function operate_to!(out::Q, ::typeof(*), x::Q) where {Q<:Rational}
+    return operate_to!(out, copy, x)
+end
+
+operate!(::typeof(*), x::Rational) = x
 
 # gcd
 

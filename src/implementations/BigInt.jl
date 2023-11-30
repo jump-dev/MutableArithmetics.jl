@@ -44,12 +44,34 @@ function operate_to!(output::BigInt, ::typeof(+), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.add!(output, a, b)
 end
 
+operate_to!(out::BigInt, ::typeof(+), a::BigInt) = operate_to!(out, copy, a)
+
+operate!(::typeof(+), a::BigInt) = a
+
 # -
 
 promote_operation(::typeof(-), ::Vararg{Type{BigInt},N}) where {N} = BigInt
 
 function operate_to!(output::BigInt, ::typeof(-), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.sub!(output, a, b)
+end
+
+operate_to!(out::BigInt, ::typeof(-), a::BigInt) = Base.GMP.MPZ.neg!(out, a)
+
+operate!(::typeof(-), a::BigInt) = operate_to!(a, -, a)
+
+# abs
+
+promote_operation(::typeof(abs), ::Type{BigInt}) = BigInt
+
+function operate!(::typeof(abs), n::BigInt)
+    n.size = abs(n.size)
+    return n
+end
+
+function operate_to!(o::BigInt, ::typeof(abs), n::BigInt)
+    operate_to!(o, copy, n)
+    return operate!(abs, o)
 end
 
 # *
@@ -59,6 +81,10 @@ promote_operation(::typeof(*), ::Type{BigInt}, ::Type{BigInt}) = BigInt
 function operate_to!(output::BigInt, ::typeof(*), a::BigInt, b::BigInt)
     return Base.GMP.MPZ.mul!(output, a, b)
 end
+
+operate_to!(out::BigInt, ::typeof(*), a::BigInt) = operate_to!(out, copy, a)
+
+operate!(::typeof(*), a::BigInt) = a
 
 promote_operation(::typeof(div), ::Type{BigInt}, ::Type{BigInt}) = BigInt
 
