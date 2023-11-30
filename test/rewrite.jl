@@ -168,3 +168,36 @@ Base.getindex(x::_KwargRef; i) = x.data[i]
     x = _KwargRef(Dict(i => i + 1 for i in 2:4))
     @test MA.@rewrite(sum(x[i = j] for j in 2:4)) == 12
 end
+
+@testset "dispatch_dot" begin
+    # Symmetric
+    x = DummyBigInt[1 2; 2 3]
+    y = LinearAlgebra.Symmetric(x)
+    @test MA.isequal_canonical(
+        LinearAlgebra.dot(x, y),
+        MA.operate(LinearAlgebra.dot, x, y),
+    )
+    a = @allocated LinearAlgebra.dot(x, y)
+    b = @allocated MA.operate(LinearAlgebra.dot, x, y)
+    @test a == b
+    # Symmetric
+    x = DummyBigInt[1 2; 2 3]
+    y = LinearAlgebra.Hermitian(x)
+    @test MA.isequal_canonical(
+        LinearAlgebra.dot(x, y),
+        MA.operate(LinearAlgebra.dot, x, y),
+    )
+    a = @allocated LinearAlgebra.dot(x, y)
+    b = @allocated MA.operate(LinearAlgebra.dot, x, y)
+    @test a == b
+    # AbstractArray
+    x = DummyBigInt[1 2; 2 3]
+    y = x
+    @test MA.isequal_canonical(
+        LinearAlgebra.dot(x, y),
+        MA.operate(LinearAlgebra.dot, x, y),
+    )
+    a = @allocated LinearAlgebra.dot(x, y)
+    b = @allocated MA.operate(LinearAlgebra.dot, x, y)
+    @test a == b
+end

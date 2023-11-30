@@ -31,6 +31,8 @@ Base.copy(x::DummyBigInt) = x
 MA.mutable_copy(x::DummyBigInt) = DummyBigInt(MA.mutable_copy(x.data))
 LinearAlgebra.symmetric_type(::Type{DummyBigInt}) = DummyBigInt
 LinearAlgebra.symmetric(x::DummyBigInt, ::Symbol) = x
+LinearAlgebra.hermitian_type(::Type{DummyBigInt}) = DummyBigInt
+LinearAlgebra.hermitian(x::DummyBigInt, ::Symbol) = x
 LinearAlgebra.dot(x::DummyBigInt, y::DummyBigInt) = x * y
 function LinearAlgebra.dot(
     x::DummyBigInt,
