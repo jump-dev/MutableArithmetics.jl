@@ -5,7 +5,7 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 """
-    @rewrite(expr, move_factors_into_sums = false)
+    @rewrite(expr, move_factors_into_sums = true)
 
 Return the value of `expr`, exploiting the mutability of the temporary
 expressions created for the computation of the result.
