@@ -304,6 +304,8 @@ Base.size(x::Issue65Matrix) = size(x.x)
 Base.getindex(x::Issue65Matrix, args...) = getindex(x.x, args...)
 Base.axes(x::Issue65Matrix, n) = Issue65OneTo(size(x.x, n))
 Base.convert(::Type{Base.OneTo}, x::Issue65OneTo) = Base.OneTo(x.N)
+Base.iterate(x::Issue65OneTo) = iterate(Base.OneTo(x.N))
+Base.iterate(x::Issue65OneTo, arg) = iterate(Base.OneTo(x.N), arg)
 
 @testset "Issue #65" begin
     x = [1.0 2.0; 3.0 4.0]
