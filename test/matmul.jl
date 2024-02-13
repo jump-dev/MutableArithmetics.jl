@@ -401,3 +401,10 @@ end
     @test MA.operate(*, x22, y) == x22 * y
     @test MA.operate(*, y, x22) == y * x22
 end
+
+@testset "Vector*Transpose{Vector}_issue_256" begin
+    x = BigInt[1 2; 3 4]
+    A = [1 2; 3 4]
+    y = MA.@rewrite sum(A[i, :] * LinearAlgebra.transpose(x[i, :]) for i in 1:2)
+    @test y == BigInt[10 14; 14 20]
+end

@@ -217,6 +217,13 @@ function promote_array_mul(
 end
 
 function promote_array_mul(
+    ::Type{<:AbstractVector{S}},
+    ::Type{<:LinearAlgebra.Transpose{T,<:AbstractVector{T}}},
+) where {S,T}
+    return Matrix{promote_sum_mul(S, T)}
+end
+
+function promote_array_mul(
     ::Type{<:AbstractMatrix{S}},
     ::Type{<:AbstractVector{T}},
 ) where {S,T}
