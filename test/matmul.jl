@@ -7,8 +7,6 @@
 using Test
 import MutableArithmetics as MA
 
-include("utilities.jl")
-
 struct CustomArray{T,N} <: AbstractArray{T,N} end
 
 import LinearAlgebra

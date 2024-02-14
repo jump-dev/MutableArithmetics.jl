@@ -33,8 +33,6 @@ macro test_macro_throws(error, m)
     end
 end
 
-include("dummy.jl")
-
 function is_supported_test(T)
     @test MA.Test._is_supported(*, T, T)
     @test MA.Test._is_supported(+, T, T)
