@@ -43,3 +43,15 @@ end
         @test MA.operate(LinearAlgebra.dot, z, z) == LinearAlgebra.dot(z, z)
     end
 end
+
+@testset "*(::Real, ::Union{Hermitian,Symmetric})" begin
+    A = DummyBigInt[1 2; 2 3]
+    B = DummyBigInt[2 4; 4 6]
+    @test MA.isequal_canonical(2 * A, B)
+    C = LinearAlgebra.Symmetric(B)
+    @test MA.isequal_canonical(2 * LinearAlgebra.Symmetric(A, :U), C)
+    @test MA.isequal_canonical(2 * LinearAlgebra.Symmetric(A, :L), C)
+    D = LinearAlgebra.Hermitian(B)
+    @test all(MA.isequal_canonical.(2 * LinearAlgebra.Hermitian(A, :L), D))
+    @test all(MA.isequal_canonical.(2 * LinearAlgebra.Hermitian(A, :U), D))
+end
