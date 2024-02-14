@@ -213,14 +213,14 @@ function promote_array_mul(
     ::Type{<:AbstractVector{S}},
     ::Type{<:LinearAlgebra.Adjoint{T,<:AbstractVector{T}}},
 ) where {S,T}
-    return Matrix{promote_sum_mul(S, T)}
+    return Matrix{promote_operation(*, S, T)}
 end
 
 function promote_array_mul(
     ::Type{<:AbstractVector{S}},
     ::Type{<:LinearAlgebra.Transpose{T,<:AbstractVector{T}}},
 ) where {S,T}
-    return Matrix{promote_sum_mul(S, T)}
+    return Matrix{promote_operation(*, S, T)}
 end
 
 function promote_array_mul(

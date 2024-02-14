@@ -403,3 +403,22 @@ end
     y = MA.@rewrite sum(A[i, :] * LinearAlgebra.transpose(x[i, :]) for i in 1:2)
     @test y == BigInt[10 14; 14 20]
 end
+
+struct Monomial end
+LinearAlgebra.transpose(m::Monomial) = m
+LinearAlgebra.adjoint(m::Monomial) = m
+MA.promote_operation(::typeof(*), ::Type{Monomial}, ::Type{Monomial}) = Monomial
+Base.:*(m::Monomial, ::Monomial) = m
+
+# `Monomial` does not implement `+`, we should check that it does not prevent
+# to do outer products of vectors
+@testset "Vector*Transpose{Vector}_issue_256 with Monomial" begin
+    m = Monomial()
+    a = [m, m]
+    for f in [LinearAlgebra.transpose, LinearAlgebra.adjoint]
+        b = f(a)
+        T = MA.promote_operation(*, typeof(a), typeof(b))
+        @test T == typeof(a * b)
+        @test T == typeof(MA.operate(*, a, b))
+    end
+end
