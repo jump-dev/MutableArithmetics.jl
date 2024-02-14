@@ -404,8 +404,7 @@ end
     @test y == BigInt[10 14; 14 20]
 end
 
-struct Monomial
-end
+struct Monomial end
 LinearAlgebra.transpose(m::Monomial) = m
 LinearAlgebra.adjoint(m::Monomial) = m
 MA.promote_operation(::typeof(*), ::Type{Monomial}, ::Type{Monomial}) = Monomial
