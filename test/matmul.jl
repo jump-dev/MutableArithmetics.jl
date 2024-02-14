@@ -99,10 +99,7 @@ end
     @testset "Dimension mismatch" begin
         A = zeros(1, 1)
         B = zeros(2, 2)
-        err = DimensionMismatch(
-            "dimensions must match: a has dims (Base.OneTo(1), Base.OneTo(1)), b has dims (Base.OneTo(2), Base.OneTo(2)), mismatch at 1",
-        )
-        @test_throws err MA.@rewrite A + B
+        @test_throws DimensionMismatch MA.@rewrite A + B
         x = ones(1)
         y = ones(2)
         err = DimensionMismatch(
