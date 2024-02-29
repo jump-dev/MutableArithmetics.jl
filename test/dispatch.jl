@@ -57,7 +57,7 @@ end
 end
 
 @testset "*(::Complex, ::Hermitian)" begin
-    A = [1 2; 2 3]
+    A = BigInt[1 2; 2 3]
     B = LinearAlgebra.Hermitian(DummyBigInt.(A))
     C = 2im * A
     @test 2im * B == C
