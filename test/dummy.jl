@@ -171,3 +171,5 @@ end
 function Base.:^(x::DummyBigInt, y::Union{Integer,UniformScaling{<:Integer}})
     return DummyBigInt(x.data^y)
 end
+
+Base.:*(x::Complex, y::DummyBigInt) = x * y.data

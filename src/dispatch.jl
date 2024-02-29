@@ -484,13 +484,6 @@ function Base.:*(α::Number, A::LinearAlgebra.Symmetric{<:AbstractMutable})
     return LinearAlgebra.Symmetric(B, c)
 end
 
-function Base.:*(α::Number, A::LinearAlgebra.Hermitian{<:AbstractMutable})
-    c = LinearAlgebra.sym_uplo(A.uplo)
-    B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
-    return LinearAlgebra.Hermitian(B, c)
-end
-
-# Fix ambiguity identified by Aqua.jl.
 function Base.:*(α::Real, A::LinearAlgebra.Hermitian{<:AbstractMutable})
     c = LinearAlgebra.sym_uplo(A.uplo)
     B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
