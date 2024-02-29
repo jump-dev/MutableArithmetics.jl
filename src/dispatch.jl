@@ -490,13 +490,6 @@ function Base.:*(α::Real, A::LinearAlgebra.Hermitian{<:AbstractMutable})
     return LinearAlgebra.Hermitian(B, c)
 end
 
-# Fix ambiguity identified by Aqua.jl.
-function Base.:*(α::Real, A::LinearAlgebra.Hermitian{<:AbstractMutable})
-    c = LinearAlgebra.sym_uplo(A.uplo)
-    B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
-    return LinearAlgebra.Hermitian(B, c)
-end
-
 # These three have specific methods that just redirect to `Matrix{T}` which
 # does not work, e.g. if `zero(T)` has a different type than `T`.
 
