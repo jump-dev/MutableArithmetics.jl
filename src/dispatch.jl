@@ -484,6 +484,18 @@ function Base.:*(α::Number, A::LinearAlgebra.Symmetric{<:AbstractMutable})
     return LinearAlgebra.Symmetric(B, c)
 end
 
+function Base.:*(α::AbstractMutable, A::LinearAlgebra.Symmetric{<:AbstractMutable})
+    c = LinearAlgebra.sym_uplo(A.uplo)
+    B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
+    return LinearAlgebra.Symmetric(B, c)
+end
+
+function Base.:*(α::AbstractMutable, A::LinearAlgebra.Symmetric)
+    c = LinearAlgebra.sym_uplo(A.uplo)
+    B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
+    return LinearAlgebra.Symmetric(B, c)
+end
+
 function Base.:*(α::Real, A::LinearAlgebra.Hermitian{<:AbstractMutable})
     c = LinearAlgebra.sym_uplo(A.uplo)
     B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)

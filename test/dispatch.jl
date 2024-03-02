@@ -56,6 +56,24 @@ end
     @test all(MA.isequal_canonical.(2 * LinearAlgebra.Hermitian(A, :U), D))
 end
 
+@testset "*(::AbstractMutable, ::Symmetric)" begin
+    A = [1 2; 5 3]
+    for s in (:L, :U)
+        B = DummyBigInt(2) * LinearAlgebra.Symmetric(A, s)
+        C = LinearAlgebra.Symmetric(DummyBigInt.(2 * A), s)
+        @test MA.isequal_canonical(B, C)
+    end
+end
+
+@testset "*(::AbstractMutable, ::Symmetric{<:AbstractMutable})" begin
+    A = DummyBigInt[1 2; 5 3]
+    for s in (:L, :U)
+        B = DummyBigInt(2) * LinearAlgebra.Symmetric(A, s)
+        C = LinearAlgebra.Symmetric(2 * A, s)
+        @test MA.isequal_canonical(B, C)
+    end
+end
+
 @testset "*(::Complex, ::Hermitian)" begin
     A = BigInt[1 2; 2 3]
     B = LinearAlgebra.Hermitian(DummyBigInt.(A))
