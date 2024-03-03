@@ -488,7 +488,7 @@ function _mult_triangle(
     end
     # Intermediate conversion to `Matrix` is needed to work around
     # https://github.com/JuliaLang/julia/issues/52895
-    return T(Matrix(LinearAlgebra.Symmetric(B, c)), c)
+    return T(Matrix(T(B, c)), c)
 end
 
 function Base.:*(α::Number, A::LinearAlgebra.Symmetric{<:AbstractMutable})
