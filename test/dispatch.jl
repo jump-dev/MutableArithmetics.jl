@@ -44,33 +44,37 @@ end
     end
 end
 
-@testset "*(::Real, ::Union{Hermitian,Symmetric})" begin
+@testset "*(::Real, ::Hermitian)" begin
     A = DummyBigInt[1 2; 2 3]
     B = DummyBigInt[2 4; 4 6]
-    @test MA.isequal_canonical(2 * A, B)
-    C = LinearAlgebra.Symmetric(B)
-    @test MA.isequal_canonical(2 * LinearAlgebra.Symmetric(A, :U), C)
-    @test MA.isequal_canonical(2 * LinearAlgebra.Symmetric(A, :L), C)
     D = LinearAlgebra.Hermitian(B)
-    @test all(MA.isequal_canonical.(2 * LinearAlgebra.Hermitian(A, :L), D))
-    @test all(MA.isequal_canonical.(2 * LinearAlgebra.Hermitian(A, :U), D))
-end
-
-@testset "*(::AbstractMutable, ::Symmetric)" begin
-    A = [1 2; 5 3]
     for s in (:L, :U)
-        B = DummyBigInt(2) * LinearAlgebra.Symmetric(A, s)
-        C = LinearAlgebra.Symmetric(DummyBigInt.(2 * A), s)
-        @test MA.isequal_canonical(B, C)
+        Ah = LinearAlgebra.Hermitian(A, s)
+        @test all(MA.isequal_canonical.(2 * Ah, D))
+        @test all(MA.isequal_canonical.(Ah * 2, D))
     end
 end
 
-@testset "*(::AbstractMutable, ::Symmetric{<:AbstractMutable})" begin
-    A = DummyBigInt[1 2; 5 3]
-    for s in (:L, :U)
-        B = DummyBigInt(2) * LinearAlgebra.Symmetric(A, s)
-        C = LinearAlgebra.Symmetric(2 * A, s)
-        @test MA.isequal_canonical(B, C)
+@testset "*(::AbstractMutable, ::Symmetric)" begin
+    for A in ([1 2; 5 3], DummyBigInt[1 2; 5 3])
+        for x in (2, DummyBigInt(2))
+            for s in (:L, :U)
+                # *(::AbstractMutable, ::Symmetric)
+                B = LinearAlgebra.Symmetric(A, s)
+                C = LinearAlgebra.Symmetric(x * A, s)
+                D = x * B
+                @test D isa LinearAlgebra.Symmetric
+                @test MA.isequal_canonical(D, C)
+                @test MA.isequal_canonical(D + D, 2 * D)
+                # *(::Symmetric, ::AbstractMutable)
+                B = LinearAlgebra.Symmetric(A, s)
+                C = LinearAlgebra.Symmetric(A * x, s)
+                D = B * x
+                @test D isa LinearAlgebra.Symmetric
+                @test MA.isequal_canonical(D, C)
+                @test MA.isequal_canonical(D + D, 2 * D)
+            end
+        end
     end
 end
 
