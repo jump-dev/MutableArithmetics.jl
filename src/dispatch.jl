@@ -490,13 +490,13 @@ function Base.:*(
 )
     c = LinearAlgebra.sym_uplo(A.uplo)
     B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
-    return LinearAlgebra.Symmetric(B, c)
+    return LinearAlgebra.Symmetric(Matrix(LinearAlgebra.Symmetric(B, c)),c)
 end
 
 function Base.:*(α::AbstractMutable, A::LinearAlgebra.Symmetric)
     c = LinearAlgebra.sym_uplo(A.uplo)
     B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
-    return LinearAlgebra.Symmetric(B, c)
+    return LinearAlgebra.Symmetric(Matrix(LinearAlgebra.Symmetric(B, c)),c)
 end
 
 function Base.:*(
