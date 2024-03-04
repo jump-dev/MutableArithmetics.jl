@@ -475,19 +475,54 @@ Base.:*(A::AbstractArray, α::AbstractMutable) = A .* α
 # Needed for Julia v1.0, otherwise, `broadcast(*, α, A)` gives a `Array` and
 # not a `Symmetric`.
 
-_mult_upper(α, A) = parent(α * LinearAlgebra.UpperTriangular(parent(A)))
-_mult_lower(α, A) = parent(α * LinearAlgebra.LowerTriangular(parent(A)))
-
-function Base.:*(α::Number, A::LinearAlgebra.Symmetric{<:AbstractMutable})
+function _mult_triangle(
+    ::Type{T},
+    x,
+    A::T,
+) where {T<:Union{LinearAlgebra.Symmetric,LinearAlgebra.Hermitian}}
     c = LinearAlgebra.sym_uplo(A.uplo)
-    B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
-    return LinearAlgebra.Symmetric(B, c)
+    B = if c == :U
+        parent(x * LinearAlgebra.UpperTriangular(parent(A)))
+    else
+        parent(x * LinearAlgebra.LowerTriangular(parent(A)))
+    end
+    # Intermediate conversion to `Matrix` is needed to work around
+    # https://github.com/JuliaLang/julia/issues/52895
+    return T(Matrix(T(B, c)), c)
 end
 
+function Base.:*(α::Number, A::LinearAlgebra.Symmetric{<:AbstractMutable})
+    return _mult_triangle(LinearAlgebra.Symmetric, α, A)
+end
+
+Base.:*(A::LinearAlgebra.Symmetric{<:AbstractMutable}, α::Number) = α * A
+
+function Base.:*(
+    α::AbstractMutable,
+    A::LinearAlgebra.Symmetric{<:AbstractMutable},
+)
+    return _mult_triangle(LinearAlgebra.Symmetric, α, A)
+end
+
+function Base.:*(
+    A::LinearAlgebra.Symmetric{<:AbstractMutable},
+    α::AbstractMutable,
+)
+    return α * A
+end
+
+function Base.:*(α::AbstractMutable, A::LinearAlgebra.Symmetric)
+    return _mult_triangle(LinearAlgebra.Symmetric, α, A)
+end
+
+Base.:*(A::LinearAlgebra.Symmetric, α::AbstractMutable) = α * A
+
 function Base.:*(α::Real, A::LinearAlgebra.Hermitian{<:AbstractMutable})
-    c = LinearAlgebra.sym_uplo(A.uplo)
-    B = c == :U ? _mult_upper(α, A) : _mult_lower(α, A)
-    return LinearAlgebra.Hermitian(B, c)
+    return _mult_triangle(LinearAlgebra.Hermitian, α, A)
+end
+
+function Base.:*(A::LinearAlgebra.Hermitian{<:AbstractMutable}, α::Real)
+    return α * A
 end
 
 # These three have specific methods that just redirect to `Matrix{T}` which
