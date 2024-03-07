@@ -33,16 +33,16 @@ _instantiate(::Type{S}) where {S<:Irrational} = S()
 _instantiate_zero(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
 _instantiate_oneunit(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
 
+# Julia v1.0.x has trouble with inference with the `Vararg` method, see
+# https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
 function promote_operation_fallback(
-    ::typeof(/),
+    op::Union{typeof(/), typeof(//), typeof(÷), typeof(%)},
     ::Type{S},
     ::Type{T},
 ) where {S,T}
-    return typeof(_instantiate_zero(S) / _instantiate_oneunit(T))
+    return typeof(op(_instantiate_zero(S), _instantiate_oneunit(T)))
 end
 
-# Julia v1.0.x has trouble with inference with the `Vararg` method, see
-# https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
 function promote_operation_fallback(
     op::F,
     ::Type{S},
