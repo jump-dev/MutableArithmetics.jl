@@ -65,15 +65,7 @@ The section is organized into four subsections that describe the need of four ke
 \label{sec:may_mutate}
 Consider the task of summing the elements of a vector.
 By default, Julia's \lstinline|sum| function will compute the sum with a code equivalent to the following:
-\begin{jllisting}
-function sum(x::Vector)
-    acc = zero(eltype(x))
-    for el in x
-        acc = acc + el
-    end
-    return acc
-end
-\end{jllisting}
+\jlinputlisting{code/sum.jl}
 If the type of the elements of \lstinline|x| is \lstinline|BigInt|, it is more efficient to replace the line
 \lstinline|acc = acc + el| by the line
 \lstinline|Base.GMP.MPZ.add!(acc, el)|.
@@ -89,17 +81,7 @@ We now consider a mutable element type for which exploiting mutability affects t
 Consider a type \lstinline|SymbolicVariable| representing a symbolic variable
 and the following types representing linear combinations of these variables with coefficients of type \lstinline|T|.
 This example encapsulates for instance JuMP affine expressions~\cite{dunning2017jump}, MOI affine functions~\cite{legat2021mathoptinterface}, polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2021multivariatepolynomials}) or symbolic sums~\cite{gowda2021high}.
-\begin{jllisting}
-struct Term{T}
-    coef::T
-    sym::SymbolicVariable
-end
-struct Sum{T}
-    terms::Vector{Term{T}}
-end
-Base.:+(s::Sum, t::Term) = Sum(push!(copy(s.terms), t))
-Base.zero(::Type{Term{T}}) where {T} = Sum(Term{T}[])
-\end{jllisting}
+\jlinputlisting{code/term.jl}
 Calling \lstinline|sum| on a vector of $n$ \lstinline|Term{T}| has a time complexity $\Theta(n^2)$.
 Indeed, when calling \lstinline|acc + el| where \lstinline|acc| contains the sum of the first \lstinline|k| terms and \lstinline|el| is the $(k+1)$th term,
 the result cannot mutate \lstinline|acc.terms| and the copy of \lstinline|acc.terms| has time complexity $\Theta(k)$.
@@ -111,21 +93,7 @@ By default, \lstinline|add!!| would fall back to calling \lstinline|+|
 so that a method calling \lstinline|add!!| would both exploit the mutability
 of mutable types but would also work for non-mutable types.
 For our example, an implementation could be:
-\begin{jllisting}
-function sum(x)
-    acc = zero(eltype(x))
-    for el in x
-        acc = add!!(acc, el)
-    end
-    return acc
-end
-add!!(a, b) = a + b # default fallback
-add!!(a::BigInt, b::BigInt) = Base.GMP.MPZ.add!(a, b)
-function add!!(s::Sum, t::Term)
-    push!(s.terms, t)
-    return s
-end
-\end{jllisting}
+\jlinputlisting{code/termsum.jl}
 Note that the time complexity of the sum of $n$ \lstinline|Term| is now $\Theta(n)$.
 
 Julia implements a specialized method for computing the sum of \lstinline|BigInt|s that uses \lstinline|Base.GMP.MPZ.add!|.
@@ -144,12 +112,7 @@ an API that allows an implementation to silently returns the
 result without modifying the first argument is not appropriate.
 
 To motivate this, consider the \lstinline|Rational| Julia type:
-\begin{jllisting}
-struct Rational{T}
-    num::T
-    den::T
-end
-\end{jllisting}
+\jlinputlisting{code/rational.jl}
 Suppose we want to mutate\cref{foot:mutate} some rational \lstinline|a::Rational| to the
 product of \lstinline|a::Rational| and some other rational \lstinline|b::Rational|
 (ignoring the simplification with \lstinline|gcd| for simplicity).
@@ -170,17 +133,7 @@ determine whether objects of a given type can be mutated\cref{foot:mutate} to th
 To motivate this, consider again the multiplication of rational numbers introduced in the previous section.
 An implementation \lstinline|mul!!| (where \lstinline|mul!!| \emph{may} mutate its first argument and \lstinline|mul!| \emph{should} mutate its first argument)
 for rational numbers could be:
-\begin{jllisting}
-function mul!!(a::Rational{S}, b::Rational{T})
-    if # S can be mutated to `*(::S, ::T)`
-        mul!(a.num, b.num)
-        mul!(a.den, b.den)
-        return a
-    else
-        return a * b
-    end
-end
-\end{jllisting}
+\jlinputlisting{code/mul.jl}
 This third feature would be needed to implement this \lstinline|if| clause.
 
 \subsection{Promotion}
@@ -196,12 +149,7 @@ an appropriate type.
 
 Consider the following matrix-vector multiplication implementation with \lstinline|SymbolicVariable|
 where \lstinline|mul_to!| mutates\cref{foot:mutate} \lstinline|c| to \lstinline|A * b|.
-\begin{jllisting}
-function Base.:*(A::Matrix{S}, b::Vector{T}) where {S,T}
-    c = Vector{U}(undef, size(A, 1)) # What is U ?
-    return mul_to!(c, A, b)
-end
-\end{jllisting}
+\jlinputlisting{code/matmul.jl}
 What should be the element type \lstinline|U| of the accumulator \lstinline|c| ?
 For instance, if \lstinline|S| is \lstinline|Float64|
 and \lstinline|T| is \lstinline|SymbolicVariable|
@@ -247,25 +195,7 @@ Hence this should not constitute a burden for the implementation.
 
 \subsection{May mutate fallback}
 We have the following default implementations of \lstinline|operate!!| (resp. \lstinline|operate_to!!|).
-\begin{jllisting}
-function operate!!(op, args...)
-    T = typeof.(args)
-    if mutability(T[1], op, T...) isa IsMutable
-        return operate!(op, args...)
-    else
-        return op(args...)
-    end
-end
-function operate_to!!(output, op, args...)
-    O = typeof(output)
-    T = typeof.(args)
-    if mutability(O, op, T...) isa IsMutable
-        return operate_to!(output, op, args...)
-    else
-        return op(args...)
-    end
-end
-\end{jllisting}
+\jlinputlisting{code/axiom.jl}
 Note that this default implementation should have optimal performance in case \lstinline|mutability| is evaluated at compile-time and the \lstinline|if| statement is optimized out by the compiler.
 Indeed, suppose that
 another implementation is faster than this default one.

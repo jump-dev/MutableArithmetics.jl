@@ -9,3 +9,11 @@ MutableArithmetics
 Dowson
 Lubin
 MultivariatePolynomials
+jl
+gcd
+num
+BangBang
+MathOptInterface
+@rewrite
+JuMP-specific
+MPZ
