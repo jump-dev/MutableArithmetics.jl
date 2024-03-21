@@ -36,7 +36,7 @@ _instantiate_oneunit(::Type{S}) where {S<:AbstractIrrational} = _instantiate(S)
 # Julia v1.0.x has trouble with inference with the `Vararg` method, see
 # https://travis-ci.org/jump-dev/JuMP.jl/jobs/617606373
 function promote_operation_fallback(
-    op::Union{typeof(/), typeof(div)},
+    op::Union{typeof(/),typeof(div)},
     ::Type{S},
     ::Type{T},
 ) where {S,T}
