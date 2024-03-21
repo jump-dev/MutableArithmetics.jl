@@ -181,7 +181,8 @@ end
 
 @testset "Error-free mutability (issue #240)" begin
     for op in (+, -, *, /, div)
-        for T in (Float64, BigFloat, Int, BigInt, Rational{Int}, Rational{BigInt})
+        for T in
+            (Float64, BigFloat, Int, BigInt, Rational{Int}, Rational{BigInt})
             @test_nowarn MA.mutability(T, op, T, T) # should run without error
         end
     end
