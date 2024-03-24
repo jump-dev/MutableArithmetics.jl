@@ -219,11 +219,11 @@ end
             BigInt[1 1; 1 1],
             zeros(BigInt, 1, 1),
         )
-        @test_throws DimensionMismatch MA.mul_to!!(
+        @test MA.mul_to!!(
             zeros(BigInt, 1, 1),
             BigInt[1 1; 1 1],
             zeros(BigInt, 2, 1),
-        )
+        ) == zeros(BigInt, 2, 1)
 
         @testset "mutability" begin
             alloc_test(() -> MA.promote_operation(*, typeof(A), typeof(B)), 0)
