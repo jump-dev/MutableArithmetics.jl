@@ -281,6 +281,39 @@ function mutability(x, op, args::Vararg{Any,N}) where {N}
     return mutability(typeof(x), op, typeof.(args)...)
 end
 
+# As a special case, we need to check that the shapes of matrix multiplication
+# match in order for the array to be mutable.
+function mutability(
+    x::AbstractArray,
+    op::typeof(*),
+    args::Vararg{Any,N},
+) where {N}
+    if mutability(typeof(x), op, typeof.(args)...) == IsNotMutable()
+        return IsNotMutable()
+    elseif size(x) == _size_after_multiply(size.(args)...)
+        return IsMutable()
+    else
+        return IsNotMutable()
+    end
+end
+
+function _size_after_multiply(x::NTuple{M,Int}, y::NTuple{N,Int}) where {N,M}
+    if x[end] != y[1]
+        return nothing
+    end
+    return (x[1:end-1]..., y[2:end]...)
+end
+
+_size_after_multiply(::Tuple{}, rhs::NTuple{M,Int}) where {M} = rhs
+_size_after_multiply(lhs::NTuple{M,Int}, ::Tuple{}) where {M} = lhs
+_size_after_multiply(::Tuple{}, ::Tuple{}) = ()
+_size_after_multiply(::Nothing, ::Any) = nothing
+
+function _size_after_multiply(x::NTuple{M,Int}, y::Vararg{Any,N}) where {N,M}
+    head = _size_after_multiply(x, Base.first(y))
+    return _size_after_multiply(head, Base.tail(y)...)
+end
+
 mutability(::Type) = IsNotMutable()
 
 """

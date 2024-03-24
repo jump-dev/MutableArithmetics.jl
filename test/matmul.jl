@@ -422,3 +422,16 @@ Base.:*(m::Monomial, ::Monomial) = m
         @test T == typeof(MA.operate(*, a, b))
     end
 end
+
+@testset "Issue_271" begin
+    A = [1; 2;;]
+    B = [1 2]
+    C = MA.operate!!(*, A, B)
+    @test A == [1; 2;;]
+    @test B == [1 2]
+    @test C == AB
+    D = MA.operate!!(*, B, A)
+    @test A == [1; 2;;]
+    @test B == [1 2]
+    @test D == BA
+end
