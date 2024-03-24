@@ -429,9 +429,9 @@ end
     C = MA.operate!!(*, A, B)
     @test A == [1; 2;;]
     @test B == [1 2]
-    @test C == AB
+    @test C == A * B
     D = MA.operate!!(*, B, A)
     @test A == [1; 2;;]
     @test B == [1 2]
-    @test D == BA
+    @test D == B * A
 end
