@@ -288,13 +288,11 @@ function mutability(
     op::typeof(*),
     args::Vararg{Any,N},
 ) where {N}
-    if mutability(typeof(x), op, typeof.(args)...) == IsNotMutable()
-        return IsNotMutable()
-    elseif size(x) == _size_after_multiply(size.(args)...)
+    is_mutable = mutability(typeof(x), op, typeof.(args)...)
+    if is_mutable && size(x) == _size_after_multiply(size.(args)...)
         return IsMutable()
-    else
-        return IsNotMutable()
     end
+    return IsNotMutable()
 end
 
 function _size_after_multiply(x::NTuple{M,Int}, y::NTuple{N,Int}) where {N,M}

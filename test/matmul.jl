@@ -424,14 +424,14 @@ Base.:*(m::Monomial, ::Monomial) = m
 end
 
 @testset "Issue_271" begin
-    A = [1; 2;;]
+    A = reshape([1, 2], (2, 1))
     B = [1 2]
     C = MA.operate!!(*, A, B)
-    @test A == [1; 2;;]
+    @test A == reshape([1, 2], (2, 1))
     @test B == [1 2]
     @test C == A * B
     D = MA.operate!!(*, B, A)
-    @test A == [1; 2;;]
+    @test A == reshape([1, 2], (2, 1))
     @test B == [1 2]
     @test D == B * A
 end
