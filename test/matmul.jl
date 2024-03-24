@@ -142,11 +142,11 @@ end
         @test MA.mul(A, x) == BigInt[3; 3; 3]
         @test MA.mul_to!!(y, A, x) == BigInt[3; 3; 3] && y == BigInt[3; 3; 3]
         @test_throws DimensionMismatch MA.mul(BigInt[1 1; 1 1], BigInt[])
-        @test_throws DimensionMismatch MA.mul_to!!(
-            BigInt[],
-            BigInt[1 1; 1 1],
-            BigInt[1; 1],
-        )
+        @test MA.mul_to!!(BigInt[], BigInt[1 1; 1 1], BigInt[1; 1]) ==
+              BigInt[2, 2]
+        z = BigInt[0, 0]
+        @test MA.mul_to!!(z, BigInt[1 1; 1 1], BigInt[1; 1]) === z
+        @test z == BigInt[2, 2]
 
         @testset "mutability" begin
             alloc_test(() -> MA.promote_operation(*, typeof(A), typeof(x)), 0)
