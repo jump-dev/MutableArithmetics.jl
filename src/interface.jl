@@ -288,7 +288,7 @@ function mutability(
     op::typeof(*),
     args::Vararg{Any,N},
 ) where {N}
-    is_mutable = mutability(typeof(x), op, typeof.(args)...)
+    is_mutable = mutability(typeof(x), op, typeof.(args)...) == IsMutable()
     if is_mutable && size(x) == _size_after_multiply(size.(args)...)
         return IsMutable()
     end
