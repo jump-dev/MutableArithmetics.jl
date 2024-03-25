@@ -34,7 +34,7 @@ The implementations of these arithmetic operations in Julia do not modify their 
 However, in many situations, a variable represents an accumulator that can be mutated\footnote{\label{foot:mutate}In this paper, the terminology ``mutate $x$ to $y$'' means modifying $x$ in-place in such a way that its value after the modification is equal to $y$.} to the result, e.g.,
 when summing the elements of an array of \lstinline|BigInt| or when implementing array multiplication.
 Moreover, for types that support mutation, mutating the value may have a significant performance benefit over creating a new instance.
-Examples of types that implement arithmetic operations and support mutation include \lstinline|Array|s, multiple-precision numbers, JuMP~\cite{dunning2017jump} expressions, MathOptInterface (MOI)~\cite{legat2021mathoptinterface} functions, and polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2021multivariatepolynomials}).
+Examples of types that implement arithmetic operations and support mutation include \lstinline|Array|s, multiple-precision numbers, JuMP~\cite{dunning2017jump} expressions, MathOptInterface (MOI)~\cite{legat2021mathoptinterface} functions, and polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2023multivariate}).
 
 This paper introduces an interface called \ma{}.
 It allows mutable types to implement an arithmetic exploiting their mutability, and for algorithms to
@@ -80,7 +80,7 @@ where $n$ is the number of elements and $m$ is the number of bits of an element.
 We now consider a mutable element type for which exploiting mutability affects the time complexity.
 Consider a type \lstinline|SymbolicVariable| representing a symbolic variable
 and the following types representing linear combinations of these variables with coefficients of type \lstinline|T|.
-This example encapsulates for instance JuMP affine expressions~\cite{dunning2017jump}, MOI affine functions~\cite{legat2021mathoptinterface}, polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2021multivariatepolynomials}) or symbolic sums~\cite{gowda2021high}.
+This example encapsulates for instance JuMP affine expressions~\cite{dunning2017jump}, MOI affine functions~\cite{legat2021mathoptinterface}, polynomials (univariate~\cite{verzani2021polynomials} or multivariate~\cite{legat2023multivariate}) or symbolic sums~\cite{gowda2021high}.
 \jlinputlisting{code/term.jl}
 Calling \lstinline|sum| on a vector of $n$ \lstinline|Term{T}| has a time complexity $\Theta(n^2)$.
 Indeed, when calling \lstinline|acc + el| where \lstinline|acc| contains the sum of the first \lstinline|k| terms and \lstinline|el| is the $(k+1)$th term,
@@ -133,7 +133,17 @@ determine whether objects of a given type can be mutated\cref{foot:mutate} to th
 To motivate this, consider again the multiplication of rational numbers introduced in the previous section.
 An implementation \lstinline|mul!!| (where \lstinline|mul!!| \emph{may} mutate its first argument and \lstinline|mul!| \emph{should} mutate its first argument)
 for rational numbers could be:
-\jlinputlisting{code/mul.jl}
+\begin{jllisting}
+function mul!!(a::Rational{S}, b::Rational{T})
+    if # S can be mutated to `*(::S, ::T)`
+        mul!(a.num, b.num)
+        mul!(a.den, b.den)
+        return a
+    else
+        return a * b
+    end
+end
+\end{jllisting}
 This third feature would be needed to implement this \lstinline|if| clause.
 
 \subsection{Promotion}
@@ -147,7 +157,7 @@ an appropriate type.
 %For the generic sum implementation to work,
 %\lstinline|zero(::Type{SymbolicVariable})| may return \lstinline|zero(Sum{Int})|.
 
-Consider the following matrix-vector multiplication implementation with \lstinline|SymbolicVariable|
+Consider the following matrix-vector multiplication implementation
 where \lstinline|mul_to!| mutates\cref{foot:mutate} \lstinline|c| to \lstinline|A * b|.
 \jlinputlisting{code/matmul.jl}
 What should be the element type \lstinline|U| of the accumulator \lstinline|c| ?
@@ -194,7 +204,7 @@ Note that implementing \lstinline|promote_operation| should be significantly eas
 Hence this should not constitute a burden for the implementation.
 
 \subsection{May mutate fallback}
-We have the following default implementations of \lstinline|operate!!| (resp. \lstinline|operate_to!!|).
+We have the following default implementations of \lstinline|operate!!| and \lstinline|operate_to!!|.
 \jlinputlisting{code/axiom.jl}
 Note that this default implementation should have optimal performance in case \lstinline|mutability| is evaluated at compile-time and the \lstinline|if| statement is optimized out by the compiler.
 Indeed, suppose that
@@ -215,21 +225,7 @@ Based on this observation, we define \lstinline|mutability(T::Type)| which
 returns \lstinline|IsMutable()| if \lstinline|T| is in the first category
 and \lstinline|IsNotMutable()| if \lstinline|T| is in the second category.
 Then we have the following fallback for \lstinline|mutability|:
-\begin{jllisting}
-mutability(::Type) = IsNotMutable()
-function mutability(
-    T::Type,
-    op::Function,
-    args::Type...,
-)
-    if mutability(T) isa IsMutable &&
-        T == promote_operation(op, args...)
-        return IsMutable()
-    else
-        return IsNotMutable()
-    end
-end
-\end{jllisting}
+\jlinputlisting{code/mutability.jl}
 
 \subsection{Minimal interface}
 In summary, for a type \lstinline|Foo| to implement the interface,
@@ -260,10 +256,8 @@ end
 Then
 \begin{unnumlist}
   \item \lstinline|mutability(::Foo, +, Foo, Foo)|,
-  \item \lstinline|operate!!(+, ::Foo, ::Foo)|,
-  \item \lstinline|operate_to!!(::Foo, +, ::Foo, ::Foo)|,
-  \item \lstinline|add!(::Foo, ::Foo)|,
-  \item \lstinline|add_to!(::Foo, ::Foo, ::Foo)|,
+  \item \lstinline|operate!!(+, ::Foo, ::Foo)| and
+  \item \lstinline|operate_to!!(::Foo, +, ::Foo, ::Foo)|
   \item \lstinline|add!!(::Foo, ::Foo)| and
   \item \lstinline|add_to!!(::Foo, ::Foo, ::Foo)|
 \end{unnumlist}
@@ -272,9 +266,11 @@ will be available as well for the user thanks to the default fallbacks.
 \section{Rewriting macro}
 
 As mentioned in the introduction, \ma{} implements a \lstinline|@rewrite| macro that rewrites:
+\begin{minipage}{\linewidth}
 \begin{jllisting}
 @rewrite(a * b + c * d - e * f * g - sum(i * y[i] for i in 2:n))
 \end{jllisting}
+\end{minipage}
 into
 \begin{jllisting}
 acc0 = Zero()
@@ -372,7 +368,6 @@ function buffered_operate!(
     operate_to!(buffer, *, x, y)
     return operate!(+, a, buffer)
 end
-
 \end{jllisting}
 Then, the matrix multiplication can create the buffer
 only once with
@@ -391,7 +386,7 @@ at the level of higher-level operations.
 This allows for instance to allocate the buffer only once even if
 several matrix products are computed:
 
-\begin{minipage}{\linewidth}
+%\begin{minipage}{\linewidth}
 \begin{jllisting}
 buf = buffer_for(
     add_mul,
@@ -405,7 +400,7 @@ buf = buffer_for(
 
 0
 \end{jllisting}
-\end{minipage}
+%\end{minipage}
 
 \subsection{Mutability layers}
 Mutable states in objects can form a hierarchy of mutable layers.
