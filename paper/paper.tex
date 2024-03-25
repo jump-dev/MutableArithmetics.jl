@@ -225,7 +225,17 @@ Based on this observation, we define \lstinline|mutability(T::Type)| which
 returns \lstinline|IsMutable()| if \lstinline|T| is in the first category
 and \lstinline|IsNotMutable()| if \lstinline|T| is in the second category.
 Then we have the following fallback for \lstinline|mutability|:
-\jlinputlisting{code/mutability.jl}
+\begin{jllisting}
+mutability(::Type) = IsNotMutable()
+function mutability(T::Type, op::Function, args::Type...)
+    if mutability(T) isa IsMutable &&
+        T == promote_operation(op, args...)
+        return IsMutable()
+    else
+        return IsNotMutable()
+    end
+end
+\end{jllisting}
 
 \subsection{Minimal interface}
 In summary, for a type \lstinline|Foo| to implement the interface,
