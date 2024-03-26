@@ -187,3 +187,22 @@ end
         end
     end
 end
+
+@testset "issue_271_mutability" begin
+    a = 1
+    x = [1; 2;;]
+    y = [1 2; 3 4]
+    z = [1 2; 3 4; 5 6]
+    @test MA.mutability(x, *, x, x') == MA.IsNotMutable()
+    @test MA.mutability(x, *, x', x) == MA.IsNotMutable()
+    @test MA.mutability(x, *, x, a, x') == MA.IsNotMutable()
+    @test MA.mutability(x, *, x', a, x) == MA.IsNotMutable()
+    @test MA.mutability(y, *, y, y) == MA.IsMutable()
+    @test MA.mutability(y, *, y, y, y) == MA.IsMutable()
+    @test MA.mutability(y, *, y, a, y') == MA.IsMutable()
+    @test MA.mutability(y, *, y', a, y) == MA.IsMutable()
+    @test MA.mutability(y, *, a, a, y) == MA.IsMutable()
+    @test MA.mutability(y, *, y, z', z) == MA.IsMutable()
+    @test MA.mutability(z, *, z, z) == MA.IsNotMutable()
+    @test MA.mutability(z, *, z, z, y) == MA.IsNotMutable()
+end

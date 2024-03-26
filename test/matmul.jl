@@ -142,11 +142,11 @@ end
         @test MA.mul(A, x) == BigInt[3; 3; 3]
         @test MA.mul_to!!(y, A, x) == BigInt[3; 3; 3] && y == BigInt[3; 3; 3]
         @test_throws DimensionMismatch MA.mul(BigInt[1 1; 1 1], BigInt[])
-        @test_throws DimensionMismatch MA.mul_to!!(
-            BigInt[],
-            BigInt[1 1; 1 1],
-            BigInt[1; 1],
-        )
+        @test MA.mul_to!!(BigInt[], BigInt[1 1; 1 1], BigInt[1; 1]) ==
+              BigInt[2, 2]
+        z = BigInt[0, 0]
+        @test MA.mul_to!!(z, BigInt[1 1; 1 1], BigInt[1; 1]) === z
+        @test z == BigInt[2, 2]
 
         @testset "mutability" begin
             alloc_test(() -> MA.promote_operation(*, typeof(A), typeof(x)), 0)
@@ -219,11 +219,11 @@ end
             BigInt[1 1; 1 1],
             zeros(BigInt, 1, 1),
         )
-        @test_throws DimensionMismatch MA.mul_to!!(
+        @test MA.mul_to!!(
             zeros(BigInt, 1, 1),
             BigInt[1 1; 1 1],
             zeros(BigInt, 2, 1),
-        )
+        ) == zeros(BigInt, 2, 1)
 
         @testset "mutability" begin
             alloc_test(() -> MA.promote_operation(*, typeof(A), typeof(B)), 0)
@@ -421,4 +421,17 @@ Base.:*(m::Monomial, ::Monomial) = m
         @test T == typeof(a * b)
         @test T == typeof(MA.operate(*, a, b))
     end
+end
+
+@testset "Issue_271" begin
+    A = reshape([1, 2], (2, 1))
+    B = [1 2]
+    C = MA.operate!!(*, A, B)
+    @test A == reshape([1, 2], (2, 1))
+    @test B == [1 2]
+    @test C == A * B
+    D = MA.operate!!(*, B, A)
+    @test A == reshape([1, 2], (2, 1))
+    @test B == [1 2]
+    @test D == B * A
 end
