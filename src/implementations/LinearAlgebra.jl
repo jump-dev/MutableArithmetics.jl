@@ -146,6 +146,24 @@ function operate!(op::AddSubMul, A::Array, x, y, args::Vararg{Any,N}) where {N}
     return operate!(op, A, x, *(y, args...))
 end
 
+function operate_to!(
+    output::AbstractArray,
+    op::Union{typeof(+),typeof(-)},
+    A::AbstractArray,
+    B::AbstractArray,
+)
+    return Base.broadcast!(op, output, A, B)
+end
+
+function operate_to!(
+    output::AbstractArray,
+    ::typeof(*),
+    v::AbstractArray,
+    α::Number,
+)
+    return LinearAlgebra.mul!(output, v, α)
+end
+
 # Product
 
 function similar_array_type(
