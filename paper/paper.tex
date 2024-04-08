@@ -355,7 +355,7 @@ In order to avoid allocating $n^2$ new \lstinline|BigInt|s,
 \ma{} enables operations to communicate the buffers they need to allocate through the \lstinline|buffer_for| function.
 The buffer can then be reused between multiple occurrences of the same operation with \lstinline|buffered_operate!|.
 By default, \lstinline|buffer_for| returns \lstinline|nothing|
-and \lstinline|buffered_operate!| has the following fallback:
+and \lstinline|buffered_operate!| has the following fallback (where \lstinline|MA| is a shortcut for \lstinline|MutableArithmetics|):
 \begin{jllisting}
 MA.buffered_operate!(::Nothing, args...) = operate!(args...)
 \end{jllisting}
