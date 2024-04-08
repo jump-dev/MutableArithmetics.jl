@@ -360,7 +360,7 @@ and \lstinline|buffered_operate!| has the following fallback (where \lstinline|M
 MA.buffered_operate!(::Nothing, args...) = operate!(args...)
 \end{jllisting}
 The implementation of the following two methods in MutableArithmetics
-allows the buffer to be created and reused by a generic code that is not
+allows the buffer to be created and reused by a generic method that is not
 specific to \lstinline|BigInt|:
 \begin{jllisting}
 function MA.buffer_for(
