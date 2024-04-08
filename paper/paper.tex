@@ -64,7 +64,7 @@ The section is organized into four subsections that describe the need of four ke
 \subsection{May mutate}
 \label{sec:may_mutate}
 Consider the task of summing the elements of a vector.
-By default, Julia's \lstinline|sum| function will compute the sum with a code equivalent to the following:
+By default, Julia's \lstinline|sum| function will compute the sum with a method equivalent to the following:
 \jlinputlisting{code/sum.jl}
 If the type of the elements of \lstinline|x| is \lstinline|BigInt|, it is more efficient to replace the line
 \lstinline|acc = acc + el| by the line
@@ -106,9 +106,9 @@ the mutable API in AbstractAlgebra~\cite{AbstractAlgebra.jl-2017},
 as well as the \lstinline|destructive_add!| function in JuMP v0.20.
 
 \subsection{Should mutate}
-In situations where the correctness of a code depends on
+In situations where the correctness of code depends on
 the mutation of the first argument of an operation,
-an API that allows an implementation to silently returns the
+an API that allows an implementation to silently return the
 result without modifying the first argument is not appropriate.
 
 To motivate this, consider the \lstinline|Rational| Julia type:
@@ -117,9 +117,8 @@ Suppose we want to mutate\cref{foot:mutate} some rational \lstinline|a::Rational
 product of \lstinline|a::Rational| and some other rational \lstinline|b::Rational|
 (ignoring the simplification with \lstinline|gcd| for simplicity).
 
-Using \lstinline|a.num = mul!!(a.num, b.num)| and
-\lstinline|a.den = mul!!(a.den, b.den)|
-(where \lstinline|mul!!| follows BangBang's convention)
+Using \lstinline|a.num = mul!!(a.num, b.num); a.den = mul!!(a.den, b.den)|
+(where \lstinline|mul!!| follows BangBang's conventioni)
 is not an option since
 the \lstinline|Rational| struct is not mutable.
 
@@ -134,8 +133,8 @@ To motivate this, consider again the multiplication of rational numbers introduc
 An implementation \lstinline|mul!!| (where \lstinline|mul!!| \emph{may} mutate its first argument and \lstinline|mul!| \emph{should} mutate its first argument)
 for rational numbers could be:
 \begin{jllisting}
-function mul!!(a::Rational{S}, b::Rational{T})
-    if # S can be mutated to `*(::S, ::T)`
+function mul!!(a::Rational{S}, b::Rational{T}) where {S,T}
+    if # `S` can be mutated to `*(::S, ::T)`
         mul!(a.num, b.num)
         mul!(a.den, b.den)
         return a
@@ -216,7 +215,7 @@ so that the same performance is obtained with the default implementation of \lst
 \subsection{Mutability fallback}
 It turns out that all types considered at the moment fall into two categories.
 The first category is made of the types \lstinline|T| for which
-\lstinline|mutability(T, ...)| always return \lstinline|IsNotMutable()|.
+\lstinline|mutability(T, ...)| always returns \lstinline|IsNotMutable()|.
 These are typically the non-mutable types, e.g., \lstinline|Int|, \lstinline|Float64|, \lstinline|Rational{Int}|, ...
 In the second category are the types \lstinline|T| for which
 \lstinline|mutability(T, op, args...)| returns \lstinline|IsMutable()|
@@ -266,8 +265,8 @@ end
 Then
 \begin{unnumlist}
   \item \lstinline|mutability(::Foo, +, Foo, Foo)|,
-  \item \lstinline|operate!!(+, ::Foo, ::Foo)| and
-  \item \lstinline|operate_to!!(::Foo, +, ::Foo, ::Foo)|
+  \item \lstinline|operate!!(+, ::Foo, ::Foo)|,
+  \item \lstinline|operate_to!!(::Foo, +, ::Foo, ::Foo)|,
   \item \lstinline|add!!(::Foo, ::Foo)| and
   \item \lstinline|add_to!!(::Foo, ::Foo, ::Foo)|
 \end{unnumlist}
@@ -356,19 +355,21 @@ In order to avoid allocating $n^2$ new \lstinline|BigInt|s,
 \ma{} enables operations to communicate the buffers they need to allocate through the \lstinline|buffer_for| function.
 The buffer can then be reused between multiple occurrences of the same operation with \lstinline|buffered_operate!|.
 By default, \lstinline|buffer_for| returns \lstinline|nothing|
-and \lstinline|buffered_operate!| has the following fallback:
+and \lstinline|buffered_operate!| has the following fallback (where \lstinline|MA| is a shortcut for \lstinline|MutableArithmetics|):
 \begin{jllisting}
-buffered_operate!(::Nothing, args...) = operate!(args...)
+MA.buffered_operate!(::Nothing, args...) = operate!(args...)
 \end{jllisting}
-The buffer can be reused by implementing:
+The implementation of the following two methods in MutableArithmetics
+allows the buffer to be created and reused by a generic method that is not
+specific to \lstinline|BigInt|:
 \begin{jllisting}
-function buffer_for(
+function MA.buffer_for(
     ::typeof(add_mul),
     ::Type{BigInt}...,
 )
     return BigInt()
 end
-function buffered_operate!(
+function MA.buffered_operate!(
     buffer::BigInt,
     ::typeof(add_mul),
     a::BigInt,
@@ -379,12 +380,13 @@ function buffered_operate!(
     return operate!(+, a, buffer)
 end
 \end{jllisting}
-Then, the matrix multiplication can create the buffer
-only once with
+This is used by the implementation of matrix-vector
+multiplication in MutableArithmetics to create the
+buffer once with
 \begin{jllisting}
 buf = buffer_for(add_mul, eltype(c), eltype(A), eltype(b))
 \end{jllisting}
-and then call
+and then reuse it with
 \begin{jllisting}
 buffered_operate!(buf, add_mul, c[i], A[i, j], b[j])
 \end{jllisting}
@@ -446,8 +448,8 @@ julia> buf = buffer_for(
     add_mul, typeof(c), typeof(A), typeof(b))
 0
 
-julia> @allocated buffered_operate!(
-           buf, add_mul, c, A, b)
+julia> @ballocated buffered_operate!(
+           $buf, add_mul, $c, $A, $b)
 0
 \end{jllisting}
 

@@ -34,7 +34,7 @@ open('header.tex', 'w') do |f|
 	# hypersetup
 	f << "\\hypersetup{\n"
 	f << "pdftitle = {#{metadata["title"]}},\n"
-	f << "pdfsubject = {JuliaCon 2019 Proceedings},\n"
+	f << "pdfsubject = {JuliaCon 2021 Proceedings},\n"
 	author_list = metadata['authors'].map { |a| a['name'] }.join(', ')
 	f << "pdfauthor = {#{author_list}},\n"
 	keyword_list = metadata['keywords'].join(', ')
