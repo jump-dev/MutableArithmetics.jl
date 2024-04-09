@@ -118,7 +118,7 @@ product of \lstinline|a::Rational| and some other rational \lstinline|b::Rationa
 (ignoring the simplification with \lstinline|gcd| for simplicity).
 
 Using \lstinline|a.num = mul!!(a.num, b.num); a.den = mul!!(a.den, b.den)|
-(where \lstinline|mul!!| follows BangBang's conventioni)
+(where \lstinline|mul!!| follows BangBang's convention)
 is not an option since
 the \lstinline|Rational| struct is not mutable.
 
@@ -406,7 +406,7 @@ buf = buffer_for(
     typeof(A),
     typeof(b),
 )
-@allocated buffered_operate!(buf, add_mul, c, A, b)
+@ballocated buffered_operate!($buf, add_mul, $c, $A, $b)
 
 # output
 
