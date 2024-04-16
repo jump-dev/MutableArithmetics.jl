@@ -85,7 +85,7 @@ function operate!(
     A = parent(adjA)
     A_nonzeros = SparseArrays.nonzeros(A)
     A_rowvals = SparseArrays.rowvals(A)
-    for k in 1:size(ret, 2)
+    for k in axes(ret, 2)
         for col in 1:A.n
             cur = ret[col, k]
             for j in SparseArrays.nzrange(A, col)
@@ -108,8 +108,8 @@ function operate!(
     _dim_check(ret, A, B)
     A_nonzeros = SparseArrays.nonzeros(A)
     A_rowvals = SparseArrays.rowvals(A)
-    for col in 1:size(A, 2)
-        for k in 1:size(ret, 2)
+    for col in axes(A, 2)
+        for k in axes(ret, 2)
             αxj = *(B[col, k], α...)
             for j in SparseArrays.nzrange(A, col)
                 ret[A_rowvals[j], k] =
@@ -130,8 +130,8 @@ function operate!(
     _dim_check(ret, A, B)
     rowval = SparseArrays.rowvals(B)
     B_nonzeros = SparseArrays.nonzeros(B)
-    for multivec_row in 1:size(A, 1)
-        for col in 1:size(B, 2)
+    for multivec_row in axes(A, 1)
+        for col in axes(B, 2)
             cur = ret[multivec_row, col]
             for k in SparseArrays.nzrange(B, col)
                 cur = operate!!(
@@ -159,11 +159,11 @@ function operate!(
     B = parent(adjB)
     B_rowvals = SparseArrays.rowvals(B)
     B_nonzeros = SparseArrays.nonzeros(B)
-    for B_col in 1:size(B, 2), k in SparseArrays.nzrange(B, B_col)
+    for B_col in axes(B, 2), k in SparseArrays.nzrange(B, B_col)
         B_row = B_rowvals[k]
         B_val = _mirror_transpose_or_adjoint(B_nonzeros[k], adjB)
         αB_val = *(B_val, α...)
-        for A_row in 1:size(A, 1)
+        for A_row in axes(A, 1)
             ret[A_row, B_row] =
                 operate!!(add_mul, ret[A_row, B_row], A[A_row, B_col], αB_val)
         end
