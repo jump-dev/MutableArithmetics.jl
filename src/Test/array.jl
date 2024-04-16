@@ -307,10 +307,10 @@ function sum_test(matrix)
     @test_rewrite sum(matrix)
     if matrix isa AbstractMatrix
         @test_rewrite sum([
-            2matrix[i, j] for i in 1:size(matrix, 1), j in 1:size(matrix, 2)
+            2matrix[i, j] for i in axes(matrix, 1), j in axes(matrix, 2)
         ])
         @test_rewrite sum(
-            2matrix[i, j] for i in 1:size(matrix, 1), j in 1:size(matrix, 2)
+            2matrix[i, j] for i in axes(matrix, 1), j in axes(matrix, 2)
         )
     end
 end
@@ -318,10 +318,10 @@ end
 function sum_multiplication_test(matrix)
     if matrix isa AbstractMatrix
         @test_rewrite sum([
-            2matrix[i, j]^2 for i in 1:size(matrix, 1), j in 1:size(matrix, 2)
+            2matrix[i, j]^2 for i in axes(matrix, 1), j in axes(matrix, 2)
         ])
         @test_rewrite sum(
-            2matrix[i, j]^2 for i in 1:size(matrix, 1), j in 1:size(matrix, 2)
+            2matrix[i, j]^2 for i in axes(matrix, 1), j in axes(matrix, 2)
         )
     end
 end
@@ -344,7 +344,7 @@ function transpose_test(x)
     # If the element type does not support multiplication, e.g.
     # JuMP or MOI quadratic functions, then we should skip these tests.
     if x isa AbstractMatrix && _is_supported(*, eltype(x), eltype(x))
-        y = [x[i, j] for j in 1:size(x, 2), i in 1:size(x, 1)]
+        y = [x[i, j] for j in axes(x, 2), i in axes(x, 1)]
         @test MA.isequal_canonical(x', y)
         @test MA.isequal_canonical(copy(transpose(x)), y)
         if size(x, 1) == size(x, 2)

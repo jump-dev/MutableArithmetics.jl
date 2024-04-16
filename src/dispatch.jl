@@ -548,7 +548,7 @@ end
 # `eltype` of `B` might be different form the `eltype` of `A`.
 function Matrix(A::LinearAlgebra.Symmetric{<:AbstractMutable})
     B = LinearAlgebra.copytri!(convert(Matrix, copy(A.data)), A.uplo)
-    for i in 1:size(A, 1)
+    for i in axes(A, 1)
         # `B[i, i]` is used instead of `A[i, i]` on Julia v1.1 hence the need
         # to overwrite it for `AbstractMutable`.
         B[i, i] = LinearAlgebra.symmetric(
@@ -561,7 +561,7 @@ end
 
 function Matrix(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     B = LinearAlgebra.copytri!(convert(Matrix, copy(A.data)), A.uplo, true)
-    for i in 1:size(A, 1)
+    for i in axes(A, 1)
         # `B[i, i]` is used instead of `A[i, i]` on Julia v1.1 hence the need
         # to overwrite it for `AbstractMutable`.
         B[i, i] = LinearAlgebra.hermitian(
