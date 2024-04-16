@@ -468,9 +468,34 @@ end
 # +(::SparseMatrixCSC) is not defined for generic types in Base.
 Base.:+(A::AbstractArray{<:AbstractMutable}) = A
 
+# `Base.*(::AbstractArray, α)` is only defined if `α isa Number`
+# Currently, mutable types are scalar elements (e.g. JuMP expression,
+# MOI functions or polynomials) so broadcasting is the right dispatch.
+# If this causes issues in the future, e.g., because a user define a non-scalar
+# subtype of `AbstractMutable`, we might want to check that
+# `ndims` is zero and error otherwise.
+
 Base.:*(α::AbstractMutable, A::AbstractArray) = α .* A
 
 Base.:*(A::AbstractArray, α::AbstractMutable) = A .* α
+
+function operate_to!(
+    output::AbstractArray,
+    ::typeof(*),
+    v::AbstractArray,
+    α::Union{Number,AbstractMutable},
+)
+    return Base.broadcast!(*, output, v, α)
+end
+
+function operate_to!(
+    output::AbstractArray,
+    ::typeof(*),
+    α::Union{Number,AbstractMutable},
+    v::AbstractArray,
+)
+    return Base.broadcast!(*, output, α, v)
+end
 
 # Needed for Julia v1.0, otherwise, `broadcast(*, α, A)` gives a `Array` and
 # not a `Symmetric`.

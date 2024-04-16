@@ -85,3 +85,24 @@ end
     @test 2im * B == C
     @test C isa Matrix{Complex{BigInt}}
 end
+
+@testset "operate_to!(::Array, ::typeof(*), ::AbstractMutable, ::Array)" begin
+    for A in ([1 2; 5 3], DummyBigInt[1 2; 5 3])
+        for x in (2, DummyBigInt(2))
+            # operate_to!(::Array, *, ::AbstractMutable, ::Array)
+            B = x * A
+            C = zero(B)
+            D = MA.operate_to!(C, *, x, A)
+            @test C === D
+            @test typeof(B) == typeof(C)
+            @test MA.isequal_canonical(B, C)
+            # operate_to!(::Array, *, ::Array, ::AbstractMutable)
+            B = A * x
+            C = zero(B)
+            D = MA.operate_to!(C, *, A, x)
+            @test C === D
+            @test typeof(B) == typeof(C)
+            @test MA.isequal_canonical(B, C)
+        end
+    end
+end

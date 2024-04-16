@@ -155,15 +155,6 @@ function operate_to!(
     return Base.broadcast!(op, output, A, B)
 end
 
-function operate_to!(
-    output::AbstractArray,
-    ::typeof(*),
-    v::AbstractArray,
-    α::Number,
-)
-    return LinearAlgebra.mul!(output, v, α)
-end
-
 # Product
 
 function similar_array_type(
