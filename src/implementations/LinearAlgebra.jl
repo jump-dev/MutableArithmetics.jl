@@ -94,6 +94,25 @@ function operate!(op::Union{typeof(+),typeof(-)}, A::Array, B::AbstractArray)
     return broadcast!(op, A, B)
 end
 
+function operate_to!(
+    output::Array,
+    op::Union{typeof(+),typeof(-)},
+    A::AbstractArray,
+    B::AbstractArray,
+)
+    if axes(output) != promote_shape(A, B)
+        throw(
+            DimensionMismatch(
+                "Cannot sum or substract matrices of axes `$(axes(A))` and" *
+                " `$(axes(B))` into a matrix of axes `$(axes(output))`," *
+                " expected axes `$(promote_shape(A, B))`.",
+            ),
+        )
+    end
+    # We don't have `MA.broadcast_to!` as it would be exactly `Base.broadcast!`.
+    return Base.broadcast!(op, output, A, B)
+end
+
 # We call `scaling_to_number` as `UniformScaling` do not support broadcasting
 function operate!(
     op::AddSubMul,
