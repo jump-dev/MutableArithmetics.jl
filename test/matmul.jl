@@ -119,9 +119,22 @@ end
             "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
         )
         @test_throws err MA.operate!(+, A, B)
+        A = spzeros(2)
+        B = spzeros(2, 1)
+        err = DimensionMismatch(
+            "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
+        )
+        @test_throws err MA.operate!(+, A, B)
         output = zeros(2)
         A = zeros(2, 1)
         B = zeros(2, 1)
+        err = DimensionMismatch(
+            "Cannot sum or substract matrices of axes `$(axes(A))` and `$(axes(B))` into a matrix of axes `$(axes(output))`, expected axes `$(axes(B))`.",
+        )
+        @test_throws err MA.operate_to!(output, +, A, B)
+        output = spzeros(2)
+        A = spzeros(2, 1)
+        B = spzeros(2, 1)
         err = DimensionMismatch(
             "Cannot sum or substract matrices of axes `$(axes(A))` and `$(axes(B))` into a matrix of axes `$(axes(output))`, expected axes `$(axes(B))`.",
         )
@@ -451,6 +464,21 @@ function test_array_sum(::Type{T}) where {T}
     alloc_test(() -> MA.add!!(y, z), 0)
     alloc_test(() -> MA.operate_to!(x, +, y, z), 0)
     alloc_test(() -> MA.add_to!!(x, y, z), 0)
+    return
+end
+
+function test_sparse_vector_sum(::Type{T}) where {T}
+    x = sparsevec([1, 3], T[5, 7])
+    y = copy(x)
+    z = copy(y)
+    alloc_test(() -> MA.operate!(+, y, z), 0)
+    alloc_test(() -> MA.operate!(-, y, z), 0)
+    alloc_test(() -> MA.add!!(y, z), 0)
+    alloc_test(() -> MA.sub!!(y, z), 0)
+    alloc_test(() -> MA.operate_to!(x, +, y, z), 0)
+    alloc_test(() -> MA.operate_to!(x, -, y, z), 0)
+    alloc_test(() -> MA.add_to!!(x, y, z), 0)
+    alloc_test(() -> MA.sub_to!!(x, y, z), 0)
     return
 end
 
