@@ -7,6 +7,8 @@
 [![deps][deps-img]][deps-url]
 [![version][version-img]][version-url]
 [![pkgeval][pkgeval-img]][pkgeval-url]
+[![DOI](https://proceedings.juliacon.org/papers/10.21105/jcon.00093/status.svg)](https://doi.org/10.21105/jcon.00093)
+
 
 **MutableArithmetics** (MA for short) is a [Julia](http://julialang.org) package
 which allows:
@@ -175,6 +177,25 @@ BenchmarkTools.Trial: 4910 samples with 1 evaluation.
  Memory estimate: 0 bytes, allocs estimate: 0.
 ```
 Note that there are now 0 allocations.
+
+## Citing MutableArithmetics
+
+If you find MutableArithmetics useful in your work, we kindly request that you cite the
+following [paper](https://doi.org/10.21105/jcon.00093):
+```bibtex
+@article{Legat2024,
+  doi = {10.21105/jcon.00093},
+  url = {https://doi.org/10.21105/jcon.00093},
+  year = {2024},
+  publisher = {The Open Journal},
+  volume = {6},
+  number = {58},
+  pages = {93},
+  author = {Benoît Legat},
+  title = {MutableArithmetics: An API for mutable operations},
+  journal = {Proceedings of the JuliaCon Conferences}
+}
+```
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
