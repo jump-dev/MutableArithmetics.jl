@@ -89,7 +89,11 @@ function _check_dims(A, B)
     return
 end
 
-function operate!(op::Union{typeof(+),typeof(-)}, A::AbstractArray, B::AbstractArray)
+function operate!(
+    op::Union{typeof(+),typeof(-)},
+    A::AbstractArray,
+    B::AbstractArray,
+)
     _check_dims(A, B)
     return broadcast!(op, A, B)
 end
@@ -156,11 +160,17 @@ end
 
 # Fallback, we may be able to be more efficient in more cases by adding more
 # specialized methods.
-function operate!(op::AddSubMul, A::Array, x, y)
+function operate!(op::AddSubMul, A::AbstractArray, x, y)
     return operate!(op, A, x * y)
 end
 
-function operate!(op::AddSubMul, A::Array, x, y, args::Vararg{Any,N}) where {N}
+function operate!(
+    op::AddSubMul,
+    A::AbstractArray,
+    x,
+    y,
+    args::Vararg{Any,N},
+) where {N}
     @assert N > 0
     return operate!(op, A, x, *(y, args...))
 end
