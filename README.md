@@ -7,7 +7,7 @@
 [![deps][deps-img]][deps-url]
 [![version][version-img]][version-url]
 [![pkgeval][pkgeval-img]][pkgeval-url]
-[![DOI](https://proceedings.juliacon.org/papers/10.21105/jcon.0093/status.svg)](https://doi.org/10.21105/jcon.0093)
+[![DOI](https://proceedings.juliacon.org/papers/10.21105/jcon.00093/status.svg)](https://doi.org/10.21105/jcon.00093)
 
 
 **MutableArithmetics** (MA for short) is a [Julia](http://julialang.org) package
