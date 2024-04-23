@@ -9,7 +9,7 @@ import MutableArithmetics as MA
 
 struct CustomArray{T,N} <: AbstractArray{T,N} end
 
-import LinearAlgebra
+import LinearAlgebra, SparseArrays
 
 function dot_test(x, y)
     @test MA.operate(LinearAlgebra.dot, x, y) == LinearAlgebra.dot(x, y)
@@ -468,7 +468,7 @@ function test_array_sum(::Type{T}) where {T}
 end
 
 function test_sparse_vector_sum(::Type{T}) where {T}
-    x = sparsevec([1, 3], T[5, 7])
+    x = SparseArrays.sparsevec([1, 3], T[5, 7])
     y = copy(x)
     z = copy(y)
     alloc_test(() -> MA.operate!(+, y, z), 0)
