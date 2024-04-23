@@ -119,8 +119,8 @@ end
             "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
         )
         @test_throws err MA.operate!(+, A, B)
-        A = spzeros(2)
-        B = spzeros(2, 1)
+        A = SparseArrays.spzeros(2)
+        B = SparseArrays.spzeros(2, 1)
         err = DimensionMismatch(
             "Cannot sum or substract a matrix of axes `$(axes(B))` into matrix of axes `$(axes(A))`, expected axes `$(axes(B))`.",
         )
@@ -132,9 +132,9 @@ end
             "Cannot sum or substract matrices of axes `$(axes(A))` and `$(axes(B))` into a matrix of axes `$(axes(output))`, expected axes `$(axes(B))`.",
         )
         @test_throws err MA.operate_to!(output, +, A, B)
-        output = spzeros(2)
-        A = spzeros(2, 1)
-        B = spzeros(2, 1)
+        output = SparseArrays.spzeros(2)
+        A = SparseArrays.spzeros(2, 1)
+        B = SparseArrays.spzeros(2, 1)
         err = DimensionMismatch(
             "Cannot sum or substract matrices of axes `$(axes(A))` and `$(axes(B))` into a matrix of axes `$(axes(output))`, expected axes `$(axes(B))`.",
         )
