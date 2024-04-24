@@ -199,3 +199,62 @@ end
     b = @allocated MA.operate(LinearAlgebra.dot, x, y)
     @test a == b
 end
+
+@testset "test_multiply_expr_MA_Zero" begin
+    x = DummyBigInt(1)
+    f = DummyBigInt(2)
+    @test MA.@rewrite(
+        f * sum(x for i in 1:0),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        sum(x for i in 1:0) * f,
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        -f * sum(x for i in 1:0),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        sum(x for i in 1:0) * -f,
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        (f + f) * sum(x for i in 1:0),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        sum(x for i in 1:0) * (f + f),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.isequal_canonical(
+        MA.@rewrite(f + sum(x for i in 1:0), move_factors_into_sums = false),
+        f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(sum(x for i in 1:0) + f, move_factors_into_sums = false),
+        f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(-f + sum(x for i in 1:0), move_factors_into_sums = false),
+        -f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(sum(x for i in 1:0) + -f, move_factors_into_sums = false),
+        -f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(
+            (f + f) + sum(x for i in 1:0),
+            move_factors_into_sums = false
+        ),
+        f + f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(
+            sum(x for i in 1:0) + (f + f),
+            move_factors_into_sums = false
+        ),
+        f + f,
+    )
+end
