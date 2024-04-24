@@ -85,6 +85,7 @@ end
 # arguments because MA.Zero is not mutable, and MA never queries the mutablility
 # of arguments if the first is not mutable.
 promote_operation(::typeof(*), ::Type{<:Any}, ::Type{Zero}) = Zero
+promote_operation(::typeof(*), ::Type{<:AbstractArray}, ::Type{Zero}) = Zero
 
 # Needed by `@rewrite(BigInt(1) .+ sum(1 for i in 1:0) * 1^2)`
 # since we don't require mutable type to support Zero in
