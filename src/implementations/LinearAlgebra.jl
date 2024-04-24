@@ -89,13 +89,17 @@ function _check_dims(A, B)
     return
 end
 
-function operate!(op::Union{typeof(+),typeof(-)}, A::Array, B::AbstractArray)
+function operate!(
+    op::Union{typeof(+),typeof(-)},
+    A::AbstractArray,
+    B::AbstractArray,
+)
     _check_dims(A, B)
     return broadcast!(op, A, B)
 end
 
 function operate_to!(
-    output::Array,
+    output::AbstractArray,
     op::Union{typeof(+),typeof(-)},
     A::AbstractArray,
     B::AbstractArray,
@@ -116,7 +120,7 @@ end
 # We call `scaling_to_number` as `UniformScaling` do not support broadcasting
 function operate!(
     op::AddSubMul,
-    A::Array,
+    A::AbstractArray,
     B::AbstractArray,
     α::Vararg{Scaling,M},
 ) where {M}
@@ -126,7 +130,7 @@ end
 
 function operate!(
     op::AddSubMul,
-    A::Array,
+    A::AbstractArray,
     α::Scaling,
     B::AbstractArray,
     β::Vararg{Scaling,M},
@@ -137,7 +141,7 @@ end
 
 function operate!(
     op::AddSubMul,
-    A::Array,
+    A::AbstractArray,
     α1::Scaling,
     α2::Scaling,
     B::AbstractArray,
@@ -156,11 +160,17 @@ end
 
 # Fallback, we may be able to be more efficient in more cases by adding more
 # specialized methods.
-function operate!(op::AddSubMul, A::Array, x, y)
+function operate!(op::AddSubMul, A::AbstractArray, x, y)
     return operate!(op, A, x * y)
 end
 
-function operate!(op::AddSubMul, A::Array, x, y, args::Vararg{Any,N}) where {N}
+function operate!(
+    op::AddSubMul,
+    A::AbstractArray,
+    x,
+    y,
+    args::Vararg{Any,N},
+) where {N}
     @assert N > 0
     return operate!(op, A, x, *(y, args...))
 end
