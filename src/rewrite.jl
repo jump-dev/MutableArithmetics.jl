@@ -30,6 +30,10 @@ end
 
 struct Zero end
 
+# This method is called in various `promote_operation_fallback` methods if one
+# of the arguments is `::Zero`.
+Base.zero(::Type{Zero}) = Zero()
+
 ## We need to copy `x` as it will be used as might be given by the user and be
 ## given as first argument of `operate!!`.
 #Base.:(+)(zero::Zero, x) = copy_if_mutable(x)

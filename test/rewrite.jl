@@ -9,7 +9,7 @@ import MutableArithmetics as MA
 
 @testset "Zero" begin
     z = MA.Zero()
-    #@test zero(MA.Zero) isa MA.Zero
+    @test zero(MA.Zero) isa MA.Zero
     @test z + z isa MA.Zero
     @test z + 1 == 1
     @test 1 + z == 1
