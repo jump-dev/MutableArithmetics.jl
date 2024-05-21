@@ -471,19 +471,14 @@ function test_sparse_vector_sum(::Type{T}) where {T}
     x = SparseArrays.sparsevec([1, 3], T[5, 7])
     y = copy(x)
     z = copy(y)
-    alloc_test(() -> MA.operate!(+, y, z), 0)
-    alloc_test(() -> MA.operate!(-, y, z), 0)
-    alloc_test(() -> MA.add!!(y, z), 0)
-    alloc_test(() -> MA.sub!!(y, z), 0)
     alloc_test(() -> MA.operate_to!(x, +, y, z), 0)
     alloc_test(() -> MA.operate_to!(x, -, y, z), 0)
-    alloc_test(() -> MA.add_to!!(x, y, z), 0)
-    alloc_test(() -> MA.sub_to!!(x, y, z), 0)
-    alloc_test(() -> MA.add_to!!(x, y), 0)
-    alloc_test(() -> MA.sub_to!!(x, y), 0)
+    alloc_test(() -> MA.operate_to!(x, +, y), 0)
+    alloc_test(() -> MA.operate_to!(x, -, y), 0)
     return
 end
 
 @testset "Array sum" begin
     test_array_sum(Int)
+    test_sparse_vector_sum(Int)
 end
