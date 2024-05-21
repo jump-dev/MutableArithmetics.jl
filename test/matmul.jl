@@ -479,6 +479,8 @@ function test_sparse_vector_sum(::Type{T}) where {T}
     alloc_test(() -> MA.operate_to!(x, -, y, z), 0)
     alloc_test(() -> MA.add_to!!(x, y, z), 0)
     alloc_test(() -> MA.sub_to!!(x, y, z), 0)
+    alloc_test(() -> MA.add_to!!(x, y), 0)
+    alloc_test(() -> MA.sub_to!!(x, y), 0)
     return
 end
 

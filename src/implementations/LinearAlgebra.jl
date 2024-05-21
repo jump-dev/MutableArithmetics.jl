@@ -102,6 +102,24 @@ function operate_to!(
     output::AbstractArray,
     op::Union{typeof(+),typeof(-)},
     A::AbstractArray,
+)
+    if axes(output) != axes(A)
+        throw(
+            DimensionMismatch(
+                "Cannot sum or substract a matrix of axes `$(axes(A))`" *
+                " into a matrix of axes `$(axes(output))`, expected" *
+                " axes `$(axes(A))`.",
+            ),
+        )
+    end
+    # We don't have `MA.broadcast_to!` as it would be exactly `Base.broadcast!`.
+    return Base.broadcast!(op, output, A)
+end
+
+function operate_to!(
+    output::AbstractArray,
+    op::Union{typeof(+),typeof(-)},
+    A::AbstractArray,
     B::AbstractArray,
 )
     if axes(output) != promote_shape(A, B)
