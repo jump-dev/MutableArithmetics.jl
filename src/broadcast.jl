@@ -151,7 +151,11 @@ end
 
 # If A is `Symmetric`, we cannot do a normal broadcast because we might modify
 # the same entry twice. See https://github.com/jump-dev/JuMP.jl/issues/2102
-function broadcast!(op::F, A::Union{Array,SparseArrays.AbstractSparseArray}, args::Vararg{Any,N}) where {F<:Function,N}
+function broadcast!(
+    op::F,
+    A::Union{Array,SparseArrays.AbstractSparseArray},
+    args::Vararg{Any,N},
+) where {F<:Function,N}
     bc = Broadcast.broadcasted(op, A, args...)
     instantiated = Broadcast.instantiate(bc)
     return copyto!(A, mutable_broadcasted(instantiated))
