@@ -17,7 +17,7 @@ function undef_array(
     return SparseArrays.spzeros(Tv, Ti, length(rows), length(cols))
 end
 
-function operate!(::typeof(zero), v::SparseArrays.SparseVec)
+function operate!(::typeof(zero), v::SparseArrays.SparseVector)
     empty!(v.nzind)
     empty!(v.nzval)
     return v
