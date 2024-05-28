@@ -17,6 +17,12 @@ function undef_array(
     return SparseArrays.spzeros(Tv, Ti, length(rows), length(cols))
 end
 
+function operate!(::typeof(zero), v::SparseArrays.SparseVector)
+    empty!(v.nzind)
+    empty!(v.nzval)
+    return v
+end
+
 function operate!(::typeof(zero), A::_SparseMat)
     for i in eachindex(A.colptr)
         A.colptr[i] = one(A.colptr[i])

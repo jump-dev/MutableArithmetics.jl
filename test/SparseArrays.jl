@@ -127,6 +127,18 @@ function test_sparse_broadcast()
     return
 end
 
+function test_zero()
+    v = SparseArrays.sparsevec([1, 2], [3.0, 4.0])
+    MA.operate!(zero, v)
+    @test isempty(SparseArrays.nonzeroinds(v))
+    @test isempty(SparseArrays.nonzeros(v))
+    A = SparseArrays.sprand(Float64, 2, 2, 0.5)
+    MA.operate!(zero, A)
+    @test iszero(SparseArrays.nnz(A))
+    @test isempty(SparseArrays.nonzeros(A))
+    return
+end
+
 end  # module
 
 TestInterfaceSparseArrays.runtests()
