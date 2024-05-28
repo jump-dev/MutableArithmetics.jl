@@ -132,7 +132,7 @@ function test_zero()
     MA.operate!(zero, v)
     @test isempty(SparseArrays.nonzeroinds(v))
     @test isempty(SparseArrays.nonzeros(v))
-    A = SparseArrays.sprand(Float64, 2, 2, 0.5)'
+    A = SparseArrays.sprand(Float64, 2, 2, 0.5)
     MA.operate!(zero, A)
     @test iszero(SparseArrays.nnz(A))
     @test isempty(SparseArrays.nonzeros(A))
