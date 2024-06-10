@@ -143,9 +143,6 @@ end
             "Cannot sum or substract a matrix of axes `$(axes(A))` into a matrix of axes `$(axes(output))`, expected axes `$(axes(A))`.",
         )
         @test_throws err MA.operate_to!(output, +, A)
-        err = DimensionMismatch(
-            "Cannot sum or substract a matrix of axes `$(axes(A))` into a matrix of axes `$(axes(output))`, expected axes `$(axes(A))`.",
-        )
         @test_throws err MA.operate_to!(output, -, A)
     end
     @testset "unsupported_product" begin
@@ -479,6 +476,7 @@ function test_sparse_vector_sum(::Type{T}) where {T}
     x = SparseArrays.sparsevec([1, 3], T[5, 7])
     y = copy(x)
     z = copy(y)
+    # FIXME not sure what is allocating
     alloc_test_le(() -> MA.operate!(+, y, z), 200)
     alloc_test_le(() -> MA.operate!(-, y, z), 200)
     alloc_test(() -> MA.operate_to!(x, +, y, z), 0)
