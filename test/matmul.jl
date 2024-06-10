@@ -139,6 +139,11 @@ end
             "Cannot sum or substract matrices of axes `$(axes(A))` and `$(axes(B))` into a matrix of axes `$(axes(output))`, expected axes `$(axes(B))`.",
         )
         @test_throws err MA.operate_to!(output, +, A, B)
+        err = DimensionMismatch(
+            "Cannot sum or substract a matrix of axes `$(axes(A))` into a matrix of axes `$(axes(output))`, expected axes `$(axes(A))`.",
+        )
+        @test_throws err MA.operate_to!(output, +, A)
+        @test_throws err MA.operate_to!(output, -, A)
     end
     @testset "unsupported_product" begin
         unsupported_product()
