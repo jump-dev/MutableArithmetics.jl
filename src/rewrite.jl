@@ -28,7 +28,7 @@ macro rewrite(args...)
     return rewrite_and_return(args[1]; move_factors_into_sums = args[2].args[2])
 end
 
-struct Zero end
+struct Zero <: Number end
 
 # This method is called in various `promote_operation_fallback` methods if one
 # of the arguments is `::Zero`.
@@ -62,7 +62,9 @@ Base.:*(z::Zero, ::Any) = z
 Base.:*(::Any, z::Zero) = z
 Base.:*(z::Zero, ::Zero) = z
 Base.:+(::Zero, x::Any) = x
+Base.:+(::Zero, x::Number) = x
 Base.:+(x::Any, ::Zero) = x
+Base.:+(x::Number, ::Zero) = x
 Base.:+(z::Zero, ::Zero) = z
 Base.:-(::Zero, x::Any) = -x
 Base.:-(x::Any, ::Zero) = x
