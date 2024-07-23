@@ -59,7 +59,9 @@ broadcast!!(::typeof(add_mul), ::Zero, x, y) = x * y
 
 # Needed in `@rewrite(1 .+ sum(1 for i in 1:0) * 1^2)`
 Base.:*(z::Zero, ::Any) = z
+Base.:*(z::Zero, ::Number) = z
 Base.:*(::Any, z::Zero) = z
+Base.:*(::Number, z::Zero) = z
 Base.:*(z::Zero, ::Zero) = z
 Base.:+(::Zero, x::Any) = x
 Base.:+(::Zero, x::Number) = x
@@ -67,13 +69,23 @@ Base.:+(x::Any, ::Zero) = x
 Base.:+(x::Number, ::Zero) = x
 Base.:+(z::Zero, ::Zero) = z
 Base.:-(::Zero, x::Any) = -x
+Base.:-(::Zero, x::Number) = -x
 Base.:-(x::Any, ::Zero) = x
+Base.:-(x::Number, ::Zero) = x
 Base.:-(z::Zero, ::Zero) = z
 Base.:-(z::Zero) = z
 Base.:+(z::Zero) = z
 Base.:*(z::Zero) = z
 
 function Base.:/(z::Zero, x::Any)
+    if iszero(x)
+        throw(DivideError())
+    else
+        return z
+    end
+end
+
+function Base.:/(z::Zero, x::Number)
     if iszero(x)
         throw(DivideError())
     else
