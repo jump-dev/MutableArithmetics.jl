@@ -115,13 +115,13 @@ function _try_size(x::AbstractArray)
 end
 _try_size(x::Array) = size(x)
 
-_checked_size(::Missing, ::Any) = false
 _checked_size(x_size::Any, y::AbstractArray) = x_size == _try_size(y)
 _checked_size(::Any, ::Any) = true
 _checked_size(::Any, ::Tuple{}) = true
 function _checked_size(x_size::Any, y::Tuple)
     return _checked_size(x_size, y[1]) && _checked_size(x_size, Base.tail(y))
 end
+_checked_size(::Missing, ::Tuple) = false
 
 # This method is a slightly tricky one:
 #
