@@ -122,6 +122,7 @@ function _checked_size(x_size::Any, y::Tuple)
     return _checked_size(x_size, y[1]) && _checked_size(x_size, Base.tail(y))
 end
 _checked_size(::Missing, ::Tuple) = false
+_checked_size(::Missing, ::Tuple{}) = false
 
 # This method is a slightly tricky one:
 #
