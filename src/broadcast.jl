@@ -102,12 +102,27 @@ function broadcast_mutability(x, op, args::Vararg{Any,N}) where {N}
     return broadcast_mutability(typeof(x), op, typeof.(args)...)
 end
 
-_checked_size(s, x::AbstractArray) = length(x) == s
+# Some AbstractArray, like JuMP.Containers.SparseAxisArray, do not support
+# Base.size. In such cases, we default to returning `false`, since we cannot
+# safely decide whether a broadcast can be stored in `x` unless we know the
+# sizes of the two entries.
+function _try_size(x::AbstractArray)
+    try
+        return size(x)
+    catch
+        return missing
+    end
+end
+_try_size(x::Array) = size(x)
+
+_checked_size(x_size::Any, y::AbstractArray) = x_size == _try_size(y)
 _checked_size(::Any, ::Any) = true
 _checked_size(::Any, ::Tuple{}) = true
-function _checked_size(s, x::Tuple)
-    return _checked_size(s, x[1]) && _checked_size(s, Base.tail(x))
+function _checked_size(x_size::Any, y::Tuple)
+    return _checked_size(x_size, y[1]) && _checked_size(x_size, Base.tail(y))
 end
+_checked_size(::Missing, ::Tuple) = false
+_checked_size(::Missing, ::Tuple{}) = false
 
 # This method is a slightly tricky one:
 #
@@ -115,15 +130,13 @@ end
 # happen during broadcasting since we'll either need to return a different size
 # to `x`, or multiple copies of an argument will be used for different parts of
 # `x`. To simplify, let's just return `IsNotMutable` if the sizes are different,
-# which will be slower but correct. This is slightly complicated by the fact
-# that some AbstractArray do not support `size`, so we check with `length`
-# instead. If the `size`s are different, a later error will be thrown.
+# which will be slower but correct.
 function broadcast_mutability(
     x::AbstractArray,
     op,
     args::Vararg{Any,N},
 ) where {N}
-    if !_checked_size(length(x), args)::Bool
+    if !_checked_size(_try_size(x), args)::Bool
         return IsNotMutable()
     end
     return broadcast_mutability(typeof(x), op, typeof.(args)...)
