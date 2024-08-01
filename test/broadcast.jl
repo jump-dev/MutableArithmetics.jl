@@ -52,3 +52,10 @@ Base.BroadcastStyle(::Type{Struct221}) = BroadcastStyle221()
 @testset "promote_broadcast_for_new_style" begin
     @test MA.promote_broadcast(MA.add_mul, Vector{Int}, Struct221) === Any
 end
+
+@testset "broadcast_length_1_dimensions" begin
+    A = rand(2, 1, 3)
+    B = rand(2, 3)
+    @test MA.broadcast!!(MA.sub_mul, A, B) ≈ A .- B
+    @test MA.broadcast!!(MA.sub_mul, B, A) ≈ B .- A
+end

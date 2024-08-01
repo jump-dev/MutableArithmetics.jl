@@ -115,15 +115,12 @@ end
 # happen during broadcasting since we'll either need to return a different size
 # to `x`, or multiple copies of an argument will be used for different parts of
 # `x`. To simplify, let's just return `IsNotMutable` if the sizes are different,
-# which will be slower but correct. This is slightly complicated by the fact
-# that some AbstractArray do not support `size`, so we check with `length`
-# instead. If the `size`s are different, a later error will be thrown.
+# which will be slower but correct.
 function broadcast_mutability(
     x::AbstractArray,
     op,
     args::Vararg{Any,N},
 ) where {N}
-    @show x, args
     if !_checked_size(size(x), args)::Bool
         return IsNotMutable()
     end
