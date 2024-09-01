@@ -178,6 +178,12 @@ BenchmarkTools.Trial: 4910 samples with 1 evaluation.
 ```
 Note that there are now 0 allocations.
 
+## Related projects
+
+For related projects, see:
+
+ * https://github.com/tkluck/InPlace.jl
+
 ## Citing MutableArithmetics
 
 If you find MutableArithmetics useful in your work, we kindly request that you cite the
