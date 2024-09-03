@@ -182,6 +182,7 @@ Note that there are now 0 allocations.
 
 For related projects, see:
 
+ * https://github.com/JuliaFolds/BangBang.jl
  * https://github.com/tkluck/InPlace.jl
 
 ## Citing MutableArithmetics
