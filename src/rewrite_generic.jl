@@ -55,6 +55,28 @@ function _is_kwarg(expr, kwarg::Symbol)
     return Meta.isexpr(expr, :kw) && expr.args[1] == kwarg
 end
 
+function _rewrite_elseif!(if_expr, expr::Any)
+    push!(if_expr.args, esc(expr))
+    return false
+end
+
+function _rewrite_elseif!(if_expr, expr::Expr)
+    if Meta.isexpr(expr, :elseif)
+        new_ifelse_expr = Expr(:elseif, esc(expr.args[1]))
+        push!(if_expr.args, new_ifelse_expr)
+        @assert 2 <= length(expr.args) <= 3
+        return mapreduce(&, 2:length(expr.args)) do i
+            return _rewrite_elseif!(new_ifelse_expr, expr.args[i])
+        end
+    else
+        stack = quote end
+        root, is_mutable = _rewrite_generic(stack, expr)
+        push!(stack.args, root)
+        push!(if_expr.args, stack)
+        return is_mutable
+    end
+end
+
 """
     _rewrite_generic(stack::Expr, expr::Expr)
 
@@ -62,7 +84,25 @@ This method is the heart of the rewrite logic. It converts `expr` into a mutable
 equivalent.
 """
 function _rewrite_generic(stack::Expr, expr::Expr)
-    if !Meta.isexpr(expr, :call)
+    if Meta.isexpr(expr, :block)
+        root = nothing
+        for arg in expr.args
+            root, mutable = _rewrite_generic(stack, arg)
+        end
+        return root, false
+    elseif Meta.isexpr(expr, :if)
+        # If blocks are special, because we can't lift the computation inside
+        # them into the stack; the values might be defined only if the branch is
+        # true.
+        if_expr = Expr(:if, esc(expr.args[1]))
+        @assert 2 <= length(expr.args) <= 3
+        is_mutable = mapreduce(&, 2:length(expr.args)) do i
+            return _rewrite_elseif!(if_expr, expr.args[i])
+        end
+        root = gensym()
+        push!(stack.args, :($root = $if_expr))
+        return root, is_mutable
+    elseif !Meta.isexpr(expr, :call)
         # In situations like `x[i]`, we do not attempt to rewrite. Return `expr`
         # and don't let future callers mutate.
         return esc(expr), false
