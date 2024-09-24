@@ -417,6 +417,19 @@ function test_rewrite_ifelse()
             2 * x
         end
     end
+    @test_rewrite begin
+        x = 2
+        y = Float64[1.0]
+        if x < 1
+            1.0
+        elseif length(y) == 2
+            2.0
+        elseif isempty(y)
+            3.0
+        else
+            4.0
+        end
+    end
     return
 end
 
