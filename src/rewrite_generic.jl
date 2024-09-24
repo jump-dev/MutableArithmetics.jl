@@ -85,10 +85,13 @@ equivalent.
 """
 function _rewrite_generic(stack::Expr, expr::Expr)
     if Meta.isexpr(expr, :block)
-        root = nothing
+        new_stack = quote end
         for arg in expr.args
-            root, mutable = _rewrite_generic(stack, arg)
+            root, _ = _rewrite_generic(new_stack, arg)
+            push!(new_stack.args, root)
         end
+        root = gensym()
+        push!(stack.args, :($root = $new_stack))
         return root, false
     elseif Meta.isexpr(expr, :if)
         # If blocks are special, because we can't lift the computation inside
