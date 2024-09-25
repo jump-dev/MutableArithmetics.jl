@@ -56,26 +56,22 @@ function _is_kwarg(expr, kwarg::Symbol)
 end
 
 function _rewrite_elseif!(if_expr, expr::Any)
-    push!(if_expr.args, esc(expr))
-    return false
-end
-
-function _rewrite_elseif!(if_expr, expr::Expr)
-    if Meta.isexpr(expr, :elseif)
+    if expr isa Expr && Meta.isexpr(expr, :elseif)
         new_ifelse_expr = Expr(:elseif, esc(expr.args[1]))
         push!(if_expr.args, new_ifelse_expr)
         @assert 2 <= length(expr.args) <= 3
         return mapreduce(&, 2:length(expr.args)) do i
             return _rewrite_elseif!(new_ifelse_expr, expr.args[i])
         end
-    else
-        stack = quote end
-        root, is_mutable = _rewrite_generic(stack, expr)
-        push!(stack.args, root)
-        push!(if_expr.args, stack)
-        return is_mutable
     end
+    stack = quote end
+    root, is_mutable = _rewrite_generic(stack, expr)
+    push!(stack.args, root)
+    push!(if_expr.args, stack)
+    return is_mutable
 end
+
+_rewrite_generic(stack::Expr, expr::LineNumberNode) = expr, false
 
 """
     _rewrite_generic(stack::Expr, expr::Expr)
