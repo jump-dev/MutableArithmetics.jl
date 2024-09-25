@@ -94,7 +94,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         push!(stack.args, :($root = $new_stack))
         return root, false
     elseif Meta.isexpr(expr, :if)
-        # If blocks are special, because we can't lift the computation inside
+        # `if` blocks are special, because we can't lift the computation inside
         # them into the stack; the values might be defined only if the branch is
         # true.
         if_expr = Expr(:if, esc(expr.args[1]))
