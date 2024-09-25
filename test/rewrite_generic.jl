@@ -360,6 +360,79 @@ function test_rewrite_generic_sum_dims()
     return
 end
 
+function test_rewrite_block()
+    @test_rewrite begin
+        x = 1
+        y = x + 2
+        z = 3 * y
+    end
+    @test_rewrite begin
+        x = [1]
+        y = x + [2]
+        z = 3 * y
+    end
+    return
+end
+
+function test_rewrite_ifelse()
+    @test_rewrite begin
+        x = -1
+        y = [3.0]
+        if x < 1
+            y .+ x
+        else
+            2 * x
+        end
+    end
+    @test_rewrite begin
+        x = 2
+        y = [3.0]
+        if x < 1
+            y .+ x
+        else
+            2 * x
+        end
+    end
+    @test_rewrite begin
+        x = 2
+        y = [3.0, 4.0]
+        if x < 1
+            y .+ x
+        elseif length(y) == 2
+            0.0
+        else
+            2 * x
+        end
+    end
+    @test_rewrite begin
+        x = 2
+        y = Float64[]
+        if x < 1
+            y .+ x
+        elseif length(y) == 2
+            0.0
+        elseif isempty(y)
+            -1.0
+        else
+            2 * x
+        end
+    end
+    @test_rewrite begin
+        x = 2
+        y = Float64[1.0]
+        if x < 1
+            1.0
+        elseif length(y) == 2
+            2.0
+        elseif isempty(y)
+            3.0
+        else
+            4.0
+        end
+    end
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
