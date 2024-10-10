@@ -4,20 +4,6 @@
 # v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
-function rand_dot_rel_err(size::Int, bias::Real)
-    x = rand(BigFloat, size) .- bias
-    y = rand(BigFloat, size) .- bias
-    backup = (MA.copy_if_mutable(x), MA.copy_if_mutable(y))
-    buf = MA.buffer_for(LinearAlgebra.dot, Vector{BigFloat}, Vector{BigFloat})
-    output = BigFloat()
-    MA.buffered_operate_to!!(buf, output, LinearAlgebra.dot, x, y)
-    @test (x, y) == backup
-    accurate = setprecision(BigFloat, 8 * precision(BigFloat)) do
-        return LinearAlgebra.dot(x, y)
-    end
-    return abs(accurate - output) / abs(accurate)
-end
-
 @testset "prec:$prec size:$size bias:$bias" for (prec, size, bias) in
                                                 Iterators.product(
     # These precisions (in bits) are most probably smaller than what
@@ -39,9 +25,34 @@ end
     (0.0, 2^-2, 2^-2 + 2^-3 + 2^-4),
 )
     err = setprecision(BigFloat, prec) do
-        return mapreduce(max, 1:10) do _
-            return rand_dot_rel_err(size, bias) / eps(BigFloat)
+        maximum_relative_error = mapreduce(max, 1:10) do _
+            # Generate some random vectors for dot(x, y) input.
+            x = rand(BigFloat, size) .- bias
+            y = rand(BigFloat, size) .- bias
+            # Copy x and y so that we can check we haven't mutated them after
+            # the fact.
+            old_x, old_y = MA.copy_if_mutable(x), MA.copy_if_mutable(y)
+            # Compute output = dot(x, y)
+            buf = MA.buffer_for(
+                LinearAlgebra.dot,
+                Vector{BigFloat},
+                Vector{BigFloat},
+            )
+            output = BigFloat()
+            MA.buffered_operate_to!!(buf, output, LinearAlgebra.dot, x, y)
+            # Check that we haven't mutated x or y
+            @test old_x == x
+            @test old_y == y
+            # Compute dot(x, y) in larger precision. This will be used to
+            # compare with our `dot`.
+            accurate = setprecision(BigFloat, 8 * precision(BigFloat)) do
+                return LinearAlgebra.dot(x, y)
+            end
+            # Compute the relative error
+            return abs(accurate - output) / abs(accurate)
         end
+        # Return estimate for ULP
+        return maximum_relative_error / eps(BigFloat)
     end
     @test 0 <= err < 1
 end
