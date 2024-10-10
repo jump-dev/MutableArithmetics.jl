@@ -46,8 +46,8 @@
             # Compute dot(x, y) in larger precision. This will be used to
             # compare with our `dot`.
             accurate = setprecision(BigFloat, 8 * precision(BigFloat)) do
-                return LinearAlgebra.dot(x, y)
-            end
+                    return LinearAlgebra.dot(x, y)
+                end
             # Compute the relative error
             return abs(accurate - output) / abs(accurate)
         end
