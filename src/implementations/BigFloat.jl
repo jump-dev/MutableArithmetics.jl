@@ -14,7 +14,8 @@ mutability(::Type{BigFloat}) = IsMutable()
 # which costs some extra allocations. We don't need the IdDict case because we
 # never call `mutable_copy` recursively.
 @static if VERSION >= v"1.12.0-DEV.1343"
-    mutable_copy(x::BigFloat) = Base.MPFR._BigFloat(copy(getfield(x, :d)))
+    # mutable_copy(x::BigFloat) = Base.MPFR._BigFloat(copy(getfield(x, :d)))
+    mutable_copy(x::BigFloat) = deepcopy(x)
 else
     function mutable_copy(x::BigFloat)
         d = x._d
