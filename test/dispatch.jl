@@ -106,3 +106,28 @@ end
         end
     end
 end
+
+function non_mutable_sum_pr306(x)
+    y = zero(eltype(x))
+    for xi in x
+        y += xi
+    end
+    return y
+end
+
+@testset "sum_with_init" begin
+    x = convert(Vector{DummyBigInt}, 1:100)
+    # compilation
+    @allocated sum(x)
+    @allocated sum(x; init = DummyBigInt(0))
+    @allocated non_mutable_sum_pr306(x)
+    # now test actual allocations
+    no_init = @allocated sum(x)
+    with_init = @allocated sum(x; init = DummyBigInt(0))
+    no_ma = @allocated non_mutable_sum_pr306(x)
+    # There's an additional 16 bytes for kwarg version. Upper bound by 40 to be
+    # safe between Julia versions
+    @test with_init <= no_init + 40
+    # MA is at least 10-times better than no MA for this example
+    @test 10 * with_init < no_ma
+end
