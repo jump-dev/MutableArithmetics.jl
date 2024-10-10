@@ -13,8 +13,8 @@
 
 abstract type AbstractMutable end
 
-function Base.sum(a::AbstractArray{<:AbstractMutable})
-    return operate(sum, a)
+function Base.sum(a::AbstractArray{<:AbstractMutable}; kwargs...)
+    return operate(sum, a; kwargs...)
 end
 
 # When doing `x'y` where the elements of `x` and/or `y` are arrays, redirecting

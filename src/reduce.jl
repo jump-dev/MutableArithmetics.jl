@@ -50,11 +50,10 @@ function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return accumulator
 end
 
-function operate(::typeof(sum), a::AbstractArray)
-    return mapreduce(
-        identity,
-        add!!,
-        a;
-        init = zero(promote_operation(+, eltype(a), eltype(a))),
-    )
+function operate(
+    ::typeof(sum),
+    a::AbstractArray;
+    init = zero(promote_operation(+, eltype(a), eltype(a))),
+)
+    return mapreduce(identity, add!!, a; init)
 end
