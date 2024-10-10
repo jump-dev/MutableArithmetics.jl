@@ -9,7 +9,7 @@
 
 mutability(::Type{BigFloat}) = IsMutable()
 
-@static if VERSION >= v"1.12"
+@static if VERSION >= v"1.12.0-DEV.1343"
     function mutable_copy(x::BigFloat)
         return Base.MPFR._BigFloat(copy(getfield(x, :d)))
     end
