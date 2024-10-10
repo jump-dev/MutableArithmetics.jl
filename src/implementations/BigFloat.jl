@@ -9,17 +9,19 @@
 
 mutability(::Type{BigFloat}) = IsMutable()
 
+# These methods are copied from `deepcopy_internal` in `base/mpfr.jl`. We don't
+# use `mutable_copy(x) = deepcopy(x)` because this creates an empty `IdDict()`
+# which costs some extra allocations. We don't need the IdDict case because we
+# never call `mutable_copy` recursively.
 @static if VERSION >= v"1.12.0-DEV.1343"
-    function mutable_copy(x::BigFloat)
-        return Base.MPFR._BigFloat(copy(getfield(x, :d)))
-    end
+    mutable_copy(x::BigFloat) = Base.MPFR._BigFloat(copy(getfield(x, :d)))
 else
-    # Copied from `deepcopy_internal` implementation in Julia:
-    # https://github.com/JuliaLang/julia/blob/7d41d1eb610cad490cbaece8887f9bbd2a775021/base/mpfr.jl#L1041-L1050
     function mutable_copy(x::BigFloat)
         d = x._d
-        d′ = GC.@preserve d unsafe_string(pointer(d), sizeof(d)) # creates a definitely-new String
-        return Base.MPFR._BigFloat(x.prec, x.sign, x.exp, d′)
+        GC.@preserve d begin
+            d′ = unsafe_string(pointer(d), sizeof(d))
+            return Base.MPFR._BigFloat(x.prec, x.sign, x.exp, d′)
+        end
     end
 end
 
