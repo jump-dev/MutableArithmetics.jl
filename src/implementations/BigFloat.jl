@@ -310,7 +310,7 @@ struct DotBuffer{F<:Real}
     multiplication_temp::F
     inner_temp::F
 
-    DotBuffer{F}() where {F<:Real} = new{F}(ntuple(i -> F(), Val{4}())...)
+    DotBuffer{F}() where {F<:Real} = new{F}(ntuple(i -> zero(F), Val{4}())...)
 end
 
 function buffer_for(
@@ -394,6 +394,31 @@ end
 #       # end.
 #       sum + c
 #   end
+
+# Returns abs(x) <= abs(y) without allocating.
+function _abs_lte_abs(x::F, y::F) where {F<:BigFloat}
+    x_is_neg = signbit(x)
+    y_is_neg = signbit(y)
+    x_neg = x_is_neg != y_is_neg
+    if x_neg
+        operate!(-, x)
+    end
+    ret = if y_is_neg
+        y <= x
+    else
+        x <= y
+    end
+    if x_neg
+        operate!(-, x)
+    end
+    return ret
+end
+
+function _mpfr_swap(x::BigFloat, y::BigFloat)
+    ccall((:mpfr_swap, :libmpfr), Cvoid, (Ref{BigFloat}, Ref{BigFloat}), x, y)
+    return
+end
+
 function buffered_operate_to!(
     buf::DotBuffer{F},
     sum::F,
@@ -401,60 +426,26 @@ function buffered_operate_to!(
     x::AbstractVector{F},
     y::AbstractVector{F},
 ) where {F<:BigFloat}
-    set! = (o, i) -> operate_to!(o, copy, i)
-
-    local swap! = function (x::BigFloat, y::BigFloat)
-        ccall((:mpfr_swap, :libmpfr), Cvoid, (Ref{BigFloat}, Ref{BigFloat}), x, y)
-        return nothing
-    end
-
-    # Returns abs(x) <= abs(y) without allocating.
-    local abs_lte_abs = function (x::F, y::F)
-        local x_is_neg = signbit(x)
-        local y_is_neg = signbit(y)
-
-        local x_neg = x_is_neg != y_is_neg
-
-        x_neg && operate!(-, x)
-
-        local ret = if y_is_neg
-            y <= x
-        else
-            x <= y
-        end
-
-        x_neg && operate!(-, x)
-
-        return ret
-    end
-
     operate!(zero, sum)
     operate!(zero, buf.compensation)
-
     for i in 0:(length(x)-1)
-        set!(buf.multiplication_temp, x[begin+i])
+        operate_to!(buf.multiplication_temp, copy, x[begin+i])
         operate!(*, buf.multiplication_temp, y[begin+i])
-
         operate!(zero, buf.summation_temp)
         operate_to!(buf.summation_temp, +, buf.multiplication_temp, sum)
-
-        if abs_lte_abs(buf.multiplication_temp, sum)
-            set!(buf.inner_temp, sum)
+        if _abs_lte_abs(buf.multiplication_temp, sum)
+            operate_to!(buf.inner_temp, copy, sum)
             operate!(-, buf.inner_temp, buf.summation_temp)
             operate!(+, buf.inner_temp, buf.multiplication_temp)
         else
-            set!(buf.inner_temp, buf.multiplication_temp)
+            operate_to!(buf.inner_temp, copy, buf.multiplication_temp)
             operate!(-, buf.inner_temp, buf.summation_temp)
             operate!(+, buf.inner_temp, sum)
         end
-
         operate!(+, buf.compensation, buf.inner_temp)
-
-        swap!(sum, buf.summation_temp)
+        _mpfr_swap(sum, buf.summation_temp)
     end
-
     operate!(+, sum, buf.compensation)
-
     return sum
 end
 
