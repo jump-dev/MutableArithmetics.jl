@@ -305,12 +305,12 @@ function operate_to!(
 end
 
 struct DotBuffer{F<:Real}
-    compensation::F
-    summation_temp::F
-    multiplication_temp::F
-    inner_temp::F
+    c::F
+    t::F
+    input::F
+    tmp::F
 
-    DotBuffer{F}() where {F<:Real} = new{F}(ntuple(i -> zero(F), Val{4}())...)
+    DotBuffer{F}() where {F<:Real} = new{F}(zero(F), zero(F), zero(F), zero(F))
 end
 
 function buffer_for(
@@ -379,10 +379,11 @@ end
 #       for i ∈ eachindex(input)
 #           t = sum + input[i]
 #           if abs(input[i]) ≤ abs(sum)
-#               c += (sum - t) + input[i]
+#               tmp = (sum - t) + input[i]
 #           else
-#               c += (input[i] - t) + sum
+#               tmp = (input[i] - t) + sum
 #           end
+#           c += tmp
 #           sum = t
 #       end
 #       # The result, with the correction only applied once in the very end.
@@ -390,7 +391,7 @@ end
 #   end
 
 # Returns abs(x) <= abs(y) without allocating.
-function _abs_lte_abs(x::F, y::F) where {F<:BigFloat}
+function _abs_lte_abs(x::BigFloat, y::BigFloat)
     x_is_neg, y_is_neg = signbit(x), signbit(y)
     if x_is_neg != y_is_neg
         operate!(-, x)
@@ -403,32 +404,31 @@ function _abs_lte_abs(x::F, y::F) where {F<:BigFloat}
 end
 
 function buffered_operate_to!(
-    buf::DotBuffer{F},
-    sum::F,
+    buf::DotBuffer{BigFloat},
+    sum::BigFloat,
     ::typeof(LinearAlgebra.dot),
-    x::AbstractVector{F},
-    y::AbstractVector{F},
-) where {F<:BigFloat}
-    operate!(zero, sum)
-    operate!(zero, buf.compensation)
-    for (xi, yi) in zip(x, y)
-        operate_to!(buf.multiplication_temp, copy, xi)
-        operate!(*, buf.multiplication_temp, yi)
-        operate!(zero, buf.summation_temp)
-        operate_to!(buf.summation_temp, +, buf.multiplication_temp, sum)
-        if _abs_lte_abs(buf.multiplication_temp, sum)
-            operate_to!(buf.inner_temp, copy, sum)
-            operate!(-, buf.inner_temp, buf.summation_temp)
-            operate!(+, buf.inner_temp, buf.multiplication_temp)
+    x::AbstractVector{BigFloat},
+    y::AbstractVector{BigFloat},
+)                                                   # See pseudocode description
+    operate!(zero, sum)                             # sum = 0
+    operate!(zero, buf.c)                           # c = 0
+    for (xi, yi) in zip(x, y)                       # for i in eachindex(input)
+        operate_to!(buf.input, copy, xi)            # input = x[i]
+        operate!(*, buf.input, yi)                  # input = x[i] * y[i]
+        operate_to!(buf.t, +, sum, buf.input)       # t = sum + input
+        if _abs_lte_abs(buf.input, sum)             # if |input| < |sum|
+            operate_to!(buf.tmp, copy, sum)         # tmp = sum
+            operate!(-, buf.tmp, buf.t)             # tmp = sum - t
+            operate!(+, buf.tmp, buf.input)         # tmp = (sum - t) + input
         else
-            operate_to!(buf.inner_temp, copy, buf.multiplication_temp)
-            operate!(-, buf.inner_temp, buf.summation_temp)
-            operate!(+, buf.inner_temp, sum)
+            operate_to!(buf.tmp, copy, buf.input)   # tmp = input
+            operate!(-, buf.tmp, buf.t)             # tmp = input - t
+            operate!(+, buf.tmp, sum)               # tmp = (input - t) + sum
         end
-        operate!(+, buf.compensation, buf.inner_temp)
-        operate_to!(sum, copy, buf.summation_temp)
+        operate!(+, buf.c, buf.tmp)                 # c += tmp
+        operate_to!(sum, copy, buf.t)               # sum = t
     end
-    operate!(+, sum, buf.compensation)
+    operate!(+, sum, buf.c)                         # sum += c
     return sum
 end
 
