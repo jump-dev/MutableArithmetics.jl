@@ -374,41 +374,29 @@ end
 #
 #   function KahanBabushkaNeumaierSum(input)
 #       sum = 0.0
-#
 #       # A running compensation for lost low-order bits.
 #       c = 0.0
-#
 #       for i ∈ eachindex(input)
 #           t = sum + input[i]
-#
 #           if abs(input[i]) ≤ abs(sum)
 #               c += (sum - t) + input[i]
 #           else
 #               c += (input[i] - t) + sum
 #           end
-#
 #           sum = t
 #       end
-#
-#       # The result, with the correction only applied once in the very
-#       # end.
+#       # The result, with the correction only applied once in the very end.
 #       sum + c
 #   end
 
 # Returns abs(x) <= abs(y) without allocating.
 function _abs_lte_abs(x::F, y::F) where {F<:BigFloat}
-    x_is_neg = signbit(x)
-    y_is_neg = signbit(y)
-    x_neg = x_is_neg != y_is_neg
-    if x_neg
+    x_is_neg, y_is_neg = signbit(x), signbit(y)
+    if x_is_neg != y_is_neg
         operate!(-, x)
     end
-    ret = if y_is_neg
-        y <= x
-    else
-        x <= y
-    end
-    if x_neg
+    ret = y_is_neg ? y <= x : x <= y
+    if x_is_neg != y_is_neg
         operate!(-, x)
     end
     return ret
@@ -423,10 +411,9 @@ function buffered_operate_to!(
 ) where {F<:BigFloat}
     operate!(zero, sum)
     operate!(zero, buf.compensation)
-    tmp = zero(F)
-    for i in 0:(length(x)-1)
-        operate_to!(buf.multiplication_temp, copy, x[begin+i])
-        operate!(*, buf.multiplication_temp, y[begin+i])
+    for (xi, yi) in zip(x, y)
+        operate_to!(buf.multiplication_temp, copy, xi)
+        operate!(*, buf.multiplication_temp, yi)
         operate!(zero, buf.summation_temp)
         operate_to!(buf.summation_temp, +, buf.multiplication_temp, sum)
         if _abs_lte_abs(buf.multiplication_temp, sum)
@@ -439,9 +426,7 @@ function buffered_operate_to!(
             operate!(+, buf.inner_temp, sum)
         end
         operate!(+, buf.compensation, buf.inner_temp)
-        operate_to!(tmp, copy, buf.multiplication_temp)
-        operate_to!(buf.multiplication_temp, copy, sum)
-        operate_to!(sum, copy, tmp)
+        operate_to!(sum, copy, buf.summation_temp)
     end
     operate!(+, sum, buf.compensation)
     return sum
