@@ -414,11 +414,6 @@ function _abs_lte_abs(x::F, y::F) where {F<:BigFloat}
     return ret
 end
 
-function _mpfr_swap(x::BigFloat, y::BigFloat)
-    ccall((:mpfr_swap, :libmpfr), Cvoid, (Ref{BigFloat}, Ref{BigFloat}), x, y)
-    return
-end
-
 function buffered_operate_to!(
     buf::DotBuffer{F},
     sum::F,
@@ -428,6 +423,7 @@ function buffered_operate_to!(
 ) where {F<:BigFloat}
     operate!(zero, sum)
     operate!(zero, buf.compensation)
+    tmp = zero(F)
     for i in 0:(length(x)-1)
         operate_to!(buf.multiplication_temp, copy, x[begin+i])
         operate!(*, buf.multiplication_temp, y[begin+i])
@@ -443,7 +439,9 @@ function buffered_operate_to!(
             operate!(+, buf.inner_temp, sum)
         end
         operate!(+, buf.compensation, buf.inner_temp)
-        _mpfr_swap(sum, buf.summation_temp)
+        operate_to!(tmp, copy, buf.multiplication_temp)
+        operate_to!(buf.multiplication_temp, copy, sum)
+        operate_to!(sum, copy, tmp)
     end
     operate!(+, sum, buf.compensation)
     return sum
