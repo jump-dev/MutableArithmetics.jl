@@ -9,12 +9,20 @@
 
 mutability(::Type{BigFloat}) = IsMutable()
 
-# Copied from `deepcopy_internal` implementation in Julia:
-# https://github.com/JuliaLang/julia/blob/7d41d1eb610cad490cbaece8887f9bbd2a775021/base/mpfr.jl#L1041-L1050
-function mutable_copy(x::BigFloat)
-    d = x._d
-    d′ = GC.@preserve d unsafe_string(pointer(d), sizeof(d)) # creates a definitely-new String
-    return Base.MPFR._BigFloat(x.prec, x.sign, x.exp, d′)
+# These methods are copied from `deepcopy_internal` in `base/mpfr.jl`. We don't
+# use `mutable_copy(x) = deepcopy(x)` because this creates an empty `IdDict()`
+# which costs some extra allocations. We don't need the IdDict case because we
+# never call `mutable_copy` recursively.
+@static if VERSION >= v"1.12.0-DEV.1343"
+    mutable_copy(x::BigFloat) = Base.MPFR._BigFloat(copy(getfield(x, :d)))
+else
+    function mutable_copy(x::BigFloat)
+        d = x._d
+        GC.@preserve d begin
+            d′ = unsafe_string(pointer(d), sizeof(d))
+            return Base.MPFR._BigFloat(x.prec, x.sign, x.exp, d′)
+        end
+    end
 end
 
 const _MPFRRoundingMode = Base.MPFR.MPFRRoundingMode
@@ -297,12 +305,12 @@ function operate_to!(
 end
 
 struct DotBuffer{F<:Real}
-    compensation::F
-    summation_temp::F
-    multiplication_temp::F
-    inner_temp::F
+    c::F
+    t::F
+    input::F
+    tmp::F
 
-    DotBuffer{F}() where {F<:Real} = new{F}(ntuple(i -> F(), Val{4}())...)
+    DotBuffer{F}() where {F<:Real} = new{F}(zero(F), zero(F), zero(F), zero(F))
 end
 
 function buffer_for(
@@ -366,87 +374,61 @@ end
 #
 #   function KahanBabushkaNeumaierSum(input)
 #       sum = 0.0
-#
 #       # A running compensation for lost low-order bits.
 #       c = 0.0
-#
 #       for i ∈ eachindex(input)
 #           t = sum + input[i]
-#
 #           if abs(input[i]) ≤ abs(sum)
-#               c += (sum - t) + input[i]
+#               tmp = (sum - t) + input[i]
 #           else
-#               c += (input[i] - t) + sum
+#               tmp = (input[i] - t) + sum
 #           end
-#
+#           c += tmp
 #           sum = t
 #       end
-#
-#       # The result, with the correction only applied once in the very
-#       # end.
+#       # The result, with the correction only applied once in the very end.
 #       sum + c
 #   end
+
+# Returns abs(x) <= abs(y) without allocating.
+function _abs_lte_abs(x::BigFloat, y::BigFloat)
+    x_is_neg, y_is_neg = signbit(x), signbit(y)
+    if x_is_neg != y_is_neg
+        operate!(-, x)
+    end
+    ret = y_is_neg ? y <= x : x <= y
+    if x_is_neg != y_is_neg
+        operate!(-, x)
+    end
+    return ret
+end
+
 function buffered_operate_to!(
-    buf::DotBuffer{F},
-    sum::F,
+    buf::DotBuffer{BigFloat},
+    sum::BigFloat,
     ::typeof(LinearAlgebra.dot),
-    x::AbstractVector{F},
-    y::AbstractVector{F},
-) where {F<:BigFloat}
-    set! = (o, i) -> operate_to!(o, copy, i)
-
-    local swap! = function (x::BigFloat, y::BigFloat)
-        ccall((:mpfr_swap, :libmpfr), Cvoid, (Ref{BigFloat}, Ref{BigFloat}), x, y)
-        return nothing
-    end
-
-    # Returns abs(x) <= abs(y) without allocating.
-    local abs_lte_abs = function (x::F, y::F)
-        local x_is_neg = signbit(x)
-        local y_is_neg = signbit(y)
-
-        local x_neg = x_is_neg != y_is_neg
-
-        x_neg && operate!(-, x)
-
-        local ret = if y_is_neg
-            y <= x
+    x::AbstractVector{BigFloat},
+    y::AbstractVector{BigFloat},
+)                                                   # See pseudocode description
+    operate!(zero, sum)                             # sum = 0
+    operate!(zero, buf.c)                           # c = 0
+    for (xi, yi) in zip(x, y)                       # for i in eachindex(input)
+        operate_to!(buf.input, copy, xi)            # input = x[i]
+        operate!(*, buf.input, yi)                  # input = x[i] * y[i]
+        operate_to!(buf.t, +, sum, buf.input)       # t = sum + input
+        if _abs_lte_abs(buf.input, sum)             # if |input| < |sum|
+            operate_to!(buf.tmp, copy, sum)         # tmp = sum
+            operate!(-, buf.tmp, buf.t)             # tmp = sum - t
+            operate!(+, buf.tmp, buf.input)         # tmp = (sum - t) + input
         else
-            x <= y
+            operate_to!(buf.tmp, copy, buf.input)   # tmp = input
+            operate!(-, buf.tmp, buf.t)             # tmp = input - t
+            operate!(+, buf.tmp, sum)               # tmp = (input - t) + sum
         end
-
-        x_neg && operate!(-, x)
-
-        return ret
+        operate!(+, buf.c, buf.tmp)                 # c += tmp
+        operate_to!(sum, copy, buf.t)               # sum = t
     end
-
-    operate!(zero, sum)
-    operate!(zero, buf.compensation)
-
-    for i in 0:(length(x)-1)
-        set!(buf.multiplication_temp, x[begin+i])
-        operate!(*, buf.multiplication_temp, y[begin+i])
-
-        operate!(zero, buf.summation_temp)
-        operate_to!(buf.summation_temp, +, buf.multiplication_temp, sum)
-
-        if abs_lte_abs(buf.multiplication_temp, sum)
-            set!(buf.inner_temp, sum)
-            operate!(-, buf.inner_temp, buf.summation_temp)
-            operate!(+, buf.inner_temp, buf.multiplication_temp)
-        else
-            set!(buf.inner_temp, buf.multiplication_temp)
-            operate!(-, buf.inner_temp, buf.summation_temp)
-            operate!(+, buf.inner_temp, sum)
-        end
-
-        operate!(+, buf.compensation, buf.inner_temp)
-
-        swap!(sum, buf.summation_temp)
-    end
-
-    operate!(+, sum, buf.compensation)
-
+    operate!(+, sum, buf.c)                         # sum += c
     return sum
 end
 
