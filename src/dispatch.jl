@@ -15,10 +15,13 @@ abstract type AbstractMutable end
 
 function Base.sum(
     a::AbstractArray{T};
-    dims = missing,
+    dims = :,
     init = zero(promote_operation(+, T, T)),
 ) where {T<:AbstractMutable}
     if !ismissing(dims)
+        # We cannot use `mapreduce` with `add!!` instead of `Base.add_mul` like
+        # `operate(sum, ...)` because the same instance given at `init` is used
+        # at several places.
         return mapreduce(identity, Base.add_sum, a; dims, init)
     end
     return operate(sum, a; init)
