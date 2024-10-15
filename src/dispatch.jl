@@ -13,8 +13,15 @@
 
 abstract type AbstractMutable end
 
-function Base.sum(a::AbstractArray{<:AbstractMutable}; kwargs...)
-    return operate(sum, a; kwargs...)
+function Base.sum(
+    a::AbstractArray{T};
+    dims = missing,
+    init = zero(promote_operation(+, T, T)),
+) where {T<:AbstractMutable}
+    if !ismissing(dims)
+        return mapreduce(identity, Base.add_sum, a; dims, init)
+    end
+    return operate(sum, a; init)
 end
 
 # When doing `x'y` where the elements of `x` and/or `y` are arrays, redirecting
