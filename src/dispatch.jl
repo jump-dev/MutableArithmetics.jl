@@ -18,7 +18,7 @@ function Base.sum(
     dims = :,
     init = zero(promote_operation(+, T, T)),
 ) where {T<:AbstractMutable}
-    if dims !== :
+    if dims !== Colon()
         # We cannot use `mapreduce` with `add!!` instead of `Base.add_mul` like
         # `operate(sum, ...)` because the same instance given at `init` is used
         # at several places.
