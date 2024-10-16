@@ -131,3 +131,15 @@ end
     # MA is at least 10-times better than no MA for this example
     @test 10 * with_init < no_ma
 end
+
+@testset "sum_with_init_and_dims" begin
+    x = reshape(convert(Vector{DummyBigInt}, 1:12), 3, 4)
+    X = reshape(1:12, 3, 4)
+    for dims in (1, 2, :, 1:2, (1, 2))
+        # Without (; init)
+        @test MA.isequal_canonical(sum(x; dims), DummyBigInt.(sum(X; dims)))
+        # With (; init)
+        y = sum(x; init = DummyBigInt(0), dims)
+        @test MA.isequal_canonical(y, DummyBigInt.(sum(X; dims)))
+    end
+end

@@ -13,8 +13,18 @@
 
 abstract type AbstractMutable end
 
-function Base.sum(a::AbstractArray{<:AbstractMutable}; kwargs...)
-    return operate(sum, a; kwargs...)
+function Base.sum(
+    a::AbstractArray{T};
+    dims = :,
+    init = zero(promote_operation(+, T, T)),
+) where {T<:AbstractMutable}
+    if dims !== Colon()
+        # We cannot use `mapreduce` with `add!!` instead of `Base.add_mul` like
+        # `operate(sum, ...)` because the same instance given at `init` is used
+        # at several places.
+        return mapreduce(identity, Base.add_sum, a; dims, init)
+    end
+    return operate(sum, a; init)
 end
 
 # When doing `x'y` where the elements of `x` and/or `y` are arrays, redirecting
