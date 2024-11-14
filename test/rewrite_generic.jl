@@ -433,6 +433,38 @@ function test_rewrite_ifelse()
     return
 end
 
+function test_return_is_mutable()
+    function _rewrite(expr)
+        return MA.rewrite(
+            expr;
+            move_factors_into_sums = false,
+            return_is_mutable = true,
+        )
+    end
+    x, expr, is_mutable = _rewrite(1)
+    @test x isa Symbol
+    @test Meta.isexpr(expr, :(=), 2)
+    @test is_mutable
+    y = 1
+    x, expr, is_mutable = _rewrite(:(y))
+    @test x isa Symbol
+    @test Meta.isexpr(expr, :(=), 2)
+    @test !is_mutable
+    x, expr, is_mutable = _rewrite(:(1 + 1))
+    @test x isa Symbol
+    @test Meta.isexpr(expr, :(=), 2)
+    @test is_mutable
+    @test_throws(
+        AssertionError,
+        MA.rewrite(
+            :(1 + 1);
+            move_factors_into_sums = true,
+            return_is_mutable = true,
+        ),
+    )
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
