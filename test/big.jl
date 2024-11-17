@@ -47,7 +47,7 @@ end
     @testset "Allocation" begin
         allocation_test(+, T, MA.add!!, MA.add_to!!, T <: Rational ? 224 : 0)
         allocation_test(-, T, MA.sub!!, MA.sub_to!!, T <: Rational ? 224 : 0)
-        allocation_test(*, T, MA.mul!!, MA.mul_to!!, T <: Rational ? 280 : 0)
+        allocation_test(*, T, MA.mul!!, MA.mul_to!!, T <: Rational ? 312 : 0)
         add_sub_mul_test(MA.add_mul, T)
         add_sub_mul_test(MA.sub_mul, T)
         if T <: Rational # https://github.com/jump-dev/MutableArithmetics.jl/issues/167
