@@ -30,7 +30,7 @@ end
     @test x == 4
     @test y == 5
     # FIXME This should not allocate but I couldn't figure out where these
-    #       240 come from.
+    #       allocations come from.
     alloc_test_le(() -> MA.broadcast!!(+, a, b), 288)
     alloc_test(() -> MA.broadcast!!(+, a, c), 0)
 end
