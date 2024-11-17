@@ -10,12 +10,12 @@ include("dummy.jl")
 # Half size on 32-bit.
 const BIGINT_ALLOC = Sys.WORD_SIZE == 64 ? 48 : 24
 
-function alloc_test(f, n)
+function alloc_test(f::F, n) where {F}
     f() # compile
     @test n == @allocated f()
 end
 
-function alloc_test_le(f, n)
+function alloc_test_le(f::F, n) where {F}
     f() # compile
     @test n >= @allocated f()
 end
