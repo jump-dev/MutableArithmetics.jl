@@ -5,15 +5,15 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 function allocation_test(
-    op,
-    T,
-    short,
-    short_to,
-    n;
+    op::F1,
+    ::Type{T},
+    short::F2,
+    short_to::F3,
+    n::Integer;
     a = T(2),
     b = T(3),
     c = T(4),
-)
+) where {T,F1,F2,F3}
     @test MA.promote_operation(op, T, T) == T
     alloc_test(() -> MA.promote_operation(op, T, T), 0)
     if op != div && op != -
@@ -45,9 +45,9 @@ end
 @testset "$T" for T in [BigInt, BigFloat, Rational{BigInt}]
     MA.Test.int_test(T)
     @testset "Allocation" begin
-        allocation_test(+, T, MA.add!!, MA.add_to!!, T <: Rational ? 224 : 0)
-        allocation_test(-, T, MA.sub!!, MA.sub_to!!, T <: Rational ? 224 : 0)
-        allocation_test(*, T, MA.mul!!, MA.mul_to!!, T <: Rational ? 312 : 0)
+        allocation_test(+, T, MA.add!!, MA.add_to!!, T <: Rational ? 192 : 0)
+        allocation_test(-, T, MA.sub!!, MA.sub_to!!, T <: Rational ? 168 : 0)
+        allocation_test(*, T, MA.mul!!, MA.mul_to!!, T <: Rational ? 240 : 0)
         add_sub_mul_test(MA.add_mul, T)
         add_sub_mul_test(MA.sub_mul, T)
         if T <: Rational # https://github.com/jump-dev/MutableArithmetics.jl/issues/167
@@ -56,7 +56,7 @@ end
                 T,
                 MA.add!!,
                 MA.add_to!!,
-                224,
+                192,
                 a = T(1 // 2),
                 b = T(3 // 2),
                 c = T(5 // 2),
@@ -66,7 +66,7 @@ end
                 T,
                 MA.sub!!,
                 MA.sub_to!!,
-                224,
+                168,
                 a = T(1 // 2),
                 b = T(3 // 2),
                 c = T(5 // 2),
