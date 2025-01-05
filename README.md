@@ -209,7 +209,7 @@ following [paper](https://doi.org/10.21105/jcon.00093):
 [docs-stable-url]: https://jump.dev/MutableArithmetics.jl/stable
 [docs-dev-url]: https://jump.dev/MutableArithmetics.jl/dev
 
-[build-img]: https://github.com/jump-dev/MutableArithmetics.jl/workflows/CI/badge.svg?branch=master
+[build-img]: https://github.com/jump-dev/MutableArithmetics.jl/actions/workflows/ci.yml/badge.svg?branch=master
 [build-url]: https://github.com/jump-dev/MutableArithmetics.jl/actions?query=workflow%3ACI
 [codecov-img]: https://codecov.io/gh/jump-dev/MutableArithmetics.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/jump-dev/MutableArithmetics.jl
