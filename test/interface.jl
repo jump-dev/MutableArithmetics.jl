@@ -206,3 +206,12 @@ end
     @test MA.mutability(z, *, z, z) == MA.IsNotMutable()
     @test MA.mutability(z, *, z, z, y) == MA.IsNotMutable()
 end
+
+@testset "issue_316_SubArray" begin
+    y = [1.0;;;]
+    Y = view(y, :, :, 1)
+    ret = [1.0;;]
+    ret = MA.operate!!(MA.add_mul, ret, 2.0, Y)
+    @test ret == [3.0;;]
+    @test y == [1.0;;;]
+end
