@@ -24,6 +24,27 @@ reduce_op(::typeof(add_dot)) = +
 
 neutral_element(::typeof(+), T::Type) = Zero()
 
+"""
+    instantiate_zero(x, ::Type{T}) where {T}
+
+If `x` is `Zero` and `zero(::T)` is defined, then returns `zero(T)`.
+Otherwise, `zero(x)` is returned.
+For instance, `instantiate_zero(Zero(), Matrix{Int})` returns `Zero()`
+because `zero(::Matrix)` is not defined.
+Types that don't define `zero` should explicitly implement a new method
+for this function that return `Zero()`.
+"""
+function instantiate_zero end
+
+instantiate_zero(x, ::Type) = x
+
+instantiate_zero(::Zero, ::Type{T}) where {T} = zero(T)
+
+# The arrays of `StaticArrays.jl` actually implement `zero` even though they
+# are subtypes of `AbstractArray` but with this method, it will be `Zero()`
+# anyway. At least it is consistent with other subtypes of `AbstractArray`.
+instantiate_zero(::Zero, ::Type{<:AbstractArray}) = Zero()
+
 map_op(::AddSubMul) = *
 
 map_op(::typeof(add_dot)) = LinearAlgebra.dot
@@ -47,7 +68,11 @@ function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
         accumulator =
             buffered_operate!!(buffer, op, accumulator, getindex.(args, I)...)
     end
-    return accumulator
+    # If there are no elements, instead of returning `MA.Zero`, we return
+    # `zero(T)` unless we know `zero(::T)` is not defined like if `T` is `Matrix{...}`.
+    # Returning `Zero()` could also work but it would be breaking so we opt for
+    # returning `zero(T)` when possible.
+    return instantiate_zero(accumulator, T)
 end
 
 function operate(::typeof(sum), a::AbstractArray)

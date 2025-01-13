@@ -38,6 +38,7 @@ end
 end
 include("matmul.jl")
 include("dispatch.jl")
+include("reduce.jl")
 include("rewrite.jl")
 include("rewrite_generic.jl")
 

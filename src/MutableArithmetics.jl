@@ -113,8 +113,6 @@ include("implementations/SparseArrays.jl")
 
 include("evalpoly.jl")
 
-include("reduce.jl")
-
 """
     isequal_canonical(a, b)
 
@@ -181,6 +179,8 @@ end
 
 include("rewrite.jl")
 include("rewrite_generic.jl")
+
+include("reduce.jl")
 include("dispatch.jl")
 
 # Test that can be used to test an implementation of the interface
