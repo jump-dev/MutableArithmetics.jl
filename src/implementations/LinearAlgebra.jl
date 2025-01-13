@@ -215,6 +215,13 @@ similar_array_type(::Type{Array{T,N}}, ::Type{S}) where {S,T,N} = Array{S,N}
 similar_array_type(::Type{BitArray{N}}, ::Type{S}) where {S,N} = Array{S,N}
 similar_array_type(::Type{BitArray{N}}, ::Type{Bool}) where {N} = BitArray{N}
 
+function similar_array_type(
+    ::Type{<:SubArray{T,N,<:Array{T}}},
+    ::Type{S},
+) where {S,T,N}
+    return Array{S,N}
+end
+
 function promote_operation(
     op::typeof(*),
     A::Type{<:AbstractArray{T}},
