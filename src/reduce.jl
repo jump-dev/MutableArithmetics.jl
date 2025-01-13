@@ -22,7 +22,7 @@ reduce_op(op::AddSubMul) = add_sub_op(op)
 
 reduce_op(::typeof(add_dot)) = +
 
-neutral_element(::typeof(+), T::Type) = zero(T)
+neutral_element(::typeof(+), T::Type) = Zero()
 
 map_op(::AddSubMul) = *
 
