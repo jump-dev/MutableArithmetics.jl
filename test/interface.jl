@@ -208,10 +208,10 @@ end
 end
 
 @testset "issue_316_SubArray" begin
-    y = [1.0;;;]
+    y = reshape([1.0], 1, 1, 1)
     Y = view(y, :, :, 1)
-    ret = [1.0;;]
+    ret = reshape([1.0], 1, 1)
     ret = MA.operate!!(MA.add_mul, ret, 2.0, Y)
-    @test ret == [3.0;;]
-    @test y == [1.0;;;]
+    @test ret == reshape([3.0], 1, 1)
+    @test y == reshape([1.0], 1, 1, 1)
 end
