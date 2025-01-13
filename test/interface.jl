@@ -215,3 +215,11 @@ end
     @test ret == reshape([3.0], 1, 1)
     @test y == reshape([1.0], 1, 1, 1)
 end
+
+@testset "issue_318_neutral_element" begin
+    a = rand(3)
+    A = [rand(2, 2) for _ in 1:3]
+    @test_throws DimensionMismatch MA.operate(LinearAlgebra.dot, a, A)
+    y = a' * A
+    @test isapprox(MA.fused_map_reduce(MA.add_mul, a', A), y)
+end
