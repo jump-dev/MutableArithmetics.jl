@@ -222,4 +222,14 @@ end
     @test_throws DimensionMismatch MA.operate(LinearAlgebra.dot, a, A)
     y = a' * A
     @test isapprox(MA.fused_map_reduce(MA.add_mul, a', A), y)
+    z = MA.operate(LinearAlgebra.dot, Int[], Int[])
+    @test iszero(z) && z isa Int
+    z = MA.operate(LinearAlgebra.dot, BigInt[], Int[])
+    @test iszero(z) && z isa BigInt
+    z = MA.operate(LinearAlgebra.dot, Int[], Float64[])
+    @test iszero(z) && z isa Float64
+    z = MA.operate(LinearAlgebra.dot, Matrix{Int}[], Matrix{Float64}[])
+    @test iszero(z) && z isa Float64
+    @test MA.fused_map_reduce(MA.add_mul, Matrix{Int}[], Float64[]) isa MA.Zero
+    @test MA.fused_map_reduce(MA.add_mul, Float64[], Matrix{Int}[]) isa MA.Zero
 end
