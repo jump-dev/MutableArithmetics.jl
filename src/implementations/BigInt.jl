@@ -182,7 +182,7 @@ _scaling_to_bigint(x) = _scaling_to(BigInt, x)
 
 function operate_to!(
     output::BigInt,
-    op::Union{typeof(+),typeof(-),typeof(*),typeof(gcd),typeof(lcm)},
+    op::Union{typeof(+),typeof(-),typeof(*),typeof(div),typeof(gcd),typeof(lcm)},
     args::Vararg{Scaling,N},
 ) where {N}
     return operate_to!(output, op, _scaling_to_bigint.(args)...)
