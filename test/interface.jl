@@ -123,6 +123,20 @@ end
                 @test a !== b
             end
         end
+        @testset "dot" for U in (Int, BigInt, Rational{Int}, Rational{BigInt})
+            y = U(5)
+            a = LinearAlgebra.dot(x, y)
+            b = MA.operate(LinearAlgebra.dot, [x], [y])
+            @test a == b
+            if MA.mutability(
+                promote_type(T, U),
+                LinearAlgebra.dot,
+                Vector{T},
+                Vector{U},
+            ) == MA.IsMutable()
+                @test a !== b
+            end
+        end
     end
 end
 

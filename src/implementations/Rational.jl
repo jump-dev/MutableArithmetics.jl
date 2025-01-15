@@ -178,7 +178,7 @@ function buffer_for(
     ::Type{Rational{T}},
 ) where {S,T}
     U = promote_operation(gcd, S, T)
-    return zero(Rational{S}), zero(Rational{T}), zero(U)
+    return zero(Rational{U}), zero(Rational{U}), zero(U)
 end
 
 function buffered_operate_to!(
