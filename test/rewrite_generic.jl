@@ -465,6 +465,13 @@ function test_return_is_mutable()
     return
 end
 
+function test_rewrite_sum_unary_minus()
+    x = big.(1:3)
+    y = MA.@rewrite(sum(-x[i] for i in 1:3), move_factors_into_sums = false)
+    @test y == big(-6)
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
