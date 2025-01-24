@@ -191,9 +191,15 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         # -(args...) => sub_mul(sub_mul(arg1, arg2), arg3)
         @assert length(expr.args) > 1
         if length(expr.args) == 2  # -(arg)
-            # The -1 comes last, so that if `expr.args[2]` is mutable, we can
-            # update it in-place.
-            return _rewrite_generic(stack, Expr(:call, :*, expr.args[2], -1))
+            value, is_mutable = _rewrite_generic(stack, expr.args[2])
+            root = gensym()
+            rhs = if is_mutable
+                Expr(:call, operate!!, *, value, -1)
+            else
+                Expr(:call, operate, *, -1, value)
+            end
+            push!(stack.args, :($root = $rhs))
+            return root, true
         end
         return _rewrite_generic_to_nested_op(stack, expr, sub_mul)
     elseif expr.args[1] == :*
@@ -235,9 +241,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         # .-(args...) => sub_mul.(sub_mul.(arg1, arg2), arg3)
         @assert length(expr.args) > 1
         if length(expr.args) == 2  # .-(arg)
-            # The -1 comes last, so that if `expr.args[2]` is mutable, we can
-            # update it in-place.
-            return _rewrite_generic(stack, Expr(:call, :.*, expr.args[2], -1))
+            return _rewrite_generic(stack, Expr(:call, :.*, -1, expr.args[2]))
         end
         return _rewrite_generic_to_nested_op(
             stack,
