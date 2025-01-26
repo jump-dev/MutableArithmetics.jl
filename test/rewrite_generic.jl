@@ -465,6 +465,39 @@ function test_return_is_mutable()
     return
 end
 
+function test_rewrite_sum_unary_minus()
+    x = big.(1:3)
+    y = MA.@rewrite(sum(-x[i] for i in 1:3), move_factors_into_sums = false)
+    @test y == big(-6)
+    return
+end
+
+function test_allocations_rewrite_unary_minus()
+    N = 100
+    x = big.(1:N)
+    a = big(-1)
+    # precompilaton
+    MA.@rewrite(sum(-x[i] for i in 1:N), move_factors_into_sums = false)
+    MA.@rewrite(-sum(x[i] for i in 1:N), move_factors_into_sums = false)
+    MA.@rewrite(sum(a * x[i] for i in 1:N), move_factors_into_sums = false)
+    sum(-x[i] for i in 1:N)
+    total = @allocated sum(-x[i] for i in 1:N)
+    # actual
+    value = @allocated(
+        MA.@rewrite(sum(-x[i] for i in 1:N), move_factors_into_sums = false),
+    )
+    @test value < total
+    value = @allocated(
+        MA.@rewrite(-sum(x[i] for i in 1:N), move_factors_into_sums = false),
+    )
+    @test value < total
+    value = @allocated(
+        MA.@rewrite(sum(a * x[i] for i in 1:N), move_factors_into_sums = false),
+    )
+    @test value < total
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()

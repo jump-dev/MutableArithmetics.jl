@@ -191,7 +191,15 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         # -(args...) => sub_mul(sub_mul(arg1, arg2), arg3)
         @assert length(expr.args) > 1
         if length(expr.args) == 2  # -(arg)
-            return _rewrite_generic(stack, Expr(:call, :*, -1, expr.args[2]))
+            value, is_mutable = _rewrite_generic(stack, expr.args[2])
+            root = gensym()
+            rhs = if is_mutable
+                Expr(:call, operate!!, *, value, -1)
+            else
+                Expr(:call, operate, *, -1, value)
+            end
+            push!(stack.args, :($root = $rhs))
+            return root, true
         end
         return _rewrite_generic_to_nested_op(stack, expr, sub_mul)
     elseif expr.args[1] == :*
@@ -278,6 +286,7 @@ function _rewrite_generic_to_nested_op(stack, expr, op; broadcast::Bool = false)
 end
 
 _is_call(expr, op) = Meta.isexpr(expr, :call) && expr.args[1] == op
+_is_call(expr, op, n) = Meta.isexpr(expr, :call, 1 + n) && expr.args[1] == op
 
 """
     _rewrite_generic_generator(stack::Expr, op::Symbol, expr::Expr)
@@ -321,6 +330,12 @@ function _rewrite_generic_generator(
             value, _ = _rewrite_generic(new_stack, arg)
             push!(rhs.args, value)
         end
+        push!(new_stack.args, :($root = $rhs))
+    elseif op == :+ && _is_call(expr.args[1], :-, 1)
+        # Optimization time! Instead of operate!!(+, root, -(arg)), rewrite this
+        # as operate!!(sub_mul, root, arg)
+        value, _ = _rewrite_generic(new_stack, expr.args[1].args[2])
+        rhs = Expr(:call, operate!!, sub_mul, root, value)
         push!(new_stack.args, :($root = $rhs))
     elseif is_flatten
         # The first argument is itself a generator
