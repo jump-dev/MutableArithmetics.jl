@@ -216,11 +216,8 @@ function _rewrite_generic(stack::Expr, expr::Expr)
         push!(stack.args, :($root = $rhs))
         for i in 4:length(expr.args)
             arg, _ = _rewrite_generic(stack, expr.args[i])
-            rhs = if is_mutable
-                Expr(:call, operate!!, *, root, arg)
-            else
-                Expr(:call, operate, *, root, arg)
-            end
+            # It is always safe to modify `root` here
+            rhs = Expr(:call, operate!!, *, root, arg)
             root = gensym()
             push!(stack.args, :($root = $rhs))
         end
