@@ -498,6 +498,18 @@ function test_allocations_rewrite_unary_minus()
     return
 end
 
+function test_allocations_rewrite_mult()
+    x = BigFloat[1, 2, 3]
+    y = MA.@rewrite(x[1] * x[2] * x[3], move_factors_into_sums = false)
+    @test y == BigFloat(6)
+    @test x == BigFloat[1, 2, 3]
+    total = @allocated (x[1] * x[2]) * x[3]
+    @test @allocated(
+        MA.@rewrite(x[1] * x[2] * x[3], move_factors_into_sums = false),
+    ) < total
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
