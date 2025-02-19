@@ -581,7 +581,7 @@ end
 
 # Needed for Julia v1.1 only. If `parent(A)` is for instance `Diagonal`, the
 # `eltype` of `B` might be different form the `eltype` of `A`.
-function Matrix(A::LinearAlgebra.Symmetric{<:AbstractMutable})
+function Base.Matrix(A::LinearAlgebra.Symmetric{<:AbstractMutable})
     B = LinearAlgebra.copytri!(convert(Matrix, copy(A.data)), A.uplo)
     for i in axes(A, 1)
         # `B[i, i]` is used instead of `A[i, i]` on Julia v1.1 hence the need
@@ -594,7 +594,7 @@ function Matrix(A::LinearAlgebra.Symmetric{<:AbstractMutable})
     return B
 end
 
-function Matrix(A::LinearAlgebra.Hermitian{<:AbstractMutable})
+function Base.Matrix(A::LinearAlgebra.Hermitian{<:AbstractMutable})
     B = LinearAlgebra.copytri!(convert(Matrix, copy(A.data)), A.uplo, true)
     for i in axes(A, 1)
         # `B[i, i]` is used instead of `A[i, i]` on Julia v1.1 hence the need
