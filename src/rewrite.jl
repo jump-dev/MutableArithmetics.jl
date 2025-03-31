@@ -81,9 +81,6 @@ end
 
 Base.iszero(::Zero) = true
 Base.isone(::Zero) = false
-Base.:(==)(::Zero, x) = iszero(x)
-Base.:(==)(x, ::Zero) = iszero(x)
-Base.:(==)(::Zero, ::Zero) = true
 
 # These methods are used to provide an efficient implementation for the common
 # case like `x^2 * sum(f for i in 1:0)`, which lowers to
