@@ -19,6 +19,8 @@ import MutableArithmetics as MA
     @test -z isa MA.Zero
     @test +z isa MA.Zero
     @test *(z) isa MA.Zero
+    @test iszero(z)
+    @test !isone(z)
 end
 
 # Test that the macro call `m` throws an error exception during pre-compilation
