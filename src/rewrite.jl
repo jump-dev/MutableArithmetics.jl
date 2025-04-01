@@ -79,6 +79,9 @@ function Base.:/(z::Zero, x::Any)
     end
 end
 
+Base.iszero(::Zero) = true
+Base.isone(::Zero) = false
+
 # These methods are used to provide an efficient implementation for the common
 # case like `x^2 * sum(f for i in 1:0)`, which lowers to
 # `_MA.operate!!(*, x^2, _MA.Zero())`. We don't need the method with reversed
