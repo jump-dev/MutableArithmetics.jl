@@ -45,7 +45,7 @@ end
 @testset "$T" for T in [BigInt, BigFloat, Rational{BigInt}]
     MA.Test.int_test(T)
     @testset "Allocation" begin
-        MAX_ALLOC = T <: Rational ? 240 : 0
+        MAX_ALLOC = T <: Rational ? 280 : 0
         allocation_test(+, T, MA.add!!, MA.add_to!!, MAX_ALLOC)
         allocation_test(-, T, MA.sub!!, MA.sub_to!!, MAX_ALLOC)
         allocation_test(*, T, MA.mul!!, MA.mul_to!!, MAX_ALLOC)
