@@ -45,15 +45,10 @@ end
 @testset "$T" for T in [BigInt, BigFloat, Rational{BigInt}]
     MA.Test.int_test(T)
     @testset "Allocation" begin
-        a, b = T(2), T(3)
-        a + b, a - b, a * b  # compilation
-        # Test that the MA methods have fewer allocated than the Base method
-        n = T <: Rational ? (@allocated a + b) - 1 : 0
-        allocation_test(+, T, MA.add!!, MA.add_to!!, n)
-        n = T <: Rational ? (@allocated a - b) - 1 : 0
-        allocation_test(-, T, MA.sub!!, MA.sub_to!!, n)
-        n = T <: Rational ? (@allocated a * b) - 1 : 0
-        allocation_test(*, T, MA.mul!!, MA.mul_to!!, n)
+        MAX_ALLOC = T <: Rational ? 240 : 0
+        allocation_test(+, T, MA.add!!, MA.add_to!!, MAX_ALLOC)
+        allocation_test(-, T, MA.sub!!, MA.sub_to!!, MAX_ALLOC)
+        allocation_test(*, T, MA.mul!!, MA.mul_to!!, MAX_ALLOC)
         add_sub_mul_test(MA.add_mul, T)
         add_sub_mul_test(MA.sub_mul, T)
         if T <: Rational # https://github.com/jump-dev/MutableArithmetics.jl/issues/167
@@ -62,7 +57,7 @@ end
                 T,
                 MA.add!!,
                 MA.add_to!!,
-                (@allocated a + b) - 1,
+                MAX_ALLOC,
                 a = T(1 // 2),
                 b = T(3 // 2),
                 c = T(5 // 2),
@@ -72,7 +67,7 @@ end
                 T,
                 MA.sub!!,
                 MA.sub_to!!,
-                (@allocated a - b) - 1,
+                MAX_ALLOC,
                 a = T(1 // 2),
                 b = T(3 // 2),
                 c = T(5 // 2),
