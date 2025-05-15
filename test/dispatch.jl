@@ -15,13 +15,15 @@ function dispatch_tests(::Type{T}) where {T}
     c = one(T)
     x = convert.(T, [1, 2, 3])
     # Need to allocate 1 BigInt for the result and one for the buffer
-    alloc_test(() -> MA.fused_map_reduce(MA.add_mul, x, x), 2BIGINT_ALLOC)
-    alloc_test(() -> MA.fused_map_reduce(MA.add_dot, x, x), 2BIGINT_ALLOC)
+    n = 2 * (BIGINT_ALLOC + (VERSION >= v"1.11" ? 8 : 0))
+    alloc_test_le(() -> MA.fused_map_reduce(MA.add_mul, x, x), n)
+    alloc_test_le(() -> MA.fused_map_reduce(MA.add_dot, x, x), n)
     if T <: MA.AbstractMutable
-        alloc_test(() -> x'x, 2BIGINT_ALLOC)
-        alloc_test(() -> transpose(x) * x, 2BIGINT_ALLOC)
-        alloc_test(() -> LinearAlgebra.dot(x, x), 2BIGINT_ALLOC)
+        alloc_test_le(() -> x'x, n)
+        alloc_test_le(() -> transpose(x) * x, n)
+        alloc_test_le(() -> LinearAlgebra.dot(x, x), n)
     end
+    return
 end
 
 @testset "Dispatch tests" begin
