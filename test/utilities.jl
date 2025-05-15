@@ -6,9 +6,14 @@
 
 include("dummy.jl")
 
-# Allocating size for allocating a `BigInt`.
-# Half size on 32-bit.
-const BIGINT_ALLOC = Sys.WORD_SIZE == 64 ? 48 : 24
+# Allocating size for allocating a `BigInt`. Half size on 32-bit.
+const BIGINT_ALLOC = @static if VERSION >= v"1.12"
+    Sys.WORD_SIZE == 64 ? 72 : 36
+elseif VERSION >= v"1.11"
+    Sys.WORD_SIZE == 64 ? 56 : 28
+else
+    Sys.WORD_SIZE == 64 ? 48 : 24
+end
 
 function alloc_test(f::F, n) where {F}
     f() # compile

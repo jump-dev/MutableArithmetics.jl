@@ -205,14 +205,13 @@ end
             alloc_test(() -> MA.mutability(y, MA.add_mul, y, A, x), 0)
         end
 
-        n = BIGINT_ALLOC + (VERSION >= v"1.11" ? 8 : 0)
-        alloc_test_le(() -> MA.add_mul!!(y, A, x), n)
-        alloc_test_le(
+        alloc_test(() -> MA.add_mul!!(y, A, x), BIGINT_ALLOC)
+        alloc_test(
             () -> MA.operate_fallback!!(MA.IsMutable(), MA.add_mul, y, A, x),
-            n,
+            BIGINT_ALLOC,
         )
-        alloc_test_le(() -> MA.operate!!(MA.add_mul, y, A, x), n)
-        alloc_test_le(() -> MA.operate!(MA.add_mul, y, A, x), n)
+        alloc_test(() -> MA.operate!!(MA.add_mul, y, A, x), BIGINT_ALLOC)
+        alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), BIGINT_ALLOC)
         # Apparently, all allocations were on creating the buffer since this is allocation free:
         buffer = MA.buffer_for(MA.add_mul, typeof(y), typeof(A), typeof(x))
         alloc_test(() -> MA.buffered_operate!(buffer, MA.add_mul, y, A, x), 0)
@@ -278,10 +277,9 @@ end
             )
             alloc_test(() -> MA.mutability(C, MA.add_mul, C, A, B), 0)
         end
-        allocs = BIGINT_ALLOC + (VERSION >= v"1.11" ? 8 : 0)
-        alloc_test(() -> MA.add_mul!!(C, A, B), allocs)
-        alloc_test(() -> MA.operate!!(MA.add_mul, C, A, B), allocs)
-        alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), allocs)
+        alloc_test(() -> MA.add_mul!!(C, A, B), BIGINT_ALLOC)
+        alloc_test(() -> MA.operate!!(MA.add_mul, C, A, B), BIGINT_ALLOC)
+        alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), BIGINT_ALLOC)
     end
 end
 
