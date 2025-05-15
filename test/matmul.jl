@@ -277,6 +277,7 @@ end
             )
             alloc_test(() -> MA.mutability(C, MA.add_mul, C, A, B), 0)
         end
+
         alloc_test(() -> MA.add_mul!!(C, A, B), BIGINT_ALLOC)
         alloc_test(() -> MA.operate!!(MA.add_mul, C, A, B), BIGINT_ALLOC)
         alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), BIGINT_ALLOC)

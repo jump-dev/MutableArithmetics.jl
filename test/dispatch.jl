@@ -22,7 +22,6 @@ function dispatch_tests(::Type{T}) where {T}
         alloc_test(() -> transpose(x) * x, 2BIGINT_ALLOC)
         alloc_test(() -> LinearAlgebra.dot(x, x), 2BIGINT_ALLOC)
     end
-    return
 end
 
 @testset "Dispatch tests" begin
