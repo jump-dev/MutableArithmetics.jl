@@ -5,15 +5,15 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 function allocation_test(
-    op::F1,
-    ::Type{T},
-    short::F2,
-    short_to::F3,
-    n::Integer;
+    op,
+    T,
+    short,
+    short_to,
+    n;
     a = T(2),
     b = T(3),
     c = T(4),
-) where {T,F1,F2,F3}
+)
     @test MA.promote_operation(op, T, T) == T
     alloc_test(() -> MA.promote_operation(op, T, T), 0)
     if op != div && op != -

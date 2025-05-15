@@ -15,12 +15,12 @@ else
     Sys.WORD_SIZE == 64 ? 48 : 24
 end
 
-function alloc_test(f::F, n) where {F}
+function alloc_test(f, n)
     f() # compile
     @test n == @allocated f()
 end
 
-function alloc_test_le(f::F, n) where {F}
+function alloc_test_le(f, n)
     f() # compile
     @test n >= @allocated f()
 end
