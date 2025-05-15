@@ -32,6 +32,9 @@ end
     # FIXME This should not allocate but I couldn't figure out where these
     #       allocations come from.
     n = (VERSION >= v"1.11" ? 336 : 240)
+    if Sys.WORD_SIZE == 32
+        n /= 2
+    end
     alloc_test(() -> MA.broadcast!!(+, a, b), n)
     alloc_test(() -> MA.broadcast!!(+, a, c), 0)
 end
