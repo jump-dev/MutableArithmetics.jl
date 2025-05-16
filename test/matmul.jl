@@ -205,17 +205,13 @@ end
             alloc_test(() -> MA.mutability(y, MA.add_mul, y, A, x), 0)
         end
 
-        # 40 bytes to create the buffer
-        # 8 bytes in the double for loop. FIXME: figure out why
-        # Half size on 32-bit.
-        n = Sys.WORD_SIZE == 64 ? 48 : 24
-        alloc_test(() -> MA.add_mul!!(y, A, x), n)
+        alloc_test(() -> MA.add_mul!!(y, A, x), BIGINT_ALLOC)
         alloc_test(
             () -> MA.operate_fallback!!(MA.IsMutable(), MA.add_mul, y, A, x),
-            n,
+            BIGINT_ALLOC,
         )
-        alloc_test(() -> MA.operate!!(MA.add_mul, y, A, x), n)
-        alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), n)
+        alloc_test(() -> MA.operate!!(MA.add_mul, y, A, x), BIGINT_ALLOC)
+        alloc_test(() -> MA.operate!(MA.add_mul, y, A, x), BIGINT_ALLOC)
         # Apparently, all allocations were on creating the buffer since this is allocation free:
         buffer = MA.buffer_for(MA.add_mul, typeof(y), typeof(A), typeof(x))
         alloc_test(() -> MA.buffered_operate!(buffer, MA.add_mul, y, A, x), 0)

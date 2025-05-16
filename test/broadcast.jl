@@ -30,8 +30,9 @@ end
     @test x == 4
     @test y == 5
     # FIXME This should not allocate but I couldn't figure out where these
-    #       240 come from.
-    alloc_test(() -> MA.broadcast!!(+, a, b), 30 * sizeof(Int))
+    #       allocations come from.
+    n = (VERSION >= v"1.11" ? 42 : 30) * sizeof(Int)
+    alloc_test(() -> MA.broadcast!!(+, a, b), n)
     alloc_test(() -> MA.broadcast!!(+, a, c), 0)
 end
 
