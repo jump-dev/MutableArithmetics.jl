@@ -52,7 +52,7 @@ function promote_operation_fallback(
 end
 
 function promote_operation_fallback(
-    op::F,
+    ::F,
     args::Vararg{Type,N},
 ) where {F<:Function,N}
     return typeof(op(_instantiate_zero.(args)...))
