@@ -89,8 +89,7 @@ function test_rewrite_nonconcrete_vector()
     y = Vector{Union{Float64,String}}(x)
     @test MA.@rewrite(x' * y, move_factors_into_sums = false) == x' * y
     @test MA.@rewrite(x .+ y, move_factors_into_sums = false) == x .+ y
-    # Reproducing buggy behavior in MA.@rewrite.
-    @test_broken MA.@rewrite(x + y, move_factors_into_sums = false) == x + x
+    @test MA.@rewrite(x + y, move_factors_into_sums = false) == x + x
     return
 end
 
