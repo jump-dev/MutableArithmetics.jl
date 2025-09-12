@@ -103,6 +103,13 @@ function promote_operation_fallback(
     )
 end
 
+function promote_operation(
+    ::Union{typeof(real),typeof(imag)},
+    ::Type{Complex{T}},
+) where {T}
+    return T
+end
+
 """
     promote_operation(op::Function, ArgsTypes::Type...)
 
