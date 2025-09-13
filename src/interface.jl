@@ -40,7 +40,11 @@ function promote_operation_fallback(
     ::Type{S},
     ::Type{T},
 ) where {S,T}
-    return typeof(op(_instantiate_zero(S), _instantiate_oneunit(T)))
+    if isconcretetype(S) && isconcretetype(T)
+        return typeof(op(_instantiate_zero(S), _instantiate_oneunit(T)))
+    else
+        return promote_type(S, T)
+    end
 end
 
 function promote_operation_fallback(
@@ -48,14 +52,22 @@ function promote_operation_fallback(
     ::Type{S},
     ::Type{T},
 ) where {F<:Function,S,T}
-    return typeof(op(_instantiate_zero(S), _instantiate_zero(T)))
+    if isconcretetype(S) && isconcretetype(T)
+        return typeof(op(_instantiate_zero(S), _instantiate_zero(T)))
+    else
+        return promote_type(S, T)
+    end
 end
 
 function promote_operation_fallback(
-    ::F,
+    op::F,
     args::Vararg{Type,N},
 ) where {F<:Function,N}
-    return typeof(op(_instantiate_zero.(args)...))
+    if all(isconcretetype, args)
+        return typeof(op(_instantiate_zero.(args)...))
+    else
+        return promote_type(args...)
+    end
 end
 
 promote_operation_fallback(::typeof(*), ::Type{T}) where {T} = T
