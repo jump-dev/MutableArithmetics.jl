@@ -7,7 +7,7 @@
 include("dummy.jl")
 
 # Allocating size for allocating a `BigInt`. Half size on 32-bit.
-const BIGINT_ALLOC = @static if VERSION >= v"1.12"
+const BIGINT_ALLOC = @static if VERSION >= v"1.12-beta1"
     Sys.WORD_SIZE == 64 ? 72 : 36
 elseif VERSION >= v"1.11"
     Sys.WORD_SIZE == 64 ? 56 : 28
