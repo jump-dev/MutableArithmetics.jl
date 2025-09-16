@@ -48,6 +48,18 @@ function promote_operation_fallback(
 end
 
 function promote_operation_fallback(
+    op::typeof(/),
+    ::Type{S},
+    ::Type{T},
+) where {S<:Integer,T<:Integer}
+    if isconcretetype(S) && isconcretetype(T)
+        return typeof(op(_instantiate_zero(S), _instantiate_oneunit(T)))
+    else
+        return promote_type(float(S), float(T))
+    end
+end
+
+function promote_operation_fallback(
     op::F,
     ::Type{S},
     ::Type{T},
