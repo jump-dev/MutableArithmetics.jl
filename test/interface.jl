@@ -57,6 +57,11 @@ Base.@irrational theodorus 1.73205080756887729353 sqrt(big(3))
               MathConstants.catalan
         @test MA._instantiate(typeof(theodorus)) == theodorus
     end
+
+    for op in [real, imag]
+        @test MA.promote_operation(op, ComplexF64) == Float64
+        @test MA.promote_operation(op, Complex{Real}) == Real
+    end
 end
 
 @testset "Errors" begin

@@ -28,6 +28,18 @@ import MutableArithmetics as MA
         )
         @test_throws err MA.promote_operation(op, Int, Vector{Int})
     end
+    for op in [+, -, *, /, div]
+        @test MA.promote_operation(op, Int, Number) == Number
+        @test MA.promote_operation(op, Number, Int) == Number
+    end
+    @test MA.promote_operation(/, Int, Integer) == Float64
+    @test MA.promote_operation(/, Integer, Integer) == Float64
+    @test MA.promote_operation(/, Integer, Int) == Float64
+    @test MA.promote_operation(gcd, Int, Integer) == Integer
+    @test MA.promote_operation(gcd, Integer, Integer) == Integer
+    @test MA.promote_operation(gcd, Integer, Int) == Integer
+    @test MA.promote_operation(&, Integer, Integer, Integer) == Integer
+    @test MA.promote_operation(&, Integer, Integer, Int) == Integer
 end
 @testset "add_to!! / add!!" begin
     @test MA.mutability(Int, MA.add_to!!, Int, Int) isa MA.IsNotMutable
