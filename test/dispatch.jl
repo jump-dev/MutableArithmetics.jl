@@ -146,6 +146,6 @@ end
 
 @testset "issue_336" begin
     A = DummyBigInt[1 2; 3 4]
-    B = Any[x[1], x[2]]
-    @test MA.isequal_canonical(A * B, A * x[1:2])
+    B = Any[A[1], A[2]]
+    @test MA.isequal_canonical(A * B, A * A[1:2])
 end
