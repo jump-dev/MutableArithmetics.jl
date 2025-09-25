@@ -143,3 +143,9 @@ end
         @test MA.isequal_canonical(y, DummyBigInt.(sum(X; dims)))
     end
 end
+
+@testset "issue_336" begin
+    A = DummyBigInt[1 2; 3 4]
+    B = Any[x[1], x[2]]
+    @test MA.isequal_canonical(A * B, A * x[1:2])
+end
