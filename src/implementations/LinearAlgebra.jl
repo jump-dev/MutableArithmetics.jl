@@ -428,7 +428,9 @@ function operate(
             # We can't use A * B here, because this will StackOverflow via:
             #   *(A, B) -> mul(A, B) -> operate(*, A, B) -> *(A, B)
             # See MutableArithmetics.jl#336
-            @assert axes(A, 2) == axes(B, 1)
+            if axes(A, 2) != axes(B, 1)
+                throw(DimensionMismatch())
+            end
             return [sum(A[i, j] * B[j] for j in axes(B, 1)) for i in axes(A, 1)]
         end
         return A * B
