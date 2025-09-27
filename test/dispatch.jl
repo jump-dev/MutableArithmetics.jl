@@ -143,3 +143,11 @@ end
         @test MA.isequal_canonical(y, DummyBigInt.(sum(X; dims)))
     end
 end
+
+@testset "issue_336" begin
+    A = DummyBigInt[1 2; 3 4]
+    B = Any[A[1], A[2]]
+    @test MA.isequal_canonical(A * B, A * A[1:2])
+    @test_throws DimensionMismatch A * Any[A[1]]
+    @test_throws DimensionMismatch MA.operate(*, A, Any[A[1]])
+end

@@ -424,6 +424,15 @@ function operate(
     # concrete. Bad things can happen if S or T is abstract and we pick the
     # wrong type for C.
     if !(isconcretetype(S) && isconcretetype(T))
+        if S <: AbstractMutable || T <: AbstractMutable
+            # We can't use A * B here, because this will StackOverflow via:
+            #   *(A, B) -> mul(A, B) -> operate(*, A, B) -> *(A, B)
+            # See MutableArithmetics.jl#336
+            if axes(A, 2) != axes(B, 1)
+                throw(DimensionMismatch())
+            end
+            return [sum(A[i, j] * B[j] for j in axes(B, 1)) for i in axes(A, 1)]
+        end
         return A * B
     end
     C = undef_array(promote_array_mul(typeof(A), typeof(B)), axes(A, 1))
@@ -439,6 +448,9 @@ function operate(
     # concrete. Bad things can happen if S or T is abstract and we pick the
     # wrong type for C.
     if !(isconcretetype(S) && isconcretetype(T))
+        # It's safe to use A * B here, because there is no fallback for
+        #   *(A, B) -> mul(A, B) -> operate(*, A, B)
+        # See MutableArithmetics.jl#336
         return A * B
     end
     C = undef_array(
