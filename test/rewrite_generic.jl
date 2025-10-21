@@ -509,6 +509,15 @@ function test_allocations_rewrite_mult()
     return
 end
 
+function test_rewrite_init_symbol()
+    x = Int[]
+    y = MA.@rewrite(sum(x; init = 0), move_factors_into_sums = false)
+    @test y == 0
+    y = MA.@rewrite(sum(x, init = 0), move_factors_into_sums = false)
+    @test y == 0
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()

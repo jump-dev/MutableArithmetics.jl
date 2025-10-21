@@ -125,16 +125,18 @@ function _rewrite_generic(stack::Expr, expr::Expr)
             # The summation has keyword arguments. We can deal with `init`, but
             # not any of the others.
             p = expr.args[2]
-            if length(p.args) == 1 && _is_kwarg(p.args[1], :init)
+            is_init = length(p.args) == 1 && _is_kwarg(p.args[1], :init)
+            if is_init && expr.args[3] isa Expr
                 # sum(iter ; init) form!
+                # We rewrite only if `iter` is an Expr; if it's just a Symbol,
+                # we don't enter this branch.
                 root = gensym()
                 init, _ = _rewrite_generic(stack, p.args[1].args[2])
                 push!(stack.args, :($root = $init))
                 return _rewrite_generic_generator(stack, :+, expr.args[3], root)
-            else
-                # We don't know how to deal with this
-                return esc(expr), false
             end
+            # We don't know how to deal with this
+            return esc(expr), false
         else
             # Summations use :+ as the reduction operator.
             init_expr = expr.args[2].args[end]
