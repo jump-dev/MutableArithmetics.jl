@@ -132,7 +132,7 @@ function operate_to!(
     return operate!(op, output, c...)
 end
 
-function operate!(op::Function, x::BigInt, args::Vararg{Any,N}) where {N}
+function operate_fallback!(op::Function, x::BigInt, args::Vararg{Any,N}) where {N}
     return operate_to!(x, op, x, args...)
 end
 

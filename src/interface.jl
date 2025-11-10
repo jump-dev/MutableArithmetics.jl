@@ -755,7 +755,7 @@ function promote_operation_fallback(
     ::Type{<:AbstractArray{A}},
     ::Type{<:AbstractArray{B}},
 ) where {A,B}
-    C = promote_operation(*, A, B)
+    C = promote_operation(LinearAlgebra.dot, A, B)
     return promote_operation(+, C, C)
 end
 
