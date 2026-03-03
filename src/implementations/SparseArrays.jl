@@ -242,7 +242,7 @@ function operate!(
                         QuickSort,
                         Base.Order.Forward,
                     )
-                    for vp in ip0:ip-1
+                    for vp in ip0:(ip-1)
                         k = ret.rowval[vp]
                         xb[k] = false
                         ret.nzval[vp] = ret.nzval[k+k0]
