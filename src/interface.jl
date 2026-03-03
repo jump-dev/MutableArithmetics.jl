@@ -330,7 +330,7 @@ function _size_after_multiply(x::NTuple{M,Int}, y::NTuple{N,Int}) where {N,M}
     if x[end] != y[1]
         return nothing
     end
-    return (x[1:end-1]..., y[2:end]...)
+    return (x[1:(end-1)]..., y[2:end]...)
 end
 
 _size_after_multiply(::Tuple{}, rhs::NTuple{M,Int}) where {M} = rhs
