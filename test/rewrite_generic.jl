@@ -317,7 +317,7 @@ Base.getindex(x::_KwargRef; i) = x.data[i]
 function test_rewrite_kw_in_ref()
     x = _KwargRef(Dict(i => i + 1 for i in 2:4))
     @test MA.@rewrite(
-        sum(x[i = j] for j in 2:4),
+        sum(x[i=j] for j in 2:4),
         move_factors_into_sums = false,
     ) == 12
     return
@@ -515,6 +515,49 @@ function test_rewrite_init_symbol()
     @test y == 0
     y = MA.@rewrite(sum(x, init = 0), move_factors_into_sums = false)
     @test y == 0
+    return
+end
+
+function test_issue_343()
+    x = rand(6)
+    y = sum(x)
+    @test MA.@rewrite(sum(x[:]), move_factors_into_sums = false) == y
+    @test MA.@rewrite(sum(x[i] for i in 1:6), move_factors_into_sums = false) ==
+          y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6 for j in 0:1),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6, j in 0:1),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(sum(x[:], init = 0), move_factors_into_sums = false) == y
+    @test MA.@rewrite(
+        sum(x[i] for i in 1:6, init in 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6 for j in 0:1, init in 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6, j in 0:1, init in 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(sum(x[:]; init = 0), move_factors_into_sums = false) == y
+    @test MA.@rewrite(
+        sum(x[i] for i in 1:6; init = 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6 for j in 0:1; init = 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6, j in 0:1; init = 0),
+        move_factors_into_sums = false
+    ) == y
     return
 end
 
