@@ -47,6 +47,8 @@ function _is_flatten(expr)
     return Meta.isexpr(expr, :call, 2) && Meta.isexpr(expr.args[2], :flatten)
 end
 
+_is_generator_or_flatten(expr) = _is_generator(expr) || _is_flatten(expr)
+
 function _is_parameters(expr)
     return Meta.isexpr(expr, :call, 3) && Meta.isexpr(expr.args[2], :parameters)
 end
@@ -111,7 +113,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
     elseif Meta.isexpr(expr.args[2], :(...))
         # If the first argument is a splat.
         return esc(expr), false
-    elseif _is_generator(expr) || _is_flatten(expr) || _is_parameters(expr)
+    elseif _is_generator_or_flatten(expr) || _is_parameters(expr)
         if !(expr.args[1] in (:sum, :Σ, :∑))
             # We don't know what this is. Return the expression and don't let
             # future callers mutate.
@@ -126,7 +128,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
             # not any of the others.
             p = expr.args[2]
             is_init = length(p.args) == 1 && _is_kwarg(p.args[1], :init)
-            if is_init && expr.args[3] isa Expr
+            if is_init && _is_generator_or_flatten(expr.args[3])
                 # sum(iter ; init) form!
                 # We rewrite only if `iter` is an Expr; if it's just a Symbol,
                 # we don't enter this branch.

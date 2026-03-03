@@ -518,6 +518,52 @@ function test_rewrite_init_symbol()
     return
 end
 
+function test_issue_343()
+    x = [1, 3, 5, 7, 8, 2]
+    y = sum(x)
+    @test MA.@rewrite(sum(x[:]), move_factors_into_sums = false) == y
+    @test MA.@rewrite(sum(x[i] for i in 1:6), move_factors_into_sums = false) ==
+          y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6 for j in 0:1),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6, j in 0:1),
+        move_factors_into_sums = false
+    ) == y
+    # Turn formatting off here so we preserve `init = 0`
+    #!format:off
+    @test MA.@rewrite(sum(x[:], init = 0), move_factors_into_sums = false) == y
+    @test MA.@rewrite(
+        sum(x[i] for i in 1:6, init = 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6 for j in 0:1, init = 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6, j in 0:1, init = 0),
+        move_factors_into_sums = false
+    ) == y
+    #!format:on
+    @test MA.@rewrite(sum(x[:]; init = 0), move_factors_into_sums = false) == y
+    @test MA.@rewrite(
+        sum(x[i] for i in 1:6; init = 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6 for j in 0:1; init = 0),
+        move_factors_into_sums = false
+    ) == y
+    @test MA.@rewrite(
+        sum(x[i+j] for i in 1:2:6, j in 0:1; init = 0),
+        move_factors_into_sums = false
+    ) == y
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
