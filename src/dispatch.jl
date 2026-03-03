@@ -372,33 +372,30 @@ for f_A in _MatrixLike, f_B in vcat(_MatrixLike, T -> StridedVector{<:T})
     end
 end
 
-# See https://github.com/JuliaLang/julia/pull/37898
-# The default fallback only used `promote_type` so it may get its wrong, e.g.,
-# for JuMP and MultivariatePolynomials.
-if VERSION >= v"1.7.0-DEV.1284"
-    using LinearAlgebra: StridedMaybeAdjOrTransMat
-    _mat_mat_scalar(A, B, γ) = operate!!(*, operate(*, A, B), γ)
-    function LinearAlgebra.mat_mat_scalar(
-        A::StridedMaybeAdjOrTransMat{<:AbstractMutable},
-        B::StridedMaybeAdjOrTransMat,
-        γ,
-    )
-        return _mat_mat_scalar(A, B, γ)
-    end
-    function LinearAlgebra.mat_mat_scalar(
-        A::StridedMaybeAdjOrTransMat,
-        B::StridedMaybeAdjOrTransMat{<:AbstractMutable},
-        γ,
-    )
-        return _mat_mat_scalar(A, B, γ)
-    end
-    function LinearAlgebra.mat_mat_scalar(
-        A::StridedMaybeAdjOrTransMat{<:AbstractMutable},
-        B::StridedMaybeAdjOrTransMat{<:AbstractMutable},
-        γ,
-    )
-        return _mat_mat_scalar(A, B, γ)
-    end
+_mat_mat_scalar(A, B, γ) = operate!!(*, operate(*, A, B), γ)
+
+function LinearAlgebra.mat_mat_scalar(
+    A::LinearAlgebra.StridedMaybeAdjOrTransMat{<:AbstractMutable},
+    B::LinearAlgebra.StridedMaybeAdjOrTransMat,
+    γ,
+)
+    return _mat_mat_scalar(A, B, γ)
+end
+
+function LinearAlgebra.mat_mat_scalar(
+    A::LinearAlgebra.StridedMaybeAdjOrTransMat,
+    B::LinearAlgebra.StridedMaybeAdjOrTransMat{<:AbstractMutable},
+    γ,
+)
+    return _mat_mat_scalar(A, B, γ)
+end
+
+function LinearAlgebra.mat_mat_scalar(
+    A::LinearAlgebra.StridedMaybeAdjOrTransMat{<:AbstractMutable},
+    B::LinearAlgebra.StridedMaybeAdjOrTransMat{<:AbstractMutable},
+    γ,
+)
+    return _mat_mat_scalar(A, B, γ)
 end
 
 # Base doesn't define efficient fallbacks for sparse array arithmetic involving
@@ -614,18 +611,6 @@ end
 # the type by default.
 Base.zero(x::AbstractMutable) = zero(typeof(x))
 
-# This was fixed in https://github.com/JuliaLang/julia/pull/36194 but then
-# reverted. Fixed again in https://github.com/JuliaLang/julia/pull/38789/.
-if VERSION >= v"1.7.0-DEV.872"
-    # `AbstractMutable` objects are more likely to implement `iszero` than `==`
-    # with `Int`.
-    LinearAlgebra.iszerodefined(::Type{<:AbstractMutable}) = true
-else
-    # To determine whether the funtion is zero preserving, `LinearAlgebra` calls
-    # `zero` on the `eltype` of the broadcasted object and then check `_iszero`.
-    # `_iszero(x)` redirects to `iszero(x)` for numbers and to `x == 0`
-    # otherwise.
-    # `x == 0` returns false for types that implement `iszero` but not `==` such
-    # as `DummyBigInt` and MOI functions.
-    LinearAlgebra._iszero(x::AbstractMutable) = iszero(x)
-end
+# `AbstractMutable` objects are more likely to implement `iszero` than `==`
+# with `Int`.
+LinearAlgebra.iszerodefined(::Type{<:AbstractMutable}) = true
