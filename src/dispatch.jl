@@ -13,6 +13,16 @@
 
 abstract type AbstractMutable end
 
+# Zero arithmetic methods for AbstractMutable types.
+# The main Zero arithmetic is defined in rewrite.jl with Number/AbstractArray;
+# these methods extend it to AbstractMutable.
+Base.:*(z::Zero, ::AbstractMutable) = z
+Base.:*(::AbstractMutable, z::Zero) = z
+Base.:+(::Zero, x::AbstractMutable) = copy_if_mutable(x)
+Base.:+(x::AbstractMutable, ::Zero) = copy_if_mutable(x)
+Base.:-(::Zero, x::AbstractMutable) = operate(-, x)
+Base.:-(x::AbstractMutable, ::Zero) = copy_if_mutable(x)
+
 function Base.sum(
     a::AbstractArray{T};
     dims = :,
