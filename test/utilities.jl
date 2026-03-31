@@ -10,9 +10,9 @@ include("dummy.jl")
 # v1.12.5 off by 8
 _big_int_alloc() = @allocated(BigInt(1))
 
-function alloc_test(f, n)
+function alloc_test(f, expected_upper_bound)
     f() # compile
-    y = @allocated f()
-    @test y <= n
+    measured_allocations = @allocated f()
+    @test measured_allocations <= expected_upper_bound
     return
 end
