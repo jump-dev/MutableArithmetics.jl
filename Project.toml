@@ -1,6 +1,6 @@
 name = "MutableArithmetics"
 uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
-version = "1.6.7"
+version = "1.7.0"
 authors = ["Gilles Peiffer", "Benoît Legat", "Sascha Timme"]
 
 [deps]
