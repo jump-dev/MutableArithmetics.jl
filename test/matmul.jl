@@ -204,7 +204,7 @@ end
             )
             alloc_test(() -> MA.mutability(y, MA.add_mul, y, A, x), 0)
         end
-
+        BIGINT_ALLOC = 2 * sizeof(Int) + _big_int_alloc()
         alloc_test(() -> MA.add_mul!!(y, A, x), BIGINT_ALLOC)
         alloc_test(
             () -> MA.operate_fallback!!(MA.IsMutable(), MA.add_mul, y, A, x),
@@ -277,7 +277,7 @@ end
             )
             alloc_test(() -> MA.mutability(C, MA.add_mul, C, A, B), 0)
         end
-
+        BIGINT_ALLOC = 2 * sizeof(Int) + _big_int_alloc()
         alloc_test(() -> MA.add_mul!!(C, A, B), BIGINT_ALLOC)
         alloc_test(() -> MA.operate!!(MA.add_mul, C, A, B), BIGINT_ALLOC)
         alloc_test(() -> MA.operate!(MA.add_mul, C, A, B), BIGINT_ALLOC)
@@ -473,8 +473,8 @@ function test_sparse_vector_sum(::Type{T}) where {T}
     y = copy(x)
     z = copy(y)
     # FIXME not sure what is allocating
-    alloc_test_le(() -> MA.operate!(+, y, z), 200)
-    alloc_test_le(() -> MA.operate!(-, y, z), 200)
+    alloc_test(() -> MA.operate!(+, y, z), 200)
+    alloc_test(() -> MA.operate!(-, y, z), 200)
     alloc_test(() -> MA.operate_to!(x, +, y, z), 0)
     alloc_test(() -> MA.operate_to!(x, -, y, z), 0)
     alloc_test(() -> MA.operate_to!(x, +, y), 0)
