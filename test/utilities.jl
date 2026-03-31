@@ -10,7 +10,7 @@ include("dummy.jl")
 # v1.12.5 off by 8
 _big_int_alloc() = @allocated(BigInt(1))
 
-function alloc_test(f::F, expected_upper_bound::Int) where {F<:Function}
+function alloc_test(f::F, expected_upper_bound::Integer) where {F<:Function}
     f() # compile
     measured_allocations = @allocated f()
     @test measured_allocations <= expected_upper_bound
