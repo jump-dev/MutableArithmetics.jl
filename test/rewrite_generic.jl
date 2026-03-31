@@ -480,20 +480,18 @@ function test_allocations_rewrite_unary_minus()
     MA.@rewrite(-sum(x[i] for i in 1:N), move_factors_into_sums = false)
     MA.@rewrite(sum(a * x[i] for i in 1:N), move_factors_into_sums = false)
     sum(-x[i] for i in 1:N)
-    total = @allocated sum(-x[i] for i in 1:N)
-    # actual
     value = @allocated(
         MA.@rewrite(sum(-x[i] for i in 1:N), move_factors_into_sums = false),
     )
-    @test value < total
+    @test value < @allocated sum(-x[i] for i in 1:N)
     value = @allocated(
         MA.@rewrite(-sum(x[i] for i in 1:N), move_factors_into_sums = false),
     )
-    @test value < total
+    @test value < @allocated -sum(x[i] for i in 1:N)
     value = @allocated(
         MA.@rewrite(sum(a * x[i] for i in 1:N), move_factors_into_sums = false),
     )
-    @test value < total
+    @test value < @allocated sum(a * x[i] for i in 1:N)
     return
 end
 
