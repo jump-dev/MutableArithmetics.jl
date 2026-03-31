@@ -7,9 +7,9 @@
 include("dummy.jl")
 
 # Allocating size for allocating a `BigInt`. Half size on 32-bit.
-const BIGINT_ALLOC = let
-    sizeof(Int) + @allocated(BigInt(1))
-end
+# v1.12.5 off by 8
+_big_int_alloc() = sizeof(Int) + @allocated(BigInt(1))
+const BIGINT_ALLOC = _big_int_alloc()
 @show BIGINT_ALLOC
 
 function alloc_test(f, n)

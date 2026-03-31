@@ -31,7 +31,8 @@ end
     @test y == 5
     # FIXME This should not allocate but I couldn't figure out where these
     #       allocations come from.
-    alloc_test_le(() -> MA.broadcast!!(+, a, b), 42 * sizeof(Int))
+    n = 6 * @allocated(BigInt(1))
+    alloc_test(() -> MA.broadcast!!(+, a, b), n)
     alloc_test(() -> MA.broadcast!!(+, a, c), 0)
 end
 
