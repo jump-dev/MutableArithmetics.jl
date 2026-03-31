@@ -26,8 +26,8 @@ function allocation_test(
     A = MA.copy_if_mutable(a)
     @test A === short(A, b)
     @test g == A
-    alloc_test_le(() -> short(A, b), n)
-    alloc_test_le(() -> short_to(c, a, b), n)
+    alloc_test(() -> short(A, b), n)
+    alloc_test(() -> short_to(c, a, b), n)
     @test g == MA.buffered_operate!(nothing, op, MA.copy_if_mutable(a), b)
     @test g == MA.buffered_operate_to!(nothing, c, op, a, b)
     buffer = MA.buffer_for(op, typeof(a), typeof(b))
