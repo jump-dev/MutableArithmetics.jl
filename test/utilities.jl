@@ -6,10 +6,6 @@
 
 include("dummy.jl")
 
-# Allocating size for allocating a `BigInt`. Half size on 32-bit.
-# v1.12.5 off by 8
-_big_int_alloc() = @allocated(BigInt(1))
-
 function alloc_test(f::F, expected_upper_bound::Integer) where {F<:Function}
     f() # compile
     measured_allocations = @allocated f()

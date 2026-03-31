@@ -15,7 +15,7 @@ function dispatch_tests(::Type{T}) where {T}
     c = one(T)
     x = convert.(T, [1, 2, 3])
     # Need to allocate 1 BigInt for the result and one for the buffer
-    nalloc = 3 * _big_int_alloc()
+    nalloc = 3 * @allocated(BigInt(1))
     alloc_test(() -> MA.fused_map_reduce(MA.add_mul, x, x), nalloc)
     alloc_test(() -> MA.fused_map_reduce(MA.add_dot, x, x), nalloc)
     if T <: MA.AbstractMutable
