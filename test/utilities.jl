@@ -15,10 +15,14 @@ end
 
 function alloc_test(f, n)
     f() # compile
-    @test n == @allocated f()
+    y = @allocated f()
+    @test n == y
+    return
 end
 
 function alloc_test_le(f, n)
     f() # compile
-    @test n >= @allocated f()
+    y = @allocated f()
+    @test n >= y
+    return
 end

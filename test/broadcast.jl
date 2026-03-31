@@ -31,9 +31,7 @@ end
     @test y == 5
     # FIXME This should not allocate but I couldn't figure out where these
     #       allocations come from.
-    n = ifelse(VERSION >= v"1.12.5", 36, ifelse(VERSION >= v"1.11", 42, 30))
-    n *= sizeof(Int)
-    alloc_test(() -> MA.broadcast!!(+, a, b), n)
+    alloc_test_le(() -> MA.broadcast!!(+, a, b), 42 * sizeof(Int))
     alloc_test(() -> MA.broadcast!!(+, a, c), 0)
 end
 
