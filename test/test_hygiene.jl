@@ -4,14 +4,19 @@
 # v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
-# hygiene.jl
-# Make sure that our macros have good hygiene
+module TestHygiene
 
 module M
+
 using Test
+
 # Import it as a different name so that we test whether MutableArithmetics is
 # needed in the current scope.
 import MutableArithmetics as NewSymbolMA
+
+@test !@isdefined(MA)
+
+@test !@isdefined(MutableArithmetics)
 
 macro _rewrite(expr)
     variable, code = NewSymbolMA.rewrite(expr)
@@ -41,7 +46,7 @@ x = big(1)
 y = NewSymbolMA.@rewrite(x + (x + 1)^1)
 @test y == 3
 
-end
+end  # M
 
 # Test the scoping outside the module. See also the note in runtests.jl.
 
@@ -50,3 +55,5 @@ using Test
 @testset "test_scoping" begin
     @test M.@_rewrite(1 + (1 + 1)^1) == 3
 end
+
+end  # TestHygiene

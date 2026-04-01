@@ -4,10 +4,20 @@
 # v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
+module TestInt
+
 using Test
 import MutableArithmetics as MA
 
-@testset "promote_operation" begin
+function runtests()
+    is_test(name::Symbol) = startswith("$name", "test_")
+    @testset "$name" for name in filter(is_test, names(@__MODULE__; all = true))
+        getfield(@__MODULE__, name)()
+    end
+    return
+end
+
+function test_promote_operation()
     @test MA.promote_operation(MA.zero, Int) == Int
     @test MA.promote_operation(MA.one, Int) == Int
     @test MA.promote_operation(+, Int, Int) == Int
@@ -40,8 +50,10 @@ import MutableArithmetics as MA
     @test MA.promote_operation(gcd, Integer, Int) == Integer
     @test MA.promote_operation(&, Integer, Integer, Integer) == Integer
     @test MA.promote_operation(&, Integer, Integer, Int) == Integer
+    return
 end
-@testset "add_to!! / add!!" begin
+
+function test_add_to!!_add!!()
     @test MA.mutability(Int, MA.add_to!!, Int, Int) isa MA.IsNotMutable
     @test MA.mutability(Int, MA.add!!, Int) isa MA.IsNotMutable
     a = 5
@@ -52,9 +64,10 @@ end
     a = 165
     b = 255
     @test MA.add!!(a, b) == 420
+    return
 end
 
-@testset "mul_to!! / mul!!" begin
+function test_mul_to!!_mul!!()
     @test MA.mutability(Int, MA.mul_to!!, Int, Int) isa MA.IsNotMutable
     @test MA.mutability(Int, MA.mul!!, Int) isa MA.IsNotMutable
     a = 5
@@ -65,9 +78,10 @@ end
     a = 15
     b = 28
     @test MA.mul!!(a, b) == 420
+    return
 end
 
-@testset "add_mul_to!! / add_mul!! / add_mul_buf_to!! /add_mul_buf!!" begin
+function test_add_mul_to!!_add_mul!!_add_mul_buf_to!!_add_mul_buf!!()
     @test MA.mutability(Int, MA.add_mul_to!!, Int, Int, Int) isa MA.IsNotMutable
     @test MA.mutability(Int, MA.add_mul!!, Int, Int) isa MA.IsNotMutable
     @test MA.mutability(Int, MA.add_mul_buf_to!!, Int, Int, Int, Int) isa
@@ -98,25 +112,34 @@ end
     d = 42
     buf = 56
     @test MA.add_mul_buf_to!!(buf, d, a, b, c) == 420
+    return
 end
 
-@testset "zero!!" begin
+function test_zero!!()
     @test MA.mutability(Int, MA.zero!!) isa MA.IsNotMutable
     a = 5
     @test MA.zero!!(a) == 0
+    return
 end
 
-@testset "one!!" begin
+function test_one!!()
     @test MA.mutability(Int, MA.one!!) isa MA.IsNotMutable
     a = 5
     @test MA.one!!(a) == 1
+    return
 end
 
-@testset "Zero / Int" begin
+function test_Zero_Int()
     @test MA.Zero() / 1 == MA.Zero()
     @test_throws DivideError MA.Zero() / 0
+    return
 end
 
-@testset "Division" begin
+function test_Division()
     @test 1 / 2 == MA.operate!!(/, 1, 2)
+    return
 end
+
+end  # module
+
+TestInt.runtests()

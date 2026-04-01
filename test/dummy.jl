@@ -4,54 +4,93 @@
 # v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
-using LinearAlgebra
+import LinearAlgebra
 import MutableArithmetics as MA
+
+struct DummyMutable end
+
+function MA.promote_operation(
+    ::typeof(+),
+    ::Type{DummyMutable},
+    ::Type{DummyMutable},
+)
+    return DummyMutable
+end
+
+# Test that this does not triggers any ambiguity even if there is a fallback specific to `/`.
+function MA.promote_operation(
+    ::Union{typeof(-),typeof(/)},
+    ::Type{DummyMutable},
+    ::Type{DummyMutable},
+)
+    return DummyMutable
+end
+
+MA.mutability(::Type{DummyMutable}) = MA.IsMutable()
 
 # It does not support operation with floats on purpose to test that
 # MutableArithmetics does not convert to float when it shouldn't.
 struct DummyBigInt <: MA.AbstractMutable
     data::BigInt
 end
-DummyBigInt(J::UniformScaling) = DummyBigInt(J.λ)
+
+DummyBigInt(J::LinearAlgebra.UniformScaling) = DummyBigInt(J.λ)
 
 # Broadcast
 Base.broadcastable(x::DummyBigInt) = Ref(x)
+
 # The version with `DummyBigInt` without `Type` is needed in LinearAlgebra for
 # Julia v1.6+.
 Base.ndims(::Union{Type{DummyBigInt},DummyBigInt}) = 0
 
 function Base.promote_rule(
     ::Type{DummyBigInt},
-    ::Type{<:Union{Integer,UniformScaling{<:Integer}}},
+    ::Type{<:Union{Integer,LinearAlgebra.UniformScaling{<:Integer}}},
 )
     return DummyBigInt
 end
+
 # `copy` on BigInt returns the same instance anyway
 Base.copy(x::DummyBigInt) = x
+
 MA.mutable_copy(x::DummyBigInt) = DummyBigInt(MA.mutable_copy(x.data))
+
 LinearAlgebra.symmetric_type(::Type{DummyBigInt}) = DummyBigInt
+
 LinearAlgebra.symmetric(x::DummyBigInt, ::Symbol) = x
+
 LinearAlgebra.issymmetric(::DummyBigInt) = true
+
 LinearAlgebra.hermitian_type(::Type{DummyBigInt}) = DummyBigInt
+
 LinearAlgebra.hermitian(x::DummyBigInt, ::Symbol) = x
+
 LinearAlgebra.dot(x::DummyBigInt, y::DummyBigInt) = x * y
+
 function LinearAlgebra.dot(
     x::DummyBigInt,
-    y::Union{Integer,UniformScaling{<:Integer}},
+    y::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
 )
     return x * y
 end
+
 function LinearAlgebra.dot(
-    x::Union{Integer,UniformScaling{<:Integer}},
+    x::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
     y::DummyBigInt,
 )
     return x * y
 end
+
 LinearAlgebra.transpose(x::DummyBigInt) = x
+
 LinearAlgebra.adjoint(x::DummyBigInt) = x
+
 MA.mutability(::Type{DummyBigInt}) = MA.IsMutable()
+
 MA.promote_operation(::typeof(zero), ::Type{DummyBigInt}) = DummyBigInt
+
 MA.promote_operation(::typeof(one), ::Type{DummyBigInt}) = DummyBigInt
+
 function MA.promote_operation(
     ::typeof(+),
     ::Type{DummyBigInt},
@@ -59,8 +98,11 @@ function MA.promote_operation(
 )
     return DummyBigInt
 end
+
 _data(x) = x
+
 _data(x::DummyBigInt) = x.data
+
 MA.scaling(x::DummyBigInt) = x
 
 function MA.operate_to!(
@@ -77,8 +119,11 @@ function MA.buffer_for(
 ) where {N}
     return DummyBigInt(BigInt())
 end
+
 _undummy(x) = x
+
 _undummy(x::DummyBigInt) = x.data
+
 function MA.buffered_operate_to!(
     buffer::DummyBigInt,
     output::DummyBigInt,
@@ -94,6 +139,7 @@ function MA.buffered_operate_to!(
     )
     return output
 end
+
 function MA.buffered_operate!(
     buffer::DummyBigInt,
     op::Function,
@@ -114,9 +160,11 @@ function MA.operate_to!(
 )
     return MA.operate_to!(output, MA.add_sub_op(op), x, *(y, z, args...))
 end
+
 function MA.operate_to!(output::DummyBigInt, op::MA.AddSubMul, x, y, z, args...)
     return MA.operate_to!(output, MA.add_sub_op(op), x, *(y, z, args...))
 end
+
 function MA.operate!(
     op::Function,
     x::DummyBigInt,
@@ -136,40 +184,85 @@ function MA.promote_operation(
 )
     return DummyBigInt
 end
+
 Base.convert(::Type{DummyBigInt}, x::Int) = DummyBigInt(x)
+
 MA.isequal_canonical(x::DummyBigInt, y::DummyBigInt) = x.data == y.data
+
 Base.iszero(x::DummyBigInt) = iszero(x.data)
+
 Base.isone(x::DummyBigInt) = isone(x.data)
-# We don't define == to tests that implementation of MA can pass the tests without defining ==.
+
+# We don't define == to tests that implementation of MA can pass the tests
+# without defining ==.
+#
 # This is the case for MOI functions for instance.
-# For th same reason, we only define `zero` and `one` for `Type{DummyBigInt}`, not for `DummyBigInt`.
+#
+# For the same reason, we only define `zero` and `one` for `Type{DummyBigInt}`,
+# not for `DummyBigInt`.
+
 Base.zero(::Type{DummyBigInt}) = DummyBigInt(zero(BigInt))
+
 Base.one(::Type{DummyBigInt}) = DummyBigInt(one(BigInt))
+
 Base.:+(x::DummyBigInt) = DummyBigInt(+x.data)
+
 Base.:+(x::DummyBigInt, y::DummyBigInt) = DummyBigInt(x.data + y.data)
-function Base.:+(x::DummyBigInt, y::Union{Integer,UniformScaling{<:Integer}})
+
+function Base.:+(
+    x::DummyBigInt,
+    y::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
+)
     return DummyBigInt(x.data + y)
 end
-function Base.:+(x::Union{Integer,UniformScaling{<:Integer}}, y::DummyBigInt)
+
+function Base.:+(
+    x::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
+    y::DummyBigInt,
+)
     return DummyBigInt(x + y.data)
 end
+
 Base.:-(x::DummyBigInt) = DummyBigInt(-x.data)
+
 Base.:-(x::DummyBigInt, y::DummyBigInt) = DummyBigInt(x.data - y.data)
-function Base.:-(x::Union{Integer,UniformScaling{<:Integer}}, y::DummyBigInt)
+
+function Base.:-(
+    x::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
+    y::DummyBigInt,
+)
     return DummyBigInt(x - y.data)
 end
-function Base.:-(x::DummyBigInt, y::Union{Integer,UniformScaling{<:Integer}})
+
+function Base.:-(
+    x::DummyBigInt,
+    y::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
+)
     return DummyBigInt(x.data - y)
 end
+
 Base.:*(x::DummyBigInt) = x
+
 Base.:*(x::DummyBigInt, y::DummyBigInt) = DummyBigInt(x.data * y.data)
-function Base.:*(x::Union{Integer,UniformScaling{<:Integer}}, y::DummyBigInt)
+
+function Base.:*(
+    x::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
+    y::DummyBigInt,
+)
     return DummyBigInt(x * y.data)
 end
-function Base.:*(x::DummyBigInt, y::Union{Integer,UniformScaling{<:Integer}})
+
+function Base.:*(
+    x::DummyBigInt,
+    y::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
+)
     return DummyBigInt(x.data * y)
 end
-function Base.:^(x::DummyBigInt, y::Union{Integer,UniformScaling{<:Integer}})
+
+function Base.:^(
+    x::DummyBigInt,
+    y::Union{Integer,LinearAlgebra.UniformScaling{<:Integer}},
+)
     return DummyBigInt(x.data^y)
 end
 
