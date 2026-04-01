@@ -10,6 +10,14 @@ using Test
 
 import MutableArithmetics as MA
 
+function runtests()
+    is_test(name::Symbol) = startswith("$name", "test_")
+    @testset "$name" for name in filter(is_test, names(@__MODULE__; all = true))
+        getfield(@__MODULE__, name)()
+    end
+    return
+end
+
 function alloc_test(f::F, expected_upper_bound::Integer) where {F<:Function}
     f() # compile
     measured_allocations = @allocated f()
@@ -17,162 +25,87 @@ function alloc_test(f::F, expected_upper_bound::Integer) where {F<:Function}
     return
 end
 
-abstract type OpSignature end
+_is_op_to(::Any) = false
 
-struct RegularSignature <: OpSignature end
+_is_op_to(::Union{typeof(MA.operate_to!),typeof(MA.operate_to!!)}) = true
 
-struct ToSignature <: OpSignature end
-
-function signature_type_of(
-    ::Union{typeof(MA.operate),typeof(MA.operate!),typeof(MA.operate!!)},
-)
-    return RegularSignature()
-end
-
-function signature_type_of(
-    ::Union{typeof(MA.operate_to!),typeof(MA.operate_to!!)},
-)
-    return ToSignature()
-end
-
-function op_may_modify_first_argument(op::Function)
-    return (op != MA.operate) & (signature_type_of(op) == RegularSignature())
-end
-
-function op_is_allowed_for_arithmetic(
-    ::typeof(evalpoly),
+function _should_test(
     ::Union{typeof(MA.operate!),typeof(MA.operate_to!)},
     ::Type{F},
-) where {F<:Any}
+) where {F}
     return MA.mutability(F) == MA.IsMutable()
 end
 
-function op_is_allowed_for_arithmetic(
-    ::typeof(evalpoly),
-    ::Union{typeof(MA.operate),typeof(MA.operate!!),typeof(MA.operate_to!!)},
-    ::Type{F},
-) where {F<:Any}
-    return true
-end
+_should_test(op, ::Type{F}) where {F} = true
 
-function allowed_allocated_byte_count(
-    ::typeof(evalpoly),
-    ::Union{typeof(MA.operate),typeof(MA.operate!),typeof(MA.operate!!)},
-    ::Type{F},
-) where {F<:Any}
-    return @allocated zero(F)
-end
-
-function allowed_allocated_byte_count(
-    ::typeof(evalpoly),
-    ::Union{typeof(MA.operate_to!),typeof(MA.operate_to!!)},
-    ::Type{F},
-) where {F<:Any}
-    return @allocated nothing
-end
-
-const evalpoly_supported_arithmetics =
-    (BigFloat, Rational{Int}, Float64, Float32, Int)
-
-const evalpoly_operations =
-    (MA.operate, MA.operate!, MA.operate_to!, MA.operate!!, MA.operate_to!!)
-
-@testset "evalpoly with $op and $F" for F in evalpoly_supported_arithmetics,
-    op in evalpoly_operations
-
-    op_is_allowed_for_arithmetic(evalpoly, op, F) || continue
-
-    sig = signature_type_of(op)
-
-    if MA.mutability(F) == MA.IsMutable()
-        @testset "empty coefficients $collection_type" for collection_type in
-                                                           ("vector", "tuple")
-            out = one(F)
-            x = one(F)
-            backup = MA.copy_if_mutable(x)
-            coefs = F[]
-            if collection_type == "tuple"
-                coefs = ()
+function test_evalpoly()
+    for F in (BigFloat, Rational{Int}, Float64, Float32, Int)
+        for op in (
+            MA.operate,
+            MA.operate!,
+            MA.operate_to!,
+            MA.operate!!,
+            MA.operate_to!!,
+        )
+            if _should_test(op, F)
+                _test_evalpoly(op, F, "vector")
+                _test_evalpoly(op, F, "tuple")
             end
-
-            # Check that the result value is OK
-            if sig == RegularSignature()
-                @test iszero(@inferred op(evalpoly, x, coefs))
-            elseif sig == ToSignature()
-                @test iszero(@inferred op(out, evalpoly, x, coefs))
-            else
-                error("unexpected")
-            end
-
-            # Check that the arguments are unmodified
-            op_may_modify_first_argument(op) || @test backup == x
         end
     end
+    return
+end
 
-    @testset "exact values: $degree, $x_int" for degree in 0:4, x_int in -5:5
+function _test_evalpoly(op, ::Type{F}, collection_type) where {F}
+    if MA.mutability(F) == MA.IsMutable()
+        out = one(F)
+        x = one(F)
+        backup = MA.copy_if_mutable(x)
+        coefs = collection_type == "tuple" ? () : F[]
+        if _is_op_to(op)
+            @test iszero(@inferred op(out, evalpoly, x, coefs))
+        else
+            @test iszero(@inferred op(evalpoly, x, coefs))
+        end
+        if op == MA.operate || _is_op_to(op)
+            @test backup == x
+        end
+    end
+    for degree in 0:4, x_int in -5:5
         coefs_int = rand(-6:6, degree + 1)
-
         coefs = map(F, coefs_int)
         x = F(x_int)
-
+        backup = MA.copy_if_mutable(x)
         reference = evalpoly(x, coefs)
-
         @test reference == evalpoly(x_int, coefs_int)
-
-        @testset "collection type $collection_type" for collection_type in
-                                                        ("vector", "tuple")
-            out = zero(F)
-            if collection_type == "vector"
-                coefs_arg = coefs
-            else
-                coefs_arg = (coefs...,)
-            end
-            if sig == RegularSignature()
-                out = @inferred op(evalpoly, x, coefs_arg)
-            elseif sig == ToSignature()
-                out = @inferred op(out, evalpoly, x, coefs_arg)
-            else
-                error("unexpected")
-            end
-
-            # Check that the result value is OK
-            @test reference == out
-
-            # Check that the arguments are unmodified
-            if op_may_modify_first_argument(op)
-                x = F(x_int)
-            else
-                @test x == F(x_int)
-            end
-            @test coefs == map(F, coefs_int)
+        out = zero(F)
+        coefs_arg = collection_type == "vector" ? coefs : (coefs...,)
+        if _is_op_to(op)
+            @test reference == @inferred op(out, evalpoly, x, coefs_arg)
+        else
+            @test reference == @inferred op(evalpoly, x, coefs_arg)
+        end
+        if op == MA.operate || _is_op_to(op)
+            @test x == backup
+        end
+        @test coefs == map(F, coefs_int)
+    end
+    byte_cnt = _is_op_to(op) ? 0 : @allocated(zero(F))
+    coefs = if collection_type == "vector"
+        F[0, 1, 0, 1, 1]
+    else
+        F.((0, 1, 0, 1, 1))
+    end
+    let o = one(F), x = one(F), coefs = coefs
+        if _is_op_to(op)
+            alloc_test(() -> op(o, evalpoly, x, coefs), byte_cnt)
+        else
+            alloc_test(() -> op(evalpoly, x, coefs), byte_cnt)
         end
     end
-
-    @testset "allocation" begin
-        byte_cnt = allowed_allocated_byte_count(evalpoly, op, F)
-        coefs_tuple = map(F, (0, 1, 0, 1, 1))
-        @testset "collection type $collection_type" for collection_type in
-                                                        ("vector", "tuple")
-            if collection_type == "vector"
-                coefs = collect(coefs_tuple)
-            else
-                coefs = coefs_tuple
-            end
-            local tested_fun
-            if sig == RegularSignature()
-                tested_fun = let x = one(F), coefs = coefs
-                    () -> op(evalpoly, x, coefs)
-                end
-            elseif sig == ToSignature()
-                tested_fun = let o = one(F), x = one(F), coefs = coefs
-                    () -> op(o, evalpoly, x, coefs)
-                end
-            else
-                error("unexpected")
-            end
-            alloc_test(tested_fun, byte_cnt)
-        end
-    end
+    return
 end
 
 end  # TestEvalPoly
+
+TestEvalPoly.runtests()
