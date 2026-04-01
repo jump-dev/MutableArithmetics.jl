@@ -23,6 +23,13 @@ Base.:+(x::AbstractMutable, ::Zero) = copy_if_mutable(x)
 Base.:-(::Zero, x::AbstractMutable) = operate(-, x)
 Base.:-(x::AbstractMutable, ::Zero) = copy_if_mutable(x)
 
+function Base.:/(z::Zero, x::AbstractMutable)
+    if iszero(x)
+        throw(DivideError())
+    end
+    return z
+end
+
 function Base.sum(
     a::AbstractArray{T};
     dims = :,
