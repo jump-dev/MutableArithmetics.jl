@@ -85,9 +85,8 @@ Base.:*(z::Zero) = z
 function Base.:/(z::Zero, x::Number)
     if iszero(x)
         throw(DivideError())
-    else
-        return z
     end
+    return z
 end
 
 Base.iszero(::Zero) = true

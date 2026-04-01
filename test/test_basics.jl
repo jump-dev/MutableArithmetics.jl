@@ -546,6 +546,12 @@ function test_operate()
     return
 end
 
+function test_op_divide()
+    @test MA.Zero() / DummyBigInt(1) == MA.Zero()
+    @test_throws DivideError MA.Zero() / DummyBigInt(0)
+    return
+end
+
 end  # TestBasics
 
 TestBasics.runtests()
