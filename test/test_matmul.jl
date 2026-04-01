@@ -4,12 +4,22 @@
 # v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
+module TestMatMul
+
 using Test
+
 import MutableArithmetics as MA
 
 struct CustomArray{T,N} <: AbstractArray{T,N} end
 
 import LinearAlgebra, SparseArrays
+
+function alloc_test(f::F, expected_upper_bound::Integer) where {F<:Function}
+    f() # compile
+    measured_allocations = @allocated f()
+    @test measured_allocations <= expected_upper_bound
+    return
+end
 
 function dot_test(x, y)
     @test MA.operate(LinearAlgebra.dot, x, y) == LinearAlgebra.dot(x, y)
@@ -61,15 +71,8 @@ end
     @test MA.operate(convert, Int, 1) === 1
 end
 
-const EXPECTED_ERROR = string(
-    "Cannot multiply a `Matrix{NoProdMutable}` with a ",
-    "`Matrix{NoProdMutable}` because the sum of the product of a ",
-    "`NoProdMutable` and a `NoProdMutable` could not be inferred so a ",
-    "`Matrix{Union{}}` allocated to store the output of the ",
-    "multiplication instead of a `Matrix{$(Int)}`.",
-)
-
 struct NoProdMutable <: MA.AbstractMutable end
+
 function MA.promote_operation(
     ::typeof(*),
     ::Type{NoProdMutable},
@@ -80,8 +83,15 @@ end
 
 function unsupported_product()
     A = [NoProdMutable() for i in 1:2, j in 1:2]
-    err = ErrorException(EXPECTED_ERROR)
+    err = ErrorException(
+        "Cannot multiply a `Matrix{$NoProdMutable}` with a " *
+        "`Matrix{$NoProdMutable}` because the sum of the product of a " *
+        "`$NoProdMutable` and a `$NoProdMutable` could not be inferred so a " *
+        "`Matrix{Union{}}` allocated to store the output of the " *
+        "multiplication instead of a `Matrix{$(Int)}`.",
+    )
     @test_throws err A * A
+    return
 end
 
 @testset "Errors" begin
@@ -486,3 +496,5 @@ end
     test_array_sum(Int)
     test_sparse_vector_sum(Int)
 end
+
+end  # TestMatMul

@@ -10,13 +10,12 @@ using Test
 
 import MutableArithmetics as MA
 
+include(joinpath(@__DIR__, "dummy.jl"))
+
 function runtests()
-    for name in names(@__MODULE__; all = true)
-        if startswith("$(name)", "test_")
-            @testset "$(name)" begin
-                getfield(@__MODULE__, name)()
-            end
-        end
+    is_test(name::Symbol) = startswith("$name", "test_")
+    @testset "$name" for name in filter(is_test, names(@__MODULE__; all = true))
+        getfield(@__MODULE__, name)()
     end
     return
 end
@@ -559,6 +558,120 @@ function test_issue_343()
         sum(x[i+j] for i in 1:2:6, j in 0:1; init = 0),
         move_factors_into_sums = false
     ) == y
+    return
+end
+
+function test_multiply_expr_MA_Zero()
+    x = DummyBigInt(1)
+    f = DummyBigInt(2)
+    @test MA.@rewrite(
+        f * sum(x for i in 1:0),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        sum(x for i in 1:0) * f,
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        -f * sum(x for i in 1:0),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        sum(x for i in 1:0) * -f,
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        (f + f) * sum(x for i in 1:0),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        sum(x for i in 1:0) * (f + f),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        -[f] * sum(x for i in 1:0),
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.@rewrite(
+        sum(x for i in 1:0) * -[f],
+        move_factors_into_sums = false
+    ) == MA.Zero()
+    @test MA.isequal_canonical(
+        MA.@rewrite(f + sum(x for i in 1:0), move_factors_into_sums = false),
+        f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(sum(x for i in 1:0) + f, move_factors_into_sums = false),
+        f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(-f + sum(x for i in 1:0), move_factors_into_sums = false),
+        -f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(sum(x for i in 1:0) + -f, move_factors_into_sums = false),
+        -f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(
+            (f + f) + sum(x for i in 1:0),
+            move_factors_into_sums = false
+        ),
+        f + f,
+    )
+    @test MA.isequal_canonical(
+        MA.@rewrite(
+            sum(x for i in 1:0) + (f + f),
+            move_factors_into_sums = false
+        ),
+        f + f,
+    )
+    return
+end
+
+function test_generator_with_not_sum()
+    @test MA.@rewrite(minimum(j^2 for j in 2:3)) == 4
+    @test MA.@rewrite(maximum(j^2 for j in 2:3)) == 9
+    return
+end
+
+function test_issue_76_trailing_dimensions()
+    @testset "(4,) + (4,1)" begin
+        X = [1, 2, 3, 4]
+        Y = reshape([1, 2, 3, 4], (4, 1))
+        @test MA.@rewrite(X + Y) == X + Y
+        @test MA.@rewrite(Y + X) == Y + X
+    end
+    @testset "(4,) + (4,1,1)" begin
+        X = [1, 2, 3, 4]
+        Y = reshape([1, 2, 3, 4], (4, 1, 1))
+        @test MA.@rewrite(X + Y) == X + Y
+        @test MA.@rewrite(Y + X) == Y + X
+    end
+    @testset "(2,2) + (2,2,1)" begin
+        X = [1 2; 3 4]
+        Y = reshape([1, 2, 3, 4], (2, 2, 1))
+        @test MA.@rewrite(X + Y) == X + Y
+        @test MA.@rewrite(Y + X) == Y + X
+    end
+    @testset "(4,) - (4,1)" begin
+        X = [1, 3, 5, 7]
+        Y = reshape([1, 2, 3, 4], (4, 1))
+        @test MA.@rewrite(X - Y) == X - Y
+        @test MA.@rewrite(Y - X) == Y - X
+    end
+    @testset "(4,) - (4,1,1)" begin
+        X = [1, 3, 5, 7]
+        Y = reshape([1, 2, 3, 4], (4, 1, 1))
+        @test MA.@rewrite(X - Y) == X - Y
+        @test MA.@rewrite(Y - X) == Y - X
+    end
+    @testset "(2,2) - (2,2,1)" begin
+        X = [1 3; 5 7]
+        Y = reshape([1, 2, 3, 4], (2, 2, 1))
+        @test MA.@rewrite(X - Y) == X - Y
+        @test MA.@rewrite(Y - X) == Y - X
+    end
     return
 end
 

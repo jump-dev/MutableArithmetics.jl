@@ -4,8 +4,23 @@
 # v.2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
+module TestEvalPoly
+
+using Test
+
+import MutableArithmetics as MA
+
+function alloc_test(f::F, expected_upper_bound::Integer) where {F<:Function}
+    f() # compile
+    measured_allocations = @allocated f()
+    @test measured_allocations <= expected_upper_bound
+    return
+end
+
 abstract type OpSignature end
+
 struct RegularSignature <: OpSignature end
+
 struct ToSignature <: OpSignature end
 
 function signature_type_of(
@@ -159,3 +174,5 @@ const evalpoly_operations =
         end
     end
 end
+
+end  # TestEvalPoly
