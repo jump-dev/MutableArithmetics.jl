@@ -18,13 +18,6 @@ function runtests()
     return
 end
 
-function alloc_test(f::F, expected_upper_bound::Integer) where {F<:Function}
-    f() # compile
-    measured_allocations = @allocated f()
-    @test measured_allocations <= expected_upper_bound
-    return
-end
-
 _is_op_to(::Any) = false
 
 _is_op_to(::Union{typeof(MA.operate_to!),typeof(MA.operate_to!!)}) = true
@@ -98,9 +91,9 @@ function _test_evalpoly(op, ::Type{F}, collection_type) where {F}
     end
     let o = one(F), x = one(F), coefs = coefs
         if _is_op_to(op)
-            alloc_test(() -> op(o, evalpoly, x, coefs), byte_cnt)
+            @test @allocated(op(o, evalpoly, x, coefs)) <= byte_cnt
         else
-            alloc_test(() -> op(evalpoly, x, coefs), byte_cnt)
+            @test @allocated(op(evalpoly, x, coefs)) <= byte_cnt
         end
     end
     return

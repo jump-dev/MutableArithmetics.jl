@@ -18,13 +18,6 @@ function runtests()
     return
 end
 
-function alloc_test(f::F, expected_upper_bound::Integer) where {F<:Function}
-    f() # compile
-    measured_allocations = @allocated f()
-    @test measured_allocations <= expected_upper_bound
-    return
-end
-
 function test_Int()
     a = [1, 2]
     b = 3
@@ -33,8 +26,8 @@ function test_Int()
     @test a == [4, 5]
     # Need to have immutable structs that contain references to be allocated on
     # the stack: https://github.com/JuliaLang/julia/pull/33886
-    alloc_test(() -> MA.broadcast!!(+, a, b), 0)
-    alloc_test(() -> MA.broadcast!!(+, a, c), 0)
+    @test @allocated(MA.broadcast!!(+, a, b)) == 0
+    @test @allocated(MA.broadcast!!(+, a, c)) == 0
     return
 end
 
@@ -51,8 +44,8 @@ function test_BigInt()
     # FIXME This should not allocate but I couldn't figure out where these
     #       allocations come from.
     n = 6 * @allocated(BigInt(1))
-    alloc_test(() -> MA.broadcast!!(+, a, b), n)
-    alloc_test(() -> MA.broadcast!!(+, a, c), 0)
+    @test @allocated(MA.broadcast!!(+, a, b)) <= n
+    @test @allocated(MA.broadcast!!(+, a, c)) == 0
     return
 end
 
