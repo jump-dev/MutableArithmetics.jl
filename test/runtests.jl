@@ -30,6 +30,9 @@ end
 @testset "BigFloat dot" begin
     include("bigfloat_dot.jl")
 end
+@testset "BigFloat all wrappers" begin
+    include("bigfloat_wrappers.jl")
+end
 @testset "evalpoly" begin
     include("evalpoly.jl")
 end
