@@ -64,6 +64,49 @@ test_copy_Rational_Int() = _test_copy(Rational{Int})
 
 test_copy_Rational_BigInt() = _test_copy(Rational{BigInt})
 
+function test_copy_BigInt_smallint()
+    function example_ints(t::Type{<:Integer})
+        if t <: Signed
+            [
+                typemin(t),
+                typemin(t) + t(1),
+                t(-2),
+                t(-1),
+                t(0),
+                t(1),
+                t(2),
+                typemax(t) - t(1),
+                typemax(t),
+            ]
+        elseif t <: Unsigned
+            [t(0), t(1), t(2), typemax(t) - t(1), typemax(t)]
+        elseif t == Bool
+            [false, true]
+        else
+            throw(ArgumentError("unknown type"))
+        end
+    end
+    @testset "`copy` small integer to `BigInt`" begin
+        for f! in (MA.operate_to!, MA.operate_to!!)
+            for typ in [Bool, Int8, Int16, Int32, UInt8, UInt16, UInt32]
+                for x in example_ints(typ)
+                    @test let y = BigInt(3)
+                        x == @inferred f!(y, copy, x)
+                    end
+                    @test let y = BigInt(3)
+                        y === @inferred f!(y, copy, x)
+                    end
+                    let y = BigInt(3), x = typ(0), f! = f!
+                        alloc_test(0) do
+                            return f!(y, copy, x)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 function _test_mutating_step_range(::Type{T}) where {T}
     r = MA.MutatingStepRange(T(2), T(3), T(9))
     expected = MA.mutability(T) isa MA.IsMutable ? 8 * ones(T, 3) : T[2, 5, 8]
