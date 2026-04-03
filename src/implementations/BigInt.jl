@@ -8,6 +8,7 @@
 # Base.BigInt.
 
 mutability(::Type{BigInt}) = IsMutable()
+mutability(::Type{BigInt}, ::typeof(copy), ::Vararg{Type}) = IsMutable()
 
 # Copied from `deepcopy_internal` implementation in Julia:
 # https://github.com/JuliaLang/julia/blob/7d41d1eb610cad490cbaece8887f9bbd2a775021/base/gmp.jl#L772
@@ -17,8 +18,21 @@ mutable_copy(x::BigInt) = Base.GMP.MPZ.set(x)
 
 promote_operation(::typeof(copy), ::Type{BigInt}) = BigInt
 
-function operate_to!(out::BigInt, ::typeof(copy), in::BigInt)
-    Base.GMP.MPZ.set!(out, in)
+function operate_to!(
+    out::BigInt,
+    ::typeof(copy),
+    in::Union{Bool,Int8,Int16,Int32,Clong,UInt8,UInt16,UInt32,Culong,BigInt},
+)
+    let f!
+        if in isa BigInt
+            f! = Base.GMP.MPZ.set!
+        elseif in isa Union{Bool,Unsigned}
+            f! = Base.GMP.MPZ.set_ui!
+        elseif in isa Signed
+            f! = Base.GMP.MPZ.set_si!
+        end
+        f!(out, in)
+    end
     return out
 end
 
@@ -28,13 +42,13 @@ operate!(::typeof(copy), x::BigInt) = x
 
 promote_operation(::typeof(zero), ::Type{BigInt}) = BigInt
 
-operate!(::typeof(zero), x::BigInt) = Base.GMP.MPZ.set_si!(x, 0)
+operate!(::typeof(zero), x::BigInt) = operate_to!(x, copy, false)
 
 # one
 
 promote_operation(::typeof(one), ::Type{BigInt}) = BigInt
 
-operate!(::typeof(one), x::BigInt) = Base.GMP.MPZ.set_si!(x, 1)
+operate!(::typeof(one), x::BigInt) = operate_to!(x, copy, true)
 
 # +
 
