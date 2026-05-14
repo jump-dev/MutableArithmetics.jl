@@ -45,7 +45,7 @@ function _is_generic_generator_call(expr)
     end
     return Meta.isexpr(expr, :call, 3) &&
            Meta.isexpr(expr.args[2], :parameters) &&
-            _is_generator_or_flatten(expr.args[3])
+           _is_generator_or_flatten(expr.args[3])
 end
 
 function _is_generator_or_flatten(expr)
