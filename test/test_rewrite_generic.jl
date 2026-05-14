@@ -675,6 +675,22 @@ function test_issue_76_trailing_dimensions()
     return
 end
 
+function test_issue_359()
+    for (expr, has_zero) in Pair{Expr,Bool}[
+        :(sum(i for i in I))=>true,
+        :(sum(i for i in I; init = 0))=>false,
+        :(sum(i for i in I, init in 0))=>false,
+    ]
+        stack = quote end
+        root, is_mutable = MA._rewrite_generic(stack, expr)
+        @test root isa Symbol
+        @test is_mutable
+        @test length(stack.args) == 3
+        @test occursin(".Zero()", string(stack.args[2])) == has_zero
+    end
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()

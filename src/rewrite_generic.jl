@@ -39,18 +39,17 @@ This most commonly happens in situations like `x^2`.
 """
 _rewrite_generic(::Expr, x::Number) = x, true
 
-function _is_generator(expr)
-    return Meta.isexpr(expr, :call, 2) && Meta.isexpr(expr.args[2], :generator)
+function _is_generic_generator_call(expr)
+    if Meta.isexpr(expr, :call, 2)
+        return _is_generator_or_flatten(expr.args[2])
+    end
+    return Meta.isexpr(expr, :call, 3) &&
+           Meta.isexpr(expr.args[2], :parameters) &&
+           _is_generator_or_flatten(expr.args[3])
 end
 
-function _is_flatten(expr)
-    return Meta.isexpr(expr, :call, 2) && Meta.isexpr(expr.args[2], :flatten)
-end
-
-_is_generator_or_flatten(expr) = _is_generator(expr) || _is_flatten(expr)
-
-function _is_parameters(expr)
-    return Meta.isexpr(expr, :call, 3) && Meta.isexpr(expr.args[2], :parameters)
+function _is_generator_or_flatten(expr)
+    return Meta.isexpr(expr, :generator) || Meta.isexpr(expr, :flatten)
 end
 
 function _is_kwarg(expr, kwarg::Symbol)
@@ -113,7 +112,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
     elseif Meta.isexpr(expr.args[2], :(...))
         # If the first argument is a splat.
         return esc(expr), false
-    elseif _is_generator_or_flatten(expr) || _is_parameters(expr)
+    elseif _is_generic_generator_call(expr)
         if !(expr.args[1] in (:sum, :Σ, :∑))
             # We don't know what this is. Return the expression and don't let
             # future callers mutate.
