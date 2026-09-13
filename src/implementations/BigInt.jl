@@ -227,6 +227,26 @@ function operate_to!(
     )
 end
 
+function buffered_operate_to!(
+    buffer::BigInt,
+    output::BigInt,
+    op::AddSubMul,
+    x::Scaling,
+    y::Scaling,
+    z::Scaling,
+    args::Vararg{Scaling,N},
+) where {N}
+    return buffered_operate_to!(
+        buffer,
+        output,
+        op,
+        _scaling_to_bigint(x),
+        _scaling_to_bigint(y),
+        _scaling_to_bigint(z),
+        _scaling_to_bigint.(args)...,
+    )
+end
+
 # Called for instance if `args` is `(v', v)` for a vector `v`.
 function operate_to!(
     output::BigInt,
