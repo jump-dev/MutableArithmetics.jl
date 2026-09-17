@@ -317,6 +317,42 @@ function test_alloc()
     return
 end
 
+function test_buffered_BigInt_mixed_integers()
+    for op in (MA.add_mul, MA.sub_mul),
+        args in ((big(2), 3, big(4)), (2, big(3), 4), (big(2), 3, big(4), 5))
+
+        expected = op(big.(args)...)
+        original = deepcopy(args)
+        output, buffer = big(0), big(0)
+        @test MA.buffered_operate_to!(buffer, output, op, args...) === output
+        @test output == expected
+        @test args == original
+    end
+    for op in (MA.add_mul, MA.sub_mul)
+        expected = op(big(2), big(3), big(4))
+        output, buffer = big(2), big(4)
+        @test MA.buffered_operate!(buffer, op, output, 3, buffer) === output
+        @test output == expected
+        output = big(0)
+        @test MA.buffered_operate_to!(output, output, op, big(2), 3, big(4)) ===
+              output
+        @test output == expected
+    end
+    return
+end
+
+function test_Rational_BigInt_mixed_integers()
+    for op in (+, -), (x, y) in ((big(1) // 2, 1 // 3), (big(7) // 6, 5 // 4))
+        expected = op(x, y)
+        @test MA.operate!!(op, deepcopy(x), y) == expected
+        buffer = MA.buffer_for(op, typeof(x), typeof(y))
+        output = zero(x)
+        @test MA.buffered_operate_to!(buffer, output, op, x, y) === output
+        @test output == expected
+    end
+    return
+end
+
 end  # TestBig
 
 TestBig.runtests()
