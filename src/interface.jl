@@ -378,7 +378,7 @@ implement a method for [`mutable_copy`](@ref) instead.
 copy_if_mutable(x) = copy_if_mutable_fallback(mutability(typeof(x)), x)
 
 function operate_to_fallback!(::IsNotMutable, output, op::Function, args...)
-    throw(
+    return throw(
         ArgumentError(
             "Cannot call `operate_to!(::$(typeof(output)), $op, " *
             "::$(join(typeof.(args), ", ::")))` as objects of type " *
@@ -475,7 +475,7 @@ function buffered_operate_to_fallback!(
     op::Function,
     args...,
 )
-    throw(
+    return throw(
         ArgumentError(
             "Cannot call `buffered_operate_to!(::$(typeof(buffer)), " *
             "::$(typeof(output)), $op, ::$(join(typeof.(args), ", ::")))` " *
@@ -547,7 +547,7 @@ function buffered_operate_fallback!(
     op::Function,
     args...,
 )
-    throw(
+    return throw(
         ArgumentError(
             "Cannot call `buffered_operate!(::$(typeof(buffer)), $op, " *
             "::$(join(typeof.(args), ", ::")))` as objects of type " *
