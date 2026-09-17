@@ -347,7 +347,7 @@ end
 
 function test_issue_316_SubArray()
     y = reshape([1.0], 1, 1, 1)
-    Y = view(y,:,:,1)
+    Y = view(y, :, :, 1)
     ret = reshape([1.0], 1, 1)
     ret = MA.operate!!(MA.add_mul, ret, 2.0, Y)
     @test ret == reshape([3.0], 1, 1)
