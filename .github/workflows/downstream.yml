@@ -39,6 +39,14 @@ jobs:
             # force it to use this PR's version of the package
             Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
             Pkg.update()
+            if "${{ matrix.package.repo }}" == "MathOptInterface.jl"
+              # MOI's ambiguity tests must run before test-only extensions of
+              # MOI methods are loaded. Its own CI keeps `General` in a
+              # separate process for the same reason.
+              ENV["MOI_TEST_MODULES"] = "General"
+              Pkg.test()  # resolver may fail with test time deps
+              ENV["MOI_TEST_MODULES"] = "Benchmarks;Bridges/General;Bridges/Constraint;Bridges/Objective;Bridges/Variable;FileFormats;Nonlinear;Test;Utilities"
+            end
             Pkg.test()  # resolver may fail with test time deps
           catch err
             err isa Pkg.Resolve.ResolverError || rethrow()
