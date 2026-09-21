@@ -39,10 +39,23 @@ end
 
 _concrete_eltype(x) = isempty(x) ? eltype(x) : typeof(first(x))
 
-function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
+"""
+    fused_map_reduce(op, args...; init = nothing)
+
+Reduce corresponding entries of `args` using the fused operation `op`.
+If supplied, `init` is the accumulator and may be mutated. Otherwise, the
+accumulator is the neutral element of the promoted result type.
+"""
+function fused_map_reduce(
+    op::F,
+    args::Vararg{Any,N};
+    init = nothing,
+) where {F<:Function,N}
     _check_same_length(args...)
-    T = promote_map_reduce(op, _concrete_eltype.(args)...)
-    accumulator = neutral_element(reduce_op(op), T)
+    T =
+        isnothing(init) ? promote_map_reduce(op, _concrete_eltype.(args)...) :
+        typeof(init)
+    accumulator = isnothing(init) ? neutral_element(reduce_op(op), T) : init
     buffer = buffer_for(op, T, eltype.(args)...)
     for I in zip(eachindex.(args)...)
         accumulator =
