@@ -9,6 +9,13 @@
 
 const _SparseMat = SparseArrays.SparseMatrixCSC
 
+function mutable_copy(v::SparseArrays.SparseVector)
+    result = copy(v)
+    vals = SparseArrays.nonzeros(result)
+    map!(copy_if_mutable, vals, vals)
+    return result
+end
+
 function undef_array(
     ::Type{_SparseMat{Tv,Ti}},
     rows::Base.OneTo,

@@ -21,6 +21,32 @@ function runtests()
     return
 end
 
+function test_mutable_copy_sparse_vector()
+    for T in (Int, BigInt)
+        v = SparseArrays.SparseVector(1_000_000, Int32[2, 7, 13], T[1, 0, 3])
+        w = MA.mutable_copy(v)
+        @test typeof(w) === typeof(v)
+        @test length(w) == length(v)
+        @test SparseArrays.nonzeroinds(w) == Int32[2, 7, 13]
+        @test SparseArrays.nonzeros(w) == T[1, 0, 3]
+        @test SparseArrays.nonzeroinds(w) !== SparseArrays.nonzeroinds(v)
+        @test SparseArrays.nonzeros(w) !== SparseArrays.nonzeros(v)
+        if T === BigInt
+            MA.operate!(+, SparseArrays.nonzeros(w)[1], 1)
+            @test w[2] == 2
+            @test v[2] == 1
+        end
+        w[7] = 4
+        @test v[7] == 0
+    end
+    v = SparseArrays.SparseVector(10, Int32[], BigInt[])
+    w = MA.mutable_copy(v)
+    @test typeof(w) === typeof(v)
+    @test length(w) == 10
+    @test SparseArrays.nnz(w) == 0
+    return
+end
+
 function test_spmatmul()
     Random.seed!(1234)
     for m in [1, 2, 3, 5, 11]
