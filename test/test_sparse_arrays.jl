@@ -162,6 +162,19 @@ function test_zero()
     return
 end
 
+function test_isequal_canonical_sparse_dense()
+    A = SparseArrays.sparse([1, 2], [1, 3], BigInt[1, 2], 3, 3)
+    B = Matrix(A)
+    @test MA.isequal_canonical(A, B)
+    @test MA.isequal_canonical(B, A)
+    B[3, 3] = 1
+    @test !MA.isequal_canonical(A, B)
+    @test !MA.isequal_canonical(B, A)
+    @test !MA.isequal_canonical(A, B[:, 1:2])
+    @test !MA.isequal_canonical(B[:, 1:2], A)
+    return
+end
+
 end  # module
 
 TestInterfaceSparseArrays.runtests()
