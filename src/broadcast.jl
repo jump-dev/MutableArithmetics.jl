@@ -222,6 +222,19 @@ function broadcast_fallback!(
     return broadcast(op, args...)
 end
 
+# `add_mul(a, b)` is `a + b` and `sub_mul(a, b)` is `a - b` but
+# `Base.broadcast` may only recognize `+` and `-`. For instance, since Julia
+# v1.14, `SparseArrays` returns a dense array for `+` or `-` with a dense
+# argument but a sparse array for other functions.
+function broadcast_fallback!(
+    ::IsNotMutable,
+    op::Union{typeof(add_mul),typeof(sub_mul)},
+    a,
+    b,
+)
+    return broadcast(add_sub_op(op), a, b)
+end
+
 function broadcast_fallback!(
     ::IsMutable,
     op::F,
