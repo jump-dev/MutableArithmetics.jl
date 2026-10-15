@@ -12,6 +12,8 @@ import LinearAlgebra
 import MutableArithmetics as MA
 import SparseArrays
 
+include("dummy.jl")
+
 function runtests()
     is_test(name::Symbol) = startswith("$name", "test_")
     @testset "$name" for name in filter(is_test, names(@__MODULE__; all = true))
@@ -287,6 +289,34 @@ function test_matrix_multiplication()
     C = X * M
     D = MA.operate!!(MA.add_mul, C, X, M)
     @test D == X * M + X * M
+    return
+end
+
+function test_wrapped_matmul()
+    a, b = [1 2; 3 4], [5 6; 7 8]
+    A, B = DummyBigInt.(a), DummyBigInt.(b)
+    for left in (transpose, adjoint), right in (transpose, adjoint)
+        expected = left(a) * right(b)
+        result = @inferred left(A) * right(B)
+        @test getfield.(result, :data) == expected
+        output = similar(result)
+        @test (@inferred LinearAlgebra.mul!(output, left(A), right(B))) ===
+              output
+        @test getfield.(output, :data) == expected
+        for (α, β) in ((2, 0), (2, 3), (0, 1))
+            output = DummyBigInt.(a)
+            @test (@inferred LinearAlgebra.mul!(
+                output,
+                left(A),
+                right(B),
+                α,
+                β,
+            )) === output
+            @test getfield.(output, :data) == expected * α + a * β
+        end
+        @test getfield.(A, :data) == a
+        @test getfield.(B, :data) == b
+    end
     return
 end
 

@@ -122,7 +122,7 @@ function _mul!(output, A, B, α, β)
         if iszero(β)
             operate!(zero, output)
         else
-            rmul!(output, scaling(β))
+            LinearAlgebra.rmul!(output, scaling(β))
         end
     end
     return operate!(add_mul, output, A, B, scaling(α))
@@ -236,20 +236,25 @@ function LinearAlgebra.mul!(
     return _mul!(ret, A, B)
 end
 
-function LinearAlgebra.mul!(
-    ret::AbstractMatrix{<:AbstractMutable},
-    A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-)
-    return _mul!(ret, A, B)
-end
+for TA in (LinearAlgebra.Transpose, LinearAlgebra.Adjoint),
+    TB in (LinearAlgebra.Transpose, LinearAlgebra.Adjoint)
 
-function LinearAlgebra.mul!(
-    ret::AbstractMatrix{<:AbstractMutable},
-    A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
-    B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
-)
-    return _mul!(ret, A, B)
+    @eval function LinearAlgebra.mul!(
+        ret::AbstractMatrix{<:AbstractMutable},
+        A::$TA{<:Any,<:AbstractVecOrMat},
+        B::$TB{<:Any,<:AbstractVecOrMat},
+    )
+        return _mul!(ret, A, B)
+    end
+    @eval function LinearAlgebra.mul!(
+        ret::AbstractMatrix{<:AbstractMutable},
+        A::$TA{<:Any,<:AbstractVecOrMat},
+        B::$TB{<:Any,<:AbstractVecOrMat},
+        α::Number,
+        β::Number,
+    )
+        return _mul!(ret, A, B, α, β)
+    end
 end
 
 function LinearAlgebra.mul!(
@@ -326,26 +331,6 @@ function LinearAlgebra.mul!(
     ret::AbstractMatrix{<:AbstractMutable},
     A::AbstractMatrix,
     B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    α::Number,
-    β::Number,
-)
-    return _mul!(ret, A, B, α, β)
-end
-
-function LinearAlgebra.mul!(
-    ret::AbstractMatrix{<:AbstractMutable},
-    A::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    B::LinearAlgebra.Adjoint{<:Any,<:AbstractVecOrMat},
-    α::Number,
-    β::Number,
-)
-    return _mul!(ret, A, B, α, β)
-end
-
-function LinearAlgebra.mul!(
-    ret::AbstractMatrix{<:AbstractMutable},
-    A::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
-    B::LinearAlgebra.Transpose{<:Any,<:AbstractVecOrMat},
     α::Number,
     β::Number,
 )
