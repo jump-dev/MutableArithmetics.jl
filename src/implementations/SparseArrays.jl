@@ -343,15 +343,7 @@ end
         SparseArrays.HigherOrderFns.SparseVecOrMatStyle,
     }
 
-    _densifies(::Type{<:Array}) = true
-    _densifies(::Type{<:AbstractArray}) = false
-    _densifies(::Type) = true
-
-    # Same as `SparseArrays.HigherOrderFns._isdensesum` but with types as
-    # arguments.
-    function _isdensesum(style, args::Vararg{Type,N}) where {N}
-        return style isa _SparseBroadcastStyle && any(_densifies, args)
-    end
+    _densifies(T::Type) = T <: Array || !(T <: AbstractArray)
 
     _dense_style(::Base.HasShape{N}) where {N} =
         Broadcast.DefaultArrayStyle{N}()
@@ -364,7 +356,7 @@ end
         B::Type,
     )
         style = _combine_styles(A, B)
-        if _isdensesum(style, A, B)
+        if style isa _SparseBroadcastStyle && any(_densifies, (A, B))
             return _dense_style(_combine_sizes(A, B))
         end
         return style
