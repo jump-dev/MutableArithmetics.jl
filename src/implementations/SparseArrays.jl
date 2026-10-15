@@ -343,26 +343,30 @@ end
         SparseArrays.HigherOrderFns.SparseVecOrMatStyle,
     }
 
-    const _SumOp = Union{typeof(+),typeof(-),typeof(add_mul),typeof(sub_mul)}
-
     _densifies(::Type{<:Array}) = true
     _densifies(::Type{<:AbstractArray}) = false
     _densifies(::Type) = true
 
-    function _dense_broadcasted_type(
-        shape::Base.HasShape{N},
-        ::Type{T},
-    ) where {N,T}
-        return _broadcasted_type(Broadcast.DefaultArrayStyle{N}(), shape, T)
+    # Same as `SparseArrays.HigherOrderFns._isdensesum` but with types as
+    # arguments.
+    function _isdensesum(style, args::Vararg{Type,N}) where {N}
+        return style isa _SparseBroadcastStyle && any(_densifies, args)
     end
 
-    function promote_broadcast(op::_SumOp, A::Type, B::Type)
-        T = Base.Broadcast.combine_eltypes(op, (A, B))
+    _dense_style(::Base.HasShape{N}) where {N} =
+        Broadcast.DefaultArrayStyle{N}()
+
+    # Unlike `SparseArrays`, we also recognize the two-argument `add_mul` and
+    # `sub_mul` as they are equivalent to `+` and `-`.
+    function _combine_styles(
+        ::Union{typeof(+),typeof(-),typeof(add_mul),typeof(sub_mul)},
+        A::Type,
+        B::Type,
+    )
         style = _combine_styles(A, B)
-        shape = _combine_sizes(A, B)
-        if style isa _SparseBroadcastStyle && (_densifies(A) || _densifies(B))
-            return _dense_broadcasted_type(shape, T)
+        if _isdensesum(style, A, B)
+            return _dense_style(_combine_sizes(A, B))
         end
-        return _broadcasted_type(style, shape, T)
+        return style
     end
 end
