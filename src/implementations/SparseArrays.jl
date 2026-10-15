@@ -212,6 +212,10 @@ function operate!(
     nB = size(B, 2)
     nnz_ret = length(ret.rowval)
     @assert length(ret.nzval) == nnz_ret
+    # Keep the existing accumulator before the kernel reuses its storage.
+    # This snapshot costs O(nnz(ret) + nB); a separate column workspace could
+    # avoid it. Ordinary products start empty and do not need the snapshot.
+    initial = iszero(nnz_ret) ? nothing : copy(ret)
     @inbounds begin
         ip = 1
         xb = fill(false, mA)
@@ -223,6 +227,15 @@ function operate!(
             end
             ret.colptr[i] = ip0 = ip
             k0 = ip - 1
+            if initial !== nothing
+                for jp in SparseArrays.nzrange(initial, i)
+                    k = initial.rowval[jp]
+                    ret.nzval[k+k0] = initial.nzval[jp]
+                    xb[k] = true
+                    ret.rowval[ip] = k
+                    ip += 1
+                end
+            end
             for jp in SparseArrays.nzrange(B, i)
                 nzB = nzvalB[jp] * rhs_constants
                 j = rowvalB[jp]
