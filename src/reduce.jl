@@ -37,7 +37,8 @@ The default returns `zero(T)` without inspecting the inputs.
 For array-valued results, it retains the symbolic [`Zero`](@ref) identity.
 Types whose zeros need value information can specialize this function to scan
 the inputs before constructing the zero.
-For example, algebra elements can prepare a common parent for all operands.
+For example, `StarAlgebras.AlgebraElement`s can prepare a common parent for all
+operands.
 
 If empty inputs provide no context, a specialization can use `zero(T)` when
 available. Otherwise it must report that no zero can be constructed.
