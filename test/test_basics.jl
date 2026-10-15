@@ -178,13 +178,18 @@ end
 
 function test_sum_with_init()
     x = convert(Vector{DummyBigInt}, 1:100)
+    init = DummyBigInt(7)
+    @test MA.isequal_canonical(@inferred(sum(x; init)), DummyBigInt(5057))
+    @test MA.isequal_canonical(init, DummyBigInt(7))
+    @test MA.isequal_canonical(x, convert(Vector{DummyBigInt}, 1:100))
     # compilation
     @allocated sum(x)
-    @allocated sum(x; init = DummyBigInt(0))
+    @allocated sum(x; init)
     @allocated non_mutable_sum_pr306(x)
     # now test actual allocations
     no_init = @allocated sum(x)
-    with_init = @allocated sum(x; init = DummyBigInt(0))
+    # Both sums own an accumulator; exclude construction of the caller's seed.
+    with_init = @allocated sum(x; init)
     no_ma = @allocated non_mutable_sum_pr306(x)
     # There's an additional 16 bytes for kwarg version. Upper bound by 40 to be
     # safe between Julia versions

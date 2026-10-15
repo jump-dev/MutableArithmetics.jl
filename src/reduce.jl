@@ -34,7 +34,7 @@ not be mutated. The returned value can be mutated independently of the inputs
 and of zeros returned by other calls.
 
 The default returns `zero(T)` without inspecting the inputs.
-For array-valued results, it retains the symbolic [`Zero`](@ref) identity.
+For array-valued results, it retains the symbolic `Zero` identity.
 Types whose zeros need value information can specialize this function to scan
 the inputs before constructing the zero.
 For example, `StarAlgebras.AlgebraElement`s can prepare a common parent for all
