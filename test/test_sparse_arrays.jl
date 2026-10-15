@@ -56,6 +56,8 @@ function test_spmatmul()
             ret = SparseArrays.spzeros(Float64, m, m)
             MA.operate!(MA.add_mul, ret, A, B)
             @test ret ≈ A * B
+            MA.operate!(MA.add_mul, ret, A, B)
+            @test ret ≈ 2 * (A * B)
             ret = SparseArrays.spzeros(Float64, m, m)
             MA.operate!(MA.add_mul, ret, A, A')
             @test ret ≈ A * A'
@@ -79,12 +81,63 @@ function test_spmatmul_prefer_sort()
     ret = SparseArrays.spzeros(Float64, m, m)
     MA.operate!(MA.add_mul, ret, A, B)
     @test ret ≈ A * B
+    MA.operate!(MA.add_mul, ret, A, B)
+    @test ret ≈ 2 * (A * B)
     ret = SparseArrays.spzeros(Float64, m, m)
     MA.operate!(MA.add_mul, ret, A, B, 2.0)
     @test ret ≈ A * B * 2.0
     ret = SparseArrays.spzeros(Float64, m, m)
     MA.operate!(MA.add_mul, ret, A, B, 2.0, 1.5)
     @test ret ≈ A * B * 2.0 * 1.5
+    return
+end
+
+function test_sparse_accumulator()
+    for T in (Float64, BigInt, Complex{Int})
+        a = T[1 0 2; 0 3 0; 4 0 0]
+        b = T[0 5 0; 6 0 0; 0 0 7]
+        if T === Complex{Int}
+            a[1, 3] += im
+            b[3, 3] -= im
+        end
+        A, B = SparseArrays.sparse(a), SparseArrays.sparse(b)
+        for left in (identity, transpose, adjoint),
+            right in (identity, transpose, adjoint)
+
+            initial = T[1 0 0; 0 0 2; 0 3 0]
+            output = SparseArrays.sparse(MA.mutable_copy(initial))
+            expected = left(a) * right(b)
+            @test (@inferred MA.operate!(
+                MA.add_mul,
+                output,
+                left(A),
+                right(B),
+            )) === output
+            @test output == initial + expected
+            @test (@inferred MA.operate!(
+                MA.add_mul,
+                output,
+                left(A),
+                right(B),
+                T(2),
+                T(3),
+            )) === output
+            @test output == initial + 7expected
+            @test A == a
+            @test B == b
+        end
+        output = SparseArrays.sparse(T[1 0 0; 0 0 2; 0 3 0])
+        empty = SparseArrays.spzeros(T, 3, 3)
+        @test MA.operate!(MA.add_mul, output, empty, B) === output
+        @test output == T[1 0 0; 0 0 2; 0 3 0]
+        @test_throws DimensionMismatch MA.operate!(
+            MA.add_mul,
+            output,
+            A,
+            SparseArrays.spzeros(T, 2, 3),
+        )
+        @test output == T[1 0 0; 0 0 2; 0 3 0]
+    end
     return
 end
 
