@@ -173,11 +173,21 @@ function test_broadcast_sparse_dense_type()
             @test MA.@rewrite(A .- B) isa typeof(A .- B)
             @test MA.@rewrite(A .+ B) == A .+ B
             @test MA.@rewrite(A .- B) == A .- B
-            for op in (MA.add_mul, MA.sub_mul)
+            for (op, base_op) in
+                ((+, +), (-, -), (MA.add_mul, +), (MA.sub_mul, -))
+                expected = broadcast(base_op, A, B)
+                # Test a dense destination even when A is sparse:
+                # `broadcast!!` skips promotion for `IsNotMutable` inputs.
+                @test MA.broadcast_mutability(
+                    Array{eltype(expected),ndims(expected)},
+                    op,
+                    typeof(A),
+                    typeof(B),
+                ) == MA.mutability(typeof(expected))
                 C = MA.copy_if_mutable(A)
                 D = MA.broadcast!!(op, C, B)
-                @test D isa typeof(broadcast(MA.add_sub_op(op), A, B))
-                @test D == broadcast(MA.add_sub_op(op), A, B)
+                @test D isa typeof(expected)
+                @test D == expected
             end
         end
     end
