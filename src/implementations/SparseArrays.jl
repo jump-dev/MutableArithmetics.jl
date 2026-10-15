@@ -197,6 +197,26 @@ end
 
 function operate!(
     ::typeof(add_mul),
+    ret::Matrix{T},
+    A::_SparseMat,
+    B::_SparseMat,
+    α::Vararg{Union{T,Scaling},N},
+) where {T,N}
+    _dim_check(ret, A, B)
+    rowvalA, nzvalA = SparseArrays.rowvals(A), SparseArrays.nonzeros(A)
+    rowvalB, nzvalB = SparseArrays.rowvals(B), SparseArrays.nonzeros(B)
+    for col in axes(B, 2), jp in SparseArrays.nzrange(B, col)
+        nzB = *(nzvalB[jp], α...)
+        for kp in SparseArrays.nzrange(A, rowvalB[jp])
+            row = rowvalA[kp]
+            ret[row, col] = operate!!(add_mul, ret[row, col], nzvalA[kp], nzB)
+        end
+    end
+    return ret
+end
+
+function operate!(
+    ::typeof(add_mul),
     ret::_SparseMat{T},
     A::_SparseMat,
     B::_SparseMat,
@@ -297,34 +317,38 @@ function _prefer_sort(nz::Integer, m::Integer)
     return m > 6 && 3 * _top_set_bit(nz) * nz < m
 end
 
-function operate!(
-    ::typeof(add_mul),
-    ret::_SparseMat{T},
-    A::_SparseMat,
-    B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
-    α::Vararg{Union{T,Scaling},N},
-) where {T,N}
-    return operate!(add_mul, ret, A, copy(B), α...)
-end
+for Output in (Matrix, _SparseMat)
+    @eval begin
+        function operate!(
+            ::typeof(add_mul),
+            ret::$Output{T},
+            A::_SparseMat,
+            B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
+            α::Vararg{Union{T,Scaling},N},
+        ) where {T,N}
+            return operate!(add_mul, ret, A, copy(B), α...)
+        end
 
-function operate!(
-    ::typeof(add_mul),
-    ret::_SparseMat{T},
-    A::_TransposeOrAdjoint{<:Any,<:_SparseMat},
-    B::_SparseMat,
-    α::Vararg{Union{T,Scaling},N},
-) where {T,N}
-    return operate!(add_mul, ret, copy(A), B, α...)
-end
+        function operate!(
+            ::typeof(add_mul),
+            ret::$Output{T},
+            A::_TransposeOrAdjoint{<:Any,<:_SparseMat},
+            B::_SparseMat,
+            α::Vararg{Union{T,Scaling},N},
+        ) where {T,N}
+            return operate!(add_mul, ret, copy(A), B, α...)
+        end
 
-function operate!(
-    ::typeof(add_mul),
-    ret::_SparseMat{T},
-    A::_TransposeOrAdjoint{<:Any,<:_SparseMat},
-    B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
-    α::Vararg{Union{T,Scaling},N},
-) where {T,N}
-    return operate!(add_mul, ret, copy(A), B, α...)
+        function operate!(
+            ::typeof(add_mul),
+            ret::$Output{T},
+            A::_TransposeOrAdjoint{<:Any,<:_SparseMat},
+            B::_TransposeOrAdjoint{<:Any,<:_SparseMat},
+            α::Vararg{Union{T,Scaling},N},
+        ) where {T,N}
+            return operate!(add_mul, ret, copy(A), B, α...)
+        end
+    end
 end
 
 # This `BroadcastStyle` is used when there is a mix of sparse arrays and dense
