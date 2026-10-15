@@ -253,16 +253,35 @@ function test_zero()
     return
 end
 
-function test_isequal_canonical_sparse_dense()
-    A = SparseArrays.sparse([1, 2], [1, 3], BigInt[1, 2], 3, 3)
-    B = Matrix(A)
-    @test MA.isequal_canonical(A, B)
-    @test MA.isequal_canonical(B, A)
-    B[3, 3] = 1
-    @test !MA.isequal_canonical(A, B)
-    @test !MA.isequal_canonical(B, A)
-    @test !MA.isequal_canonical(A, B[:, 1:2])
-    @test !MA.isequal_canonical(B[:, 1:2], A)
+function test_broadcast_sparse_dense_type()
+    for T in (Float64, BigInt)
+        X = SparseArrays.sparse([1, 2], [1, 3], T[1, 2], 3, 3)
+        Xd = Matrix(X)
+        x = SparseArrays.sparsevec([1, 3], T[1, 2], 3)
+        xd = Vector(x)
+        for (A, B) in ((Xd, X), (X, Xd), (X, X), (xd, x), (x, xd), (X, 2))
+            @test MA.@rewrite(A .+ B) isa typeof(A .+ B)
+            @test MA.@rewrite(A .- B) isa typeof(A .- B)
+            @test MA.@rewrite(A .+ B) == A .+ B
+            @test MA.@rewrite(A .- B) == A .- B
+            for (op, base_op) in
+                ((+, +), (-, -), (MA.add_mul, +), (MA.sub_mul, -))
+                expected = broadcast(base_op, A, B)
+                # Test a dense destination even when A is sparse:
+                # `broadcast!!` skips promotion for `IsNotMutable` inputs.
+                @test MA.broadcast_mutability(
+                    Array{eltype(expected),ndims(expected)},
+                    op,
+                    typeof(A),
+                    typeof(B),
+                ) == MA.mutability(typeof(expected))
+                C = MA.copy_if_mutable(A)
+                D = MA.broadcast!!(op, C, B)
+                @test D isa typeof(expected)
+                @test D == expected
+            end
+        end
+    end
     return
 end
 

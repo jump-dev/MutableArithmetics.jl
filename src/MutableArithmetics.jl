@@ -179,15 +179,6 @@ function isequal_canonical(x::_SparseMat, y::_SparseMat)
            isequal_canonical(x.nzval, y.nzval)
 end
 
-# Since Julia v1.14, broadcasting `+` or `-` over a mix of sparse and dense
-# arrays gives a dense array while `MA.broadcast!!` may still give a sparse one.
-function isequal_canonical(x::_SparseMat, y::Matrix)
-    return size(x) == size(y) &&
-           all(i -> isequal_canonical(x[i], y[i]), eachindex(y))
-end
-
-isequal_canonical(x::Matrix, y::_SparseMat) = isequal_canonical(y, x)
-
 include("rewrite.jl")
 include("rewrite_generic.jl")
 include("dispatch.jl")

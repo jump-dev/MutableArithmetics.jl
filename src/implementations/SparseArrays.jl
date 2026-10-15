@@ -368,3 +368,34 @@ function _broadcasted_type(
 ) where {Eltype}
     return _SparseMat{Eltype,Int}
 end
+
+@static if VERSION >= v"1.14.0-DEV"
+    # Since Julia v1.14, broadcasting `+` or `-` over sparse arrays and a dense
+    # array or a scalar gives a dense array, see `_isdensesum` in
+    # `SparseArrays.HigherOrderFns`. This is used to decide whether the result
+    # can be stored in the first argument, the result itself is computed with
+    # `+` or `-`, see `broadcast_fallback!`.
+    const _SparseBroadcastStyle = Union{
+        SparseArrays.HigherOrderFns.PromoteToSparse,
+        SparseArrays.HigherOrderFns.SparseVecOrMatStyle,
+    }
+
+    _densifies(T::Type) = T <: Array || !(T <: AbstractArray)
+
+    _dense_style(::Base.HasShape{N}) where {N} =
+        Broadcast.DefaultArrayStyle{N}()
+
+    # Unlike `SparseArrays`, we also recognize the two-argument `add_mul` and
+    # `sub_mul` as they are equivalent to `+` and `-`.
+    function _combine_styles(
+        ::Union{typeof(+),typeof(-),typeof(add_mul),typeof(sub_mul)},
+        A::Type,
+        B::Type,
+    )
+        style = _combine_styles(A, B)
+        if style isa _SparseBroadcastStyle && any(_densifies, (A, B))
+            return _dense_style(_combine_sizes(A, B))
+        end
+        return style
+    end
+end

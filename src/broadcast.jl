@@ -56,6 +56,12 @@ end
     )
 end
 
+# The style may also depend on the operation, see the `SparseArrays`
+# implementation.
+function _combine_styles(::Function, args::Vararg{Type,N}) where {N}
+    return _combine_styles(args...)
+end
+
 _combine_shapes(s) = s
 
 function _combine_2_shapes(::Base.HasShape{N}, ::Base.HasShape{M}) where {N,M}
@@ -78,7 +84,7 @@ function promote_broadcast(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     # that case.
     T = Base.Broadcast.combine_eltypes(op, args)
     return _broadcasted_type(
-        _combine_styles(args...),
+        _combine_styles(op, args...),
         _combine_sizes(args...),
         T,
     )
@@ -220,6 +226,21 @@ function broadcast_fallback!(
     args::Vararg{Any,N},
 ) where {F<:Function,N}
     return broadcast(op, args...)
+end
+
+# `add_mul(a, b)` is `a + b` and `sub_mul(a, b)` is `a - b` but
+# `Base.broadcast` may only recognize `+` and `-`. For instance, since Julia
+# v1.14, `SparseArrays` returns a dense array for `+` or `-` with a dense
+# argument but a sparse array for other functions.
+# See
+# https://github.com/JuliaSparse/SparseArrays.jl/blob/a74e7b5ceaa2d1da322befd008ad017b9065e181/src/higherorderfns.jl#L1423
+function broadcast_fallback!(
+    ::IsNotMutable,
+    op::Union{typeof(add_mul),typeof(sub_mul)},
+    a,
+    b,
+)
+    return broadcast(add_sub_op(op), a, b)
 end
 
 function broadcast_fallback!(
