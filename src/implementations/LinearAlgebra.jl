@@ -304,9 +304,9 @@ function _dim_check(C::AbstractVector, A::AbstractMatrix, B::AbstractVector)
     return
 end
 
-function _dim_check(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+function _dim_check(C::AbstractMatrix, A::AbstractVecOrMat, B::AbstractMatrix)
     mB, nB = size(B)
-    mA, nA = size(A)
+    mA, nA = size(A, 1), size(A, 2)
     if mB != nA
         throw(
             DimensionMismatch(
@@ -383,12 +383,20 @@ function operate!(
     return buffered_operate!(buffer, add_mul, C, A, B)
 end
 
-function operate!(::typeof(zero), C::Union{Vector,Matrix})
+function _zero_for!(C::AbstractArray, inputs::Vararg{Any,N}) where {N}
+    isempty(C) && return C
+    # Prepare context once, then give each output entry its own zero.
+    z = zero_for(eltype(C), _zero_inputs(*, inputs...)...)
     # C may contain undefined values so we cannot call `zero!`
+    first_index = first(eachindex(C))
     for i in eachindex(C)
-        @inbounds C[i] = zero(eltype(C))
+        @inbounds C[i] = i == first_index ? z : zero(z)
     end
-    return
+    return C
+end
+
+function operate!(::typeof(zero), C::AbstractArray)
+    return _zero_for!(C)
 end
 
 function operate_to!(
@@ -397,7 +405,9 @@ function operate_to!(
     A::AbstractArray,
     B::AbstractArray,
 )
-    operate!(zero, C)
+    _dim_check(C, A, B)
+    isempty(C) && return C
+    _zero_for!(C, A, B)
     return operate!(add_mul, C, A, B)
 end
 

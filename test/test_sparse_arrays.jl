@@ -72,6 +72,26 @@ function test_spmatmul()
     return
 end
 
+function test_operate_to_product()
+    for T in (Int, BigInt),
+        sparse_inputs in (false, true),
+        matrix in (false, true)
+
+        a = T[1 0 2; 0 3 0]
+        b = matrix ? T[0 4; 5 0; 0 6] : T[4, 5, 6]
+        A, B = sparse_inputs ? SparseArrays.sparse.((a, b)) : (a, b)
+        C = SparseArrays.sparse(matrix ? T[7 8; 9 10] : T[7, 8])
+        @test (@inferred MA.operate_to!(C, *, A, B)) === C
+        @test C == a * b
+        bad = matrix ? B[1:2, :] : B[1:2]
+        @test_throws DimensionMismatch MA.operate_to!(C, *, A, bad)
+        @test C == a * b
+        @test MA.operate_to!(C, *, A, zero(B)) === C
+        @test iszero(SparseArrays.nnz(C))
+    end
+    return
+end
+
 function test_spmatmul_prefer_sort()
     Random.seed!(1234)
     m = n = 100
