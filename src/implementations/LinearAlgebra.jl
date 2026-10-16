@@ -386,7 +386,7 @@ end
 function _zero_for!(C::AbstractArray, inputs::Vararg{Any,N}) where {N}
     isempty(C) && return C
     # Prepare context once, then give each output entry its own zero.
-    z = zero_for(eltype(C), _zero_inputs(*, inputs...)...)
+    z = zero_for(eltype(C), map(_zero_entries, inputs)...)
     # C may contain undefined values so we cannot call `zero!`
     first_index = first(eachindex(C))
     for i in eachindex(C)

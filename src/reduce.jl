@@ -63,23 +63,18 @@ _concrete_eltype(x) = isempty(x) ? eltype(x) : typeof(first(x))
 
 # Implicit sparse zeros add no context and need not be constructed or indexed.
 _zero_entries(input) = input
-_zero_inputs(op, args::Vararg{Any,N}) where {N} = map(_zero_entries, args)
-# Prepare from the factors used by add_dot: adjoint can change their context.
-function _zero_inputs(::typeof(add_dot), a, b)
-    return (Iterators.map(adjoint, _zero_entries(a)), _zero_entries(b))
-end
 
 """
     fused_map_reduce(op, args...)
 
 Reduce corresponding entries of `args` using the fused operation `op`.
 The accumulator is prepared by [`zero_for`](@ref) from the promoted result type
-and the inputs (with the left operands adjointed for `add_dot`).
+and the inputs.
 """
 function fused_map_reduce(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     _check_same_length(args...)
     T = promote_map_reduce(op, _concrete_eltype.(args)...)
-    accumulator = zero_for(T, _zero_inputs(op, args...)...)
+    accumulator = zero_for(T, map(_zero_entries, args)...)
     buffer = buffer_for(op, T, eltype.(args)...)
     for I in zip(eachindex.(args)...)
         accumulator =
