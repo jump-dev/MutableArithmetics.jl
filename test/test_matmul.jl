@@ -283,6 +283,59 @@ function test_matrix_matrix_product()
     return
 end
 
+function test_product_zero_allocations()
+    for T in (Int, Float64, BigInt), matrix in (false, true)
+        A = T[1 2; 3 4]
+        B = matrix ? T[2 3; 4 5] : T[2, 3]
+        C = matrix ? Matrix{T}(undef, 2, 2) : Vector{T}(undef, 2)
+        @test (@inferred MA.operate_to!(C, *, A, B)) === C
+        expected = copy(C)
+        # The existing type-only initialization is the allocation baseline.
+        MA.operate!(zero, C)
+        MA.operate!(MA.add_mul, C, A, B)
+        budget = @allocated begin
+            MA.operate!(zero, C)
+            MA.operate!(MA.add_mul, C, A, B)
+        end
+        @test (@allocated MA.operate_to!(C, *, A, B)) <= budget
+        @test C == expected
+        bad = matrix ? B[1:1, :] : B[1:1]
+        @test_throws DimensionMismatch MA.operate_to!(C, *, A, bad)
+        @test C == expected
+    end
+    C = Matrix{BigInt}(undef, 2, 2)
+    @test MA.operate_to!(
+        C,
+        *,
+        zeros(Int, 2, 0),
+        Matrix{BigInt}(undef, 0, 2),
+    ) === C
+    MA.operate!(+, C[1], 1)
+    @test C == [1 0; 0 0]
+    return
+end
+
+function test_product_array_outputs()
+    for T in (Int, BigInt)
+        A = T[1 2; 3 4]
+        b = T[2, 3]
+        for (left, right) in ((A, b), (A, hcat(b, b)), (b, transpose(b)))
+            expected = left * right
+            C = similar(expected)
+            @test (@inferred MA.operate_to!(C, *, left, right)) === C
+            @test C == expected
+            output_view = view(C, axes(C)...)
+            @test (@inferred MA.operate!(zero, output_view)) === output_view
+            @test all(iszero, C)
+            if T === BigInt
+                MA.operate!(+, C[1], 1)
+                @test all(iszero, C[2:end])
+            end
+        end
+    end
+    return
+end
+
 function test_matrix_multiplication()
     X = ones(BigInt, 1, 1)
     M = ones(1, 1)

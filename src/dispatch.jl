@@ -33,15 +33,25 @@ end
 function Base.sum(
     a::AbstractArray{T};
     dims = :,
-    init = zero(promote_operation(+, T, T)),
+    init = nothing,
 ) where {T<:AbstractMutable}
+    accumulator = if isnothing(init)
+        zero_for(promote_operation(+, T, T), _zero_entries(a))
+    elseif isempty(a)
+        copy_if_mutable(init)
+    else
+        # Base.sum owns its accumulator: include the seed's context, then
+        # add it without mutating the caller's value.
+        R = promote_operation(+, typeof(init), promote_operation(+, T, T))
+        operate!!(+, zero_for(R, _zero_entries(a), (init,)), init)
+    end
     if dims !== Colon()
-        # We cannot use `mapreduce` with `add!!` instead of `Base.add_mul` like
+        # We cannot use `mapreduce` with `add!!` instead of `Base.add_sum` like
         # `operate(sum, ...)` because the same instance given at `init` is used
         # at several places.
-        return mapreduce(identity, Base.add_sum, a; dims, init)
+        return mapreduce(identity, Base.add_sum, a; dims, init = accumulator)
     end
-    return operate(sum, a; init)
+    return operate(sum, a; init = accumulator)
 end
 
 # When doing `x'y` where the elements of `x` and/or `y` are arrays, redirecting
@@ -120,7 +130,7 @@ function _mul!(output, A, B, α, β)
     # See SparseArrays/src/linalg.jl
     if !isone(β)
         if iszero(β)
-            operate!(zero, output)
+            _zero_for!(output, A, B)
         else
             LinearAlgebra.rmul!(output, scaling(β))
         end
@@ -129,7 +139,7 @@ function _mul!(output, A, B, α, β)
 end
 
 function _mul!(output, A, B, α)
-    operate!(zero, output)
+    _zero_for!(output, A, B)
     return operate!(add_mul, output, A, B, scaling(α))
 end
 
@@ -470,7 +480,7 @@ end
 function Base.Matrix(S::_SparseMat{T}) where {T<:AbstractMutable}
     U = promote_operation(+, promote_operation(zero, T), T)
     A = Matrix{U}(undef, size(S)...)
-    operate!(zero, A)
+    _zero_for!(A, S)
     return operate!(+, A, S)
 end
 

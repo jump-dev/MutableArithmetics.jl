@@ -9,6 +9,18 @@
 
 const _SparseMat = SparseArrays.SparseMatrixCSC
 
+function _zero_entries(input::SparseArrays.AbstractSparseArray)
+    return SparseArrays.nonzeros(input)
+end
+for (Wrapper, op) in
+    ((LinearAlgebra.Transpose, transpose), (LinearAlgebra.Adjoint, adjoint))
+    @eval function _zero_entries(
+        input::$Wrapper{<:Any,<:SparseArrays.AbstractSparseArray},
+    )
+        return Iterators.map($op, SparseArrays.nonzeros(parent(input)))
+    end
+end
+
 function mutable_copy(v::SparseArrays.SparseVector)
     result = copy(v)
     vals = SparseArrays.nonzeros(result)
@@ -37,6 +49,14 @@ function operate!(::typeof(zero), A::_SparseMat)
     empty!(A.rowval)
     empty!(A.nzval)
     return A
+end
+
+function _zero_for!(
+    C::Union{SparseArrays.SparseVector,_SparseMat},
+    inputs::Vararg{Any,N},
+) where {N}
+    # Sparse outputs are cleared structurally; there are no entries to fill.
+    return operate!(zero, C)
 end
 
 function promote_operation(
