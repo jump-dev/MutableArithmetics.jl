@@ -16,6 +16,12 @@ function Base.iterate(::UnreadableInput)
     return error("The type-based zero must not read inputs")
 end
 
+struct UnreadableVector{T} <: AbstractVector{T} end
+Base.size(::UnreadableVector) = (2,)
+function Base.getindex(::UnreadableVector, ::Int)
+    return error("The type-based zero must not read diagonal entries")
+end
+
 @testset "Zeros from inputs" begin
     for T in (Int, Float64, BigInt)
         a = @inferred MA.zero_for(T, UnreadableInput())
@@ -29,6 +35,8 @@ end
         end
         @test (@inferred MA.operate(sum, T[1, 2, 3])) == 6
         @test iszero(MA.operate(sum, T[]))
+        d = LinearAlgebra.Diagonal(UnreadableVector{T}())
+        @test iszero(@inferred MA.zero_for(T, MA._zero_entries(d)))
     end
     @test MA.zero_for(Matrix{Int}, UnreadableInput()) isa MA.Zero
 end

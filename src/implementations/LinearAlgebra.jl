@@ -383,6 +383,10 @@ function operate!(
     return buffered_operate!(buffer, add_mul, C, A, B)
 end
 
+function _zero_entries(input::LinearAlgebra.Diagonal)
+    return _zero_entries(input.diag)
+end
+
 function _zero_for!(C::AbstractArray, inputs::Vararg{Any,N}) where {N}
     isempty(C) && return C
     # Prepare context once, then give each output entry its own zero.
