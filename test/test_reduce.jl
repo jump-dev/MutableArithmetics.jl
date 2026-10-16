@@ -11,6 +11,10 @@ import LinearAlgebra
 import MutableArithmetics as MA
 import SparseArrays
 
+# StarAlgebras needs to read entries to determine the parent of its zero.
+# Other types, such as JuMP expressions, can construct zero from the type alone.
+# These fixtures ensure that the default zero_for path, including _zero_entries,
+# does not read inputs, preserving that fast path even for structured arrays.
 struct UnreadableInput end
 function Base.iterate(::UnreadableInput)
     return error("The type-based zero must not read inputs")
