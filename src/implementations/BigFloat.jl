@@ -33,7 +33,7 @@ promote_operation(::typeof(copy), ::Type{BigFloat}) = BigFloat
 
 function operate_to!(out::BigFloat, ::typeof(copy), in::BigFloat)
     ccall(
-        (:mpfr_set, :libmpfr),
+        (:mpfr_set, Base.MPFR.libmpfr),
         Int32,
         (Ref{BigFloat}, Ref{BigFloat}, _MPFRRoundingMode),
         out,
@@ -51,7 +51,7 @@ promote_operation(::typeof(zero), ::Type{BigFloat}) = BigFloat
 
 function _set_si!(x::BigFloat, value)
     ccall(
-        (:mpfr_set_si, :libmpfr),
+        (:mpfr_set_si, Base.MPFR.libmpfr),
         Int32,
         (Ref{BigFloat}, Clong, _MPFRRoundingMode),
         x,
@@ -76,7 +76,7 @@ end
 
 function operate_to!(output::BigFloat, ::typeof(+), a::BigFloat, b::BigFloat)
     ccall(
-        (:mpfr_add, :libmpfr),
+        (:mpfr_add, Base.MPFR.libmpfr),
         Int32,
         (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, _MPFRRoundingMode),
         output,
@@ -97,7 +97,7 @@ promote_operation(::typeof(-), ::Vararg{Type{BigFloat},N}) where {N} = BigFloat
 
 function operate_to!(output::BigFloat, ::typeof(-), a::BigFloat, b::BigFloat)
     ccall(
-        (:mpfr_sub, :libmpfr),
+        (:mpfr_sub, Base.MPFR.libmpfr),
         Int32,
         (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, _MPFRRoundingMode),
         output,
@@ -136,7 +136,7 @@ promote_operation(::typeof(*), ::Type{BigFloat}, ::Type{BigFloat}) = BigFloat
 
 function operate_to!(output::BigFloat, ::typeof(*), a::BigFloat, b::BigFloat)
     ccall(
-        (:mpfr_mul, :libmpfr),
+        (:mpfr_mul, Base.MPFR.libmpfr),
         Int32,
         (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, _MPFRRoundingMode),
         output,
@@ -170,7 +170,7 @@ function operate_to!(
     z::F,
 ) where {F<:BigFloat}
     ccall(
-        (:mpfr_fma, :libmpfr),
+        (:mpfr_fma, Base.MPFR.libmpfr),
         Int32,
         (Ref{F}, Ref{F}, Ref{F}, Ref{F}, _MPFRRoundingMode),
         output,
