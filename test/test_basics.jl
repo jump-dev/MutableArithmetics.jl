@@ -600,6 +600,26 @@ function test_op_divide()
     return
 end
 
+function test_mutability_specializes_on_op()
+    # `op` is only passed to `promote_operation` so Julia does not specialize
+    # `mutability` on it unless forced to. It would then compile
+    # `promote_operation(::Function, ...)` which is invalidated by any new
+    # `promote_operation` method with generic argument types.
+    x = DummyBigInt(1)
+    @test MA.mutability(x, +, x, x) == MA.IsMutable()
+    unspecialized = Type[]
+    for method in methods(MA.mutability)
+        for mi in Base.specializations(method)
+            params = Base.unwrap_unionall(mi.specTypes).parameters
+            if length(params) >= 3 && params[3] === Function
+                push!(unspecialized, mi.specTypes)
+            end
+        end
+    end
+    @test isempty(unspecialized)
+    return
+end
+
 end  # TestBasics
 
 TestBasics.runtests()

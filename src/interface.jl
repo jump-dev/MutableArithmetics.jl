@@ -300,7 +300,7 @@ struct IsNotMutable <: MutableTrait end
 Return either [`IsMutable`](@ref) to indicate an object of type `T` can be
 modified to be equal to `op(args...)` or [`IsNotMutable`](@ref) otherwise.
 """
-function mutability(T::Type, op, args::Vararg{Type,N}) where {N}
+function mutability(T::Type, op::F, args::Vararg{Type,N}) where {F,N}
     if mutability(T) isa IsMutable && promote_operation(op, args...) == T
         return IsMutable()
     else
@@ -308,7 +308,7 @@ function mutability(T::Type, op, args::Vararg{Type,N}) where {N}
     end
 end
 
-function mutability(x, op, args::Vararg{Any,N}) where {N}
+function mutability(x, op::F, args::Vararg{Any,N}) where {F,N}
     return mutability(typeof(x), op, typeof.(args)...)
 end
 
