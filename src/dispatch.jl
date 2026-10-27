@@ -42,7 +42,7 @@ function Base.sum(
     else
         # Base.sum owns its accumulator: include the seed's context, then
         # add it without mutating the caller's value.
-        R = promote_operation(+, typeof(init), promote_operation(+, T, T))
+        R = promote_operation(+, promote_operation(+, typeof(init), T), T)
         operate!!(+, zero_for(R, _zero_entries(a), (init,)), init)
     end
     if dims !== Colon()

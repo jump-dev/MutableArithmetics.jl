@@ -620,6 +620,45 @@ function test_mutability_specializes_on_op()
     return
 end
 
+struct X380 <: MA.AbstractMutable
+    x::Int
+end
+
+mutable struct Expr380 <: MA.AbstractMutable
+    terms::Dict{X380,Int}
+    constant::Int
+end
+
+function MA.operate(::typeof(+), expr::Expr380, x::Int)
+    expr.constant += x
+    return expr
+end
+
+function MA.operate(::typeof(+), expr::Expr380, x::X380)
+    expr.terms[x] = get!(expr.terms, x, 0) + 1
+    return expr
+end
+
+Base.zero(::Type{Expr380}) = Expr380(Dict{X380,Int}(), 0)
+
+MA.promote_operation(::typeof(+), ::Type{X380}, ::Type{Int}) = Expr380
+
+MA.promote_operation(::typeof(+), ::Type{Int}, ::Type{X380}) = Expr380
+
+MA.promote_operation(::typeof(+), ::Type{Expr380}, ::Type{X380}) = Expr380
+
+MA.promote_operation(::typeof(+), ::Type{X380}, ::Type{Expr380}) = Expr380
+
+MA.promote_operation(::typeof(+), ::Type{Expr380}, ::Type{Expr380}) = Expr380
+
+function test_issue_380()
+    x = X380.(1:3)
+    y = sum(x; init = 0)
+    @test y.terms == Dict(x .=> 1)
+    @test y.constant == 0
+    return
+end
+
 end  # TestBasics
 
 TestBasics.runtests()
