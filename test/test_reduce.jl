@@ -7,26 +7,38 @@
 module TestReduce
 
 using Test
+
 import LinearAlgebra
 import MutableArithmetics as MA
 import SparseArrays
+
+function runtests()
+    is_test(name::Symbol) = startswith("$name", "test_")
+    @testset "$name" for name in filter(is_test, names(@__MODULE__; all = true))
+        getfield(@__MODULE__, name)()
+    end
+    return
+end
 
 # StarAlgebras needs to read entries to determine the parent of its zero.
 # Other types, such as JuMP expressions, can construct zero from the type alone.
 # These fixtures ensure that the default zero_for path, including _zero_entries,
 # does not read inputs, preserving that fast path even for structured arrays.
 struct UnreadableInput end
+
 function Base.iterate(::UnreadableInput)
     return error("The type-based zero must not read inputs")
 end
 
 struct UnreadableVector{T} <: AbstractVector{T} end
+
 Base.size(::UnreadableVector) = (2,)
+
 function Base.getindex(::UnreadableVector, ::Int)
     return error("The type-based zero must not read diagonal entries")
 end
 
-@testset "Zeros from inputs" begin
+function test_Zeros_from_inputs()
     for T in (Int, Float64, BigInt)
         a = @inferred MA.zero_for(T, UnreadableInput())
         b = @inferred MA.zero_for(T, UnreadableInput())
@@ -43,9 +55,10 @@ end
         @test iszero(@inferred MA.zero_for(T, MA._zero_entries(d)))
     end
     @test MA.zero_for(Matrix{Int}, UnreadableInput()) isa MA.Zero
+    return
 end
 
-@testset "Sparse reductions preserve adjoints and inputs" begin
+function test_sparse_reductions_preserve_adjoints_and_inputs()
     for values in ([1, 0, 2], BigInt[1, 0, 2], [1 + 2im, 0, 3 - im])
         a = SparseArrays.sparse(values)
         b = [2, 3, 4]
@@ -56,9 +69,10 @@ end
               LinearAlgebra.dot(values, b)
         @test a == values
     end
+    return
 end
 
-@testset "Fused reductions" begin
+function test_fused_reductions()
     for T in (Int, BigInt), op in (MA.add_mul, MA.add_dot)
         a, b = T[1, 2, 3], T[4, 5, 6]
         originals = MA.mutable_copy.((a, b))
@@ -72,9 +86,10 @@ end
     @test (@inferred MA.fused_map_reduce(MA.add_dot, a, b)) ==
           LinearAlgebra.dot(a, b)
     @test MA.fused_map_reduce(MA.add_mul, Matrix{Int}[], Float64[]) isa MA.Zero
+    return
 end
 
-function test_allocations()
+function test_fused_reduction_allocations()
     a, b = [1, 2, 3], [4, 5, 6]
     @test (@inferred MA.fused_map_reduce(MA.add_mul, a, b)) == 32
     @test (@allocated MA.fused_map_reduce(MA.add_mul, a, b)) == 0
@@ -85,10 +100,6 @@ function test_allocations()
     @test (@inferred MA.zero_for(Int, UnreadableInput())) == 0
     @test (@allocated MA.zero_for(Int, UnreadableInput())) == 0
     return
-end
-
-@testset "Fused reduction allocations" begin
-    test_allocations()
 end
 
 function test_bigint_allocations()
@@ -102,8 +113,6 @@ function test_bigint_allocations()
     return
 end
 
-@testset "BigInt reduction allocations" begin
-    test_bigint_allocations()
-end
+end  # TestReduce
 
-end
+TestReduce.runtests()
