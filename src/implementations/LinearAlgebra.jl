@@ -558,3 +558,45 @@ function operate(
 )
     return fused_map_reduce(add_dot, x, y)
 end
+
+# The buffer of the scalar `add_dot` operation can be reused for every entry, so
+# computing several dot products with the same buffer allocates nothing.
+function buffer_for(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{<:AbstractArray{S}},
+    ::Type{<:AbstractArray{T}},
+) where {S,T}
+    U = promote_operation(LinearAlgebra.dot, S, T)
+    return buffer_for(add_dot, U, S, T)
+end
+
+function _buffered_dot_to!(buffer, output, x, y)
+    _check_same_length(x, y)
+    operate!(zero, output)
+    for (xi, yi) in zip(x, y)
+        buffered_operate!(buffer, add_dot, output, xi, yi)
+    end
+    return output
+end
+
+function operate_to_fallback!(
+    ::IsMutable,
+    output,
+    ::typeof(LinearAlgebra.dot),
+    x::AbstractArray,
+    y::AbstractArray,
+)
+    buffer = buffer_for(LinearAlgebra.dot, typeof(x), typeof(y))
+    return _buffered_dot_to!(buffer, output, x, y)
+end
+
+function buffered_operate_to_fallback!(
+    ::IsMutable,
+    buffer,
+    output,
+    ::typeof(LinearAlgebra.dot),
+    x::AbstractArray,
+    y::AbstractArray,
+)
+    return _buffered_dot_to!(buffer, output, x, y)
+end

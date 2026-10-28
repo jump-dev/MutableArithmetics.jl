@@ -317,6 +317,81 @@ function test_alloc()
     return
 end
 
+function _buffered_dot_helper(buffer, output, x, y)
+    let b = buffer, o = output, x = x, y = y
+        () -> MA.buffered_operate_to!!(b, o, LinearAlgebra.dot, x, y)
+    end
+end
+
+function test_buffered_dot()
+    for (S, T) in (
+        (BigInt, BigInt),
+        (BigInt, Int),
+        (Rational{BigInt}, Rational{BigInt}),
+        (Rational{BigInt}, BigInt),
+        (BigFloat, Float64),
+    )
+        x = S[1, 2, -3]
+        y = T[4, -5, 6]
+        expected = LinearAlgebra.dot(x, y)
+        U = typeof(expected)
+        buffer = MA.buffer_for(LinearAlgebra.dot, typeof(x), typeof(y))
+        output = U(7)
+        @test MA.buffered_operate_to!(
+            buffer,
+            output,
+            LinearAlgebra.dot,
+            x,
+            y,
+        ) === output
+        @test output == expected
+        # Called a second time to check that the output is reset to zero
+        @test MA.buffered_operate_to!!(
+            buffer,
+            output,
+            LinearAlgebra.dot,
+            x,
+            y,
+        ) === output
+        @test output == expected
+        output = U(7)
+        @test MA.operate_to!(output, LinearAlgebra.dot, x, y) === output
+        @test output == expected
+        @test x == S[1, 2, -3]
+        @test y == T[4, -5, 6]
+        if S == T
+            # There is no buffer for the scalar `add_mul` of mixed types
+            alloc_test(_buffered_dot_helper(buffer, output, x, y), 0)
+        end
+        @test_throws DimensionMismatch MA.buffered_operate_to!(
+            buffer,
+            output,
+            LinearAlgebra.dot,
+            x,
+            T[1, 2],
+        )
+    end
+    # Types without a buffer and types that cannot be mutated
+    @test MA.buffer_for(LinearAlgebra.dot, Vector{Int}, Vector{Int}) === nothing
+    @test MA.buffered_operate_to!!(
+        nothing,
+        0,
+        LinearAlgebra.dot,
+        [1, 2],
+        [3, 4],
+    ) == 11
+    output = big(0)
+    @test MA.buffered_operate_to!(
+        nothing,
+        output,
+        LinearAlgebra.dot,
+        big.([1, 2]),
+        [3, 4],
+    ) === output
+    @test output == 11
+    return
+end
+
 function test_buffered_BigInt_mixed_integers()
     for op in (MA.add_mul, MA.sub_mul),
         args in ((big(2), 3, big(4)), (2, big(3), 4), (big(2), 3, big(4), 5))
