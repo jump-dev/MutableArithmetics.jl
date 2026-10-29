@@ -118,6 +118,37 @@ function _test_allocation(::Type{T}) where {T}
     return
 end
 
+function test_bool_multiplication()
+    for x in (
+            big(2),
+            big(2) // 3,
+            BigFloat(2; precision = 128),
+            BigFloat(-2),
+            BigFloat(0),
+            BigFloat(-0.0),
+            BigFloat(Inf),
+            BigFloat(-Inf),
+            BigFloat(NaN),
+        ),
+        b in (false, true)
+
+        original = MA.mutable_copy(x)
+        for args in ((x, b), (b, x))
+            product = @inferred MA.operate(*, args...)
+            @test isequal(product, *(args...))
+            if x isa BigFloat
+                @test precision(product) == precision(*(args...))
+            end
+            MA.operate!(one, product)
+            @test isequal(x, original)
+        end
+    end
+    for b in (false, true), args in ((2 // 3, b), (b, 2 // 3))
+        @test (@inferred MA.operate(*, args...)) === *(args...)
+    end
+    return
+end
+
 function test_unary_neg()
     for x in BigFloat[-1.3, -1.0, -0.7, -0.0, 0.0, 0.3, 1.0, 1.7]
         backup = MA.copy_if_mutable(x)
