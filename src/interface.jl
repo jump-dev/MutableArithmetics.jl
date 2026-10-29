@@ -410,7 +410,8 @@ Modify the value of `output` to be equal to the value of `op(args...)`. Can
 only be called if `mutability(output, op, args...)` returns [`IsMutable`](@ref).
 
 If `output === args[i]` for some `i`, this function may throw an error. Use
-`operate!!` or `operate!` instead.
+`operate!!` or `operate!` instead. More generally, `args` should not share
+mutable objects with `output`, see the aliasing section of [`operate!`](@ref).
 
 For example, in DynamicPolynomials, `operate_to!(p, +, p, q)` throws an error
 because otherwise, the algorithm would fill `p` while iterating over the terms
@@ -458,6 +459,17 @@ end
 Modify the value of `args[1]` to be equal to the value of `op(args...)`. Can
 only be called if `mutability(args[1], op, args...)` returns
 [`IsMutable`](@ref).
+
+## Aliasing
+
+The other arguments `args[2:end]` should not share mutable objects with
+`args[1]`, otherwise, the result may be incorrect and the other arguments may
+be modified. Methods may support such aliasing if detecting it is cheap, e.g.,
+checking whether `args[1] === args[i]`, but they should not check it if it is
+expensive. For instance, if `args[1]` is a polynomial with `BigInt`
+coefficients that are modified in place, methods should not check whether a
+`BigInt` of another argument is one of these coefficients as this would
+require iterating over all the coefficients of `args[1]`.
 """
 function operate!(op::F, args::Vararg{Any,N}) where {F<:Function,N}
     return operate_fallback!(mutability(args[1], op, args...), op, args...)
@@ -531,6 +543,8 @@ end
 Modify the value of `output` to be equal to the value of `op(args...)`,
 possibly modifying `buffer`. Can only be called if
 `mutability(output, op, args...)` returns [`IsMutable`](@ref).
+`args` should not share mutable objects with `output`, see the aliasing section
+of [`operate!`](@ref).
 """
 function buffered_operate_to!(
     buffer,
@@ -595,6 +609,8 @@ end
 Modify the value of `args[1]` to be equal to the value of `op(args...)`,
 possibly modifying `buffer`. Can only be called if
 `mutability(args[1], op, args...)` returns [`IsMutable`](@ref).
+`args[2:end]` should not share mutable objects with `args[1]`, see the aliasing
+section of [`operate!`](@ref).
 """
 function buffered_operate! end
 
