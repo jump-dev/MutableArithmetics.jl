@@ -132,6 +132,13 @@ end
 
 # *
 
+# Multiplication by `true` can return `x` itself in Base.
+function operate(::typeof(*), x::BigFloat, y::Bool)
+    return y ? mutable_copy(x) : x * y
+end
+
+operate(::typeof(*), x::Bool, y::BigFloat) = operate(*, y, x)
+
 promote_operation(::typeof(*), ::Type{BigFloat}, ::Type{BigFloat}) = BigFloat
 
 function operate_to!(output::BigFloat, ::typeof(*), a::BigFloat, b::BigFloat)

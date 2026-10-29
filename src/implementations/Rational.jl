@@ -164,6 +164,13 @@ end
 
 # *
 
+# Multiplication by `true` can return `x` itself in Base.
+function operate(::typeof(*), x::Rational, y::Bool)
+    return y ? copy_if_mutable(x) : x * y
+end
+
+operate(::typeof(*), x::Bool, y::Rational) = operate(*, y, x)
+
 function promote_operation(
     ::typeof(*),
     ::Type{Rational{S}},
