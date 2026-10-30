@@ -282,9 +282,7 @@ function test_precision()
         # The zero "bias" signifies that the input will be entirely
         # nonnegative (drawn from the interval [0, 1]), while a positive
         # bias shifts that interval towards negative infinity. We want to
-        # test a few different values here, but we do not want to set the
-        # bias to 0.5, because the expected value is then zero and there's
-        # no guarantee on the relative error in that case.
+        # test a few different values here to exercise cancellation.
         (0.0, 2^-2, 2^-2 + 2^-3 + 2^-4),
     )
     @testset "prec:$prec size:$size bias:$bias" for (prec, size, bias) in iters
@@ -295,7 +293,7 @@ end
 
 function _test_precision(prec, size, bias)
     err = setprecision(BigFloat, prec) do
-        maximum_relative_error = mapreduce(max, 1:10) do _
+        maximum_scaled_error = mapreduce(max, 1:10) do _
             # Generate some random vectors for dot(x, y) input.
             x = rand(BigFloat, size) .- bias
             y = rand(BigFloat, size) .- bias
@@ -313,18 +311,35 @@ function _test_precision(prec, size, bias)
             # Check that we haven't mutated x or y
             @test old_x == x
             @test old_y == y
-            # Compute dot(x, y) in larger precision. This will be used to
-            # compare with our `dot`.
-            accurate = setprecision(BigFloat, 8 * precision(BigFloat)) do
-                    return LinearAlgebra.dot(x, y)
-                end
-            # Compute the relative error
-            return abs(accurate - output) / abs(accurate)
+            return _scaled_dot_error(output, x, y)
         end
-        # Return estimate for ULP
-        return maximum_relative_error / eps(BigFloat)
+        return maximum_scaled_error / eps(BigFloat)
     end
     @test 0 <= err < 1
+    return
+end
+
+function _scaled_dot_error(output, x, y)
+    return setprecision(BigFloat, 8 * precision(BigFloat)) do
+        products = x .* y
+        # The kernel compensates summation, but each product is rounded first.
+        # Scale by the absolute products: cancellation can make the exact dot
+        # arbitrarily small without reducing the product-rounding error.
+        return abs(sum(products) - output) / sum(abs, products)
+    end
+end
+
+function test_precision_cancellation()
+    setprecision(BigFloat, 32) do
+        e = eps(BigFloat)
+        x = BigFloat[1+e, 1]
+        y = BigFloat[1-e, -1]
+        buffer = MA.buffer_for(LinearAlgebra.dot, typeof(x), typeof(y))
+        output = BigFloat()
+        MA.buffered_operate_to!(buffer, output, LinearAlgebra.dot, x, y)
+        # Rounded products can cancel even though the exact dot is -e^2.
+        @test _scaled_dot_error(output, x, y) < eps(BigFloat)
+    end
     return
 end
 
