@@ -330,6 +330,21 @@ function test_mult_AbstractMutable_Symmetric()
     end
 end
 
+# *(::AbstractMutable, ::AdjointAbsVec) and *(::AbstractMutable, ::TransposeAbsVec)
+function test_mult_AbstractMutable_row_vector()
+    v = DummyBigInt[1, 2]
+    x = DummyBigInt(2)
+    for (f, R) in
+        ((adjoint, LinearAlgebra.Adjoint), (transpose, LinearAlgebra.Transpose))
+        w = f(DummyBigInt[2, 4])
+        @test x * f(v) isa R
+        @test MA.isequal_canonical(x * f(v), w)
+        @test f(v) * x isa R
+        @test MA.isequal_canonical(f(v) * x, w)
+    end
+    return
+end
+
 function test_issue_271_mutability()
     a = 1
     x = [1; 2;;]
