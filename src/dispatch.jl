@@ -498,6 +498,16 @@ Base.:*(α::AbstractMutable, A::AbstractArray) = α .* A
 
 Base.:*(A::AbstractArray, α::AbstractMutable) = A .* α
 
+# Broadcasting would turn a row vector into a `Matrix` while `*(::Number, _)`
+# keeps it as a row vector so we use `map` which keeps it as well.
+
+const _RowVector =
+    Union{LinearAlgebra.AdjointAbsVec,LinearAlgebra.TransposeAbsVec}
+
+Base.:*(α::AbstractMutable, A::_RowVector) = map(a -> α * a, A)
+
+Base.:*(A::_RowVector, α::AbstractMutable) = map(a -> a * α, A)
+
 function operate_to!(
     output::AbstractArray,
     ::typeof(*),
