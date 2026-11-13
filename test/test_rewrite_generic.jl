@@ -691,6 +691,13 @@ function test_issue_359()
     return
 end
 
+function test_mutability_narg_multiplication()
+    stack = quote end
+    root, is_mutable = MA._rewrite_generic(stack, :(a * x * a))
+    @test is_mutable
+    return
+end
+
 end  # module
 
 TestRewriteGeneric.runtests()
