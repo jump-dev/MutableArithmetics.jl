@@ -224,7 +224,7 @@ function _rewrite_generic(stack::Expr, expr::Expr)
             root = gensym()
             push!(stack.args, :($root = $rhs))
         end
-        return root, is_mutable
+        return root, true
     elseif expr.args[1] == :.+
         # .+(args...) => add_mul.(add_mul.(arg1, arg2), arg3)
         @assert length(expr.args) > 1
